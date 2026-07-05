@@ -23,6 +23,8 @@ export interface Source {
   name: string;
   kind: SourceKind;
   weight: SignalWeight;
+  /** Short, free-text stance this source takes (e.g. "Ambiente ruidoso") — feeds contradiction detection (SPEC-007). */
+  claim?: string;
 }
 
 /**
@@ -38,6 +40,8 @@ export interface Restaurant {
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';
+  /** Plain-language explanation behind `trust` (SPEC-007) — "el usuario nunca ve números, ve explicaciones". */
+  trustRationale?: string;
   type: RestaurantSignal;
   /** The Brain's one-line reason to go. */
   why: string;

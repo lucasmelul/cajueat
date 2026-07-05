@@ -205,6 +205,15 @@
   color: var(--ink-600);
   line-height: 1.5;
 }
+.cj-trust-rationale {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--ink-500);
+  line-height: 1.5;
+}
 .cj-sources {
   display: flex;
   flex-wrap: wrap;

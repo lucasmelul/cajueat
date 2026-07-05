@@ -31,6 +31,8 @@ export interface Source {
   weight: SignalWeight;
   /** ISO date the signal was captured — feeds the Trust Engine's freshness factor. */
   capturedAt: string;
+  /** Short, free-text stance this source takes (e.g. "Ambiente ruidoso") — feeds contradiction detection (SPEC-007). */
+  claim?: string;
 }
 
 export interface Restaurant {

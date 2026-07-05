@@ -220,6 +220,7 @@ export function Restaurant() {
           <section className="cj-sec">
             <Badge tone="over">¿Por qué te lo recomendé?</Badge>
             <p className="cj-why">{restaurant.why}</p>
+            {restaurant.trustRationale && <p className="cj-trust-rationale">{restaurant.trustRationale}</p>}
             <div className="cj-sources">
               {restaurant.sources.map((s) => (
                 <SourceChip key={s.name} name={s.name} kind={s.kind} weight={s.weight} />

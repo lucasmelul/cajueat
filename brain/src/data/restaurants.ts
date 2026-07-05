@@ -15,11 +15,12 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
 }
 
-const src = (name: string, kind: Source['kind'], weight: Source['weight'], capturedDaysAgo: number): Source => ({
+const src = (name: string, kind: Source['kind'], weight: Source['weight'], capturedDaysAgo: number, claim?: string): Source => ({
   name,
   kind,
   weight,
   capturedAt: daysAgo(capturedDaysAgo),
+  ...(claim ? { claim } : {}),
 });
 
 const RAW_RESTAURANTS: RawRestaurant[] = [
@@ -53,9 +54,9 @@ const RAW_RESTAURANTS: RawRestaurant[] = [
     idealFor: ['Primera cita', 'Ocasión especial', 'Solo en la barra'],
     notFor: ['Grupos grandes', 'Ir con chicos'],
     sources: [
-      src('@buenospaladaires', 'curator', 'strong', 40),
-      src('Tu visita', 'visit', 'strong', 10),
-      src('42 personas', 'community', 'medium', 20),
+      src('@buenospaladaires', 'curator', 'strong', 40, 'Excelente para una primera cita'),
+      src('Tu visita', 'visit', 'strong', 10, 'Ideal para ir en pareja'),
+      src('42 personas', 'community', 'medium', 20, 'Buen lugar para ir de a dos'),
     ],
   },
   {
@@ -84,7 +85,10 @@ const RAW_RESTAURANTS: RawRestaurant[] = [
     tips: ['Andá temprano', 'Preguntá el fuera de carta'],
     idealFor: ['Amigos', 'Después del trabajo'],
     notFor: ['Charla tranquila', 'Reuniones de negocios'],
-    sources: [src('@salt_argentina', 'curator', 'medium', 200), src('18 personas', 'community', 'medium', 15)],
+    sources: [
+      src('@salt_argentina', 'curator', 'medium', 200, 'Ambiente tranquilo, bueno para charlar'),
+      src('18 personas', 'community', 'medium', 15, 'Bastante ruidoso los fines de semana'),
+    ],
   },
   {
     id: 'cuervo',
