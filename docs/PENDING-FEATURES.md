@@ -28,7 +28,7 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Solo modela guardados + ADN (tags planos) + puntos + colecciones. Los tipos de memoria más ricos del spec (hábitos, patrones, contextual, temporal) no están implementados.
 
 ### SPEC-007 — Trust Engine
-- [ ] Consensus y Contradictions (2 de los 6 componentes del spec) no están modelados. El cálculo actual pondera weight/kind/freshness de cada fuente, pero no detecta señales contradictorias entre fuentes ni cuenta consenso real entre curadores independientes.
+- [x] Consensus y Contradictions — resuelto, ver abajo.
 
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
@@ -41,3 +41,4 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - **2026-07-05** — Bug: el `sub` de la Brain Card no pasaba por `highlightText()`, mostrando `**asteriscos**` literales en vez de negrita. Commit `347ba18`.
 - **2026-07-05** — Context Chips "Para una cita", "Trabajar" y "Guardados" ahora filtran de verdad contra el Recommendation Engine (antes eran puramente visuales). Commit `6c43a31`.
 - **2026-07-05** — Catálogo ampliado de 3 a 6 restaurantes (Nonna Emma, Terraza Norte, Brote), mismo formato hand-authored. Da variedad real a diversify/search/trust (ahora sí aparece un ejemplo de confianza "low") y más de una opción por filtro de contexto. Sigue sin ser ingesta real de fuentes externas. Commit `3af1405`.
+- **2026-07-05** — Trust Engine ahora detecta contradicciones reales entre fuentes (`claim` + ejes de contradicción determinísticos) y las nombra en el rationale en vez de promediarlas en silencio; Consensus ya existía de forma implícita (diversidad de `kind`), quedó documentado como tal. De paso se descubrió que `trustRationale` se calculaba pero nunca llegaba a la UI — ahora se muestra en la ficha del restaurante. Anafe quedó con una contradicción real de ejemplo (ahora "Señales en conflicto"). Commit `55947e1`.
