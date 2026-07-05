@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { brain } from '../brain';
-import type { DnaTag, User } from '../../types';
+import type { Collection, DnaTag, User } from '../../types';
 
 export type OverlayKind = 'capture' | 'feedback' | 'search' | null;
 
@@ -38,6 +38,14 @@ interface AppState {
   removeDnaTag: (id: string) => Promise<void>;
   addDnaTag: (label: string) => Promise<void>;
 
+  /** Named collections (CP-019, SPEC-009) — separate from the flat `saved` bookmark. Refetched after every mutation rather than patched optimistically, since nested restaurantIds arrays make optimistic patching error-prone for little benefit here. */
+  collections: Collection[];
+  loadCollections: () => Promise<void>;
+  createCollection: (name: string) => Promise<void>;
+  addToCollectionByName: (name: string, restaurantId: string) => Promise<void>;
+  removeFromCollection: (collectionId: string, restaurantId: string) => Promise<void>;
+  deleteCollection: (id: string) => Promise<void>;
+
   /** Guards against re-fetching saved/dna on every screen mount once loaded. */
   memoryHydrated: boolean;
   hydrateMemory: () => Promise<void>;
@@ -74,6 +82,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   addDnaTag: async (label) => {
     const tag = await brain.addDnaTag(label);
     set((state) => ({ dna: [...state.dna, tag] }));
+  },
+
+  collections: [],
+  loadCollections: async () => {
+    set({ collections: await brain.getCollections() });
+  },
+  createCollection: async (name) => {
+    await brain.createCollection(name);
+    await get().loadCollections();
+  },
+  addToCollectionByName: async (name, restaurantId) => {
+    await brain.addRestaurantToCollectionByName(name, restaurantId);
+    await get().loadCollections();
+  },
+  removeFromCollection: async (collectionId, restaurantId) => {
+    await brain.removeFromCollection(collectionId, restaurantId);
+    await get().loadCollections();
+  },
+  deleteCollection: async (id) => {
+    await brain.deleteCollection(id);
+    await get().loadCollections();
   },
 
   memoryHydrated: false,

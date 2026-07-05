@@ -10,6 +10,7 @@ import {
   CircleCheck,
   CircleMinus,
   Clock,
+  FolderPlus,
   Heart,
   Laptop,
   Navigation,
@@ -64,7 +65,7 @@ async function shareRestaurant(r: RestaurantData) {
 export function Restaurant() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { saved, toggleSaved, setPendingQuery, hydrateMemory } = useAppStore();
+  const { saved, toggleSaved, setPendingQuery, hydrateMemory, addToCollectionByName } = useAppStore();
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [similar, setSimilar] = useState<RestaurantData[]>([]);
@@ -90,6 +91,12 @@ export function Restaurant() {
     if (!restaurant) return;
     setPendingQuery(`¿Vale la pena ${restaurant.name} para una cita?`);
     navigate('/conversation');
+  };
+
+  const addToCollection = () => {
+    if (!restaurant) return;
+    const name = window.prompt('¿A qué colección lo agregamos? (nueva o existente)')?.trim();
+    if (name) addToCollectionByName(name, restaurant.id);
   };
 
   if (loading || !restaurant) {
@@ -124,6 +131,9 @@ export function Restaurant() {
             <div className="cj-hero__top-r">
               <button className="cj-round" aria-label="Compartir" onClick={() => shareRestaurant(restaurant)}>
                 <Share2 size={18} />
+              </button>
+              <button className="cj-round" aria-label="Agregar a colección" onClick={addToCollection}>
+                <FolderPlus size={18} />
               </button>
               <button className={`cj-round ${isSaved ? 'on' : ''}`} onClick={() => toggleSaved(restaurant.id)} aria-label="Guardar">
                 <Bookmark size={18} fill={isSaved ? 'currentColor' : 'none'} />

@@ -55,4 +55,15 @@ export const httpBrainClient: BrainClient = {
   submitCapture: (input) => request('/capture', { method: 'POST', body: JSON.stringify(input) }),
 
   search: (query, limit = 8) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
+
+  getCollections: () => request('/collections'),
+
+  createCollection: (name) => request('/collections', { method: 'POST', body: JSON.stringify({ name }) }),
+
+  addRestaurantToCollectionByName: (name, restaurantId) =>
+    request('/collections/by-name', { method: 'POST', body: JSON.stringify({ name, restaurantId }) }),
+
+  removeFromCollection: (collectionId, restaurantId) => request(`/collections/${collectionId}/restaurants/${restaurantId}`, { method: 'DELETE' }),
+
+  deleteCollection: (id) => request(`/collections/${id}`, { method: 'DELETE' }),
 };

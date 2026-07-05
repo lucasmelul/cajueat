@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Plus, X } from 'lucide-react';
-import { Badge, Button, Chip } from '../../components/core';
+import { ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { Badge, Button, Chip, IconButton } from '../../components/core';
 import { CajuPoints, RestaurantCard } from '../../components/discovery';
 import { BrainMark } from '../../components/brain';
 import { brain } from '../../lib/brain';
@@ -18,22 +18,43 @@ const CONTRIBUTIONS = [
 /** How the Brain understands the user — not a social profile (SPEC-010, CP-011). */
 export function Profile() {
   const navigate = useNavigate();
-  const { user, setUser, saved, dna, removeDnaTag, addDnaTag, openOverlay, hydrateMemory } = useAppStore();
+  const {
+    user,
+    setUser,
+    saved,
+    dna,
+    removeDnaTag,
+    addDnaTag,
+    openOverlay,
+    hydrateMemory,
+    collections,
+    loadCollections,
+    createCollection,
+    removeFromCollection,
+    deleteCollection,
+  } = useAppStore();
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
     hydrateMemory();
+    loadCollections();
     brain.getAllRestaurants().then(setAllRestaurants);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const savedList = allRestaurants.filter((r) => saved[r.id]);
+  const restaurantById = (id: string) => allRestaurants.find((r) => r.id === id);
 
   const addTag = () => {
     const label = window.prompt('¿Qué más le enseñamos al Brain sobre vos?')?.trim();
     if (label) addDnaTag(label);
+  };
+
+  const addCollection = () => {
+    const name = window.prompt('¿Cómo se llama la colección?')?.trim();
+    if (name) createCollection(name);
   };
 
   return (
@@ -100,6 +121,56 @@ export function Profile() {
               <p className="cj-empty">Todavía no guardaste lugares. Tocá el marcador en cualquier ficha.</p>
             )}
           </div>
+        </section>
+
+        <section className="cj-prof-sec">
+          <div className="cj-prof-sech">
+            <Badge tone="over">Tus colecciones</Badge>
+            <button className="cj-prof-edit" onClick={addCollection}>
+              Crear
+            </button>
+          </div>
+          <p className="cj-prof-lead">Agrupá lugares como quieras — Sushi, Primera cita, lo que sea.</p>
+          {collections.length === 0 ? (
+            <p className="cj-empty">Todavía no armaste ninguna. Desde una ficha, tocá "Agregar a colección".</p>
+          ) : (
+            collections.map((c) => (
+              <div className="cj-collection" key={c.id}>
+                <div className="cj-collection__head">
+                  <span className="cj-collection__name">{c.name}</span>
+                  <span className="cj-prof-count">{c.restaurantIds.length}</span>
+                  <IconButton icon={<Trash2 size={15} />} label="Eliminar colección" variant="plain" size="sm" onClick={() => deleteCollection(c.id)} />
+                </div>
+                <div className="cj-prof-saved">
+                  {c.restaurantIds.map((rid) => {
+                    const r = restaurantById(rid);
+                    if (!r) return null;
+                    return (
+                      <div className="cj-collection__row" key={rid}>
+                        <RestaurantCard
+                          compact
+                          name={r.name}
+                          cuisine={r.cuisine}
+                          neighborhood={r.neighborhood}
+                          price={r.price}
+                          tags={r.tags}
+                          trust={r.trust}
+                          onClick={() => navigate(`/restaurant/${r.id}`)}
+                        />
+                        <IconButton
+                          icon={<X size={14} />}
+                          label="Quitar de la colección"
+                          variant="plain"
+                          size="sm"
+                          onClick={() => removeFromCollection(c.id, rid)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </section>
 
         <section className="cj-prof-sec">

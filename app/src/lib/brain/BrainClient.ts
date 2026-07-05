@@ -1,4 +1,4 @@
-import type { ConversationTurn, DnaTag, MapEvent, RecommendationContext, Recommendations, Restaurant, User } from '../../types';
+import type { Collection, ConversationTurn, DnaTag, MapEvent, RecommendationContext, Recommendations, Restaurant, User } from '../../types';
 
 /**
  * The only way any screen talks to the Brain (CP-002 Product Architecture:
@@ -30,4 +30,12 @@ export interface BrainClient {
 
   /** SPEC-008 Search Experience — intent-lite matching, never returns an empty list. */
   search(query: string, limit?: number): Promise<Restaurant[]>;
+
+  /** SPEC-009 Collections — named groupings, separate from the flat "saved" bookmark. */
+  getCollections(): Promise<Collection[]>;
+  createCollection(name: string): Promise<Collection>;
+  /** "Guardar es enseñar": find-or-create by name, then add the restaurant. */
+  addRestaurantToCollectionByName(name: string, restaurantId: string): Promise<Collection>;
+  removeFromCollection(collectionId: string, restaurantId: string): Promise<void>;
+  deleteCollection(id: string): Promise<void>;
 }

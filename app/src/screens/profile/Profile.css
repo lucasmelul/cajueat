@@ -142,3 +142,31 @@
   color: var(--ink-400);
   font-family: var(--font-mono);
 }
+
+.cj-collection {
+  margin-bottom: 18px;
+}
+.cj-collection:last-child {
+  margin-bottom: 0;
+}
+.cj-collection__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cj-collection__name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+.cj-collection__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cj-collection__row .caju-rest {
+  flex: 1;
+  min-width: 0;
+}

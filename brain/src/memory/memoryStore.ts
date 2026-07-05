@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { DnaTag, User } from '../types.js';
+import type { Collection, DnaTag, User } from '../types.js';
 
 /**
  * SPEC-006 Memory Engine: what the Brain remembers about the (single, MVP)
@@ -22,6 +22,7 @@ interface MemoryState {
   saved: Record<string, boolean>;
   dna: DnaTag[];
   contributions: Contribution[];
+  collections: Collection[];
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,15 +45,19 @@ const DEFAULT_STATE: MemoryState = {
     { label: 'Subiste una foto del omakase', points: 20, when: Date.now() - 7 * 86400_000 },
     { label: 'Respondiste un quiz de ambiente', points: 10, when: Date.now() - 14 * 86400_000 },
   ],
+  collections: [{ id: 'c1', name: 'Sushi', restaurantIds: ['osaka'] }],
 };
 
 let state: MemoryState;
 let dnaCounter = 0;
+let collectionCounter = 1;
 
 function load(): MemoryState {
   if (!existsSync(DATA_FILE)) return structuredClone(DEFAULT_STATE);
   try {
-    return JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as MemoryState;
+    const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<MemoryState>;
+    // Backward-compatible with memory.json files written before `collections` existed.
+    return { ...structuredClone(DEFAULT_STATE), ...parsed, collections: parsed.collections ?? structuredClone(DEFAULT_STATE.collections) };
   } catch {
     return structuredClone(DEFAULT_STATE);
   }
@@ -65,6 +70,7 @@ function persist() {
 
 state = load();
 dnaCounter = state.dna.length;
+collectionCounter = state.collections.length;
 
 export function getProfile() {
   return { user: state.user, saved: state.saved, dna: state.dna, contributions: state.contributions };
@@ -108,4 +114,43 @@ export function recordContribution(label: string, points: number) {
   state.contributions.unshift({ label, points, when: Date.now() });
   state.contributions = state.contributions.slice(0, 20);
   addCajuPoints(points);
+}
+
+export function getCollections(): Collection[] {
+  return state.collections;
+}
+
+export function createCollection(name: string): Collection {
+  collectionCounter += 1;
+  const collection: Collection = { id: `c-${collectionCounter}`, name, restaurantIds: [] };
+  state.collections.push(collection);
+  persist();
+  return collection;
+}
+
+/** Guardar es enseñar (CP-019): find-or-create by name, then add the restaurant. */
+export function addRestaurantToCollectionByName(name: string, restaurantId: string): Collection {
+  const trimmed = name.trim();
+  let collection = state.collections.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+  if (!collection) {
+    collectionCounter += 1;
+    collection = { id: `c-${collectionCounter}`, name: trimmed, restaurantIds: [] };
+    state.collections.push(collection);
+  }
+  if (!collection.restaurantIds.includes(restaurantId)) {
+    collection.restaurantIds.push(restaurantId);
+  }
+  persist();
+  return collection;
+}
+
+export function removeRestaurantFromCollection(collectionId: string, restaurantId: string) {
+  const collection = state.collections.find((c) => c.id === collectionId);
+  if (collection) collection.restaurantIds = collection.restaurantIds.filter((id) => id !== restaurantId);
+  persist();
+}
+
+export function deleteCollection(id: string) {
+  state.collections = state.collections.filter((c) => c.id !== id);
+  persist();
 }

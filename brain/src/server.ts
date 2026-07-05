@@ -10,6 +10,7 @@ import { dnaRouter } from './routes/dna.js';
 import { feedbackRouter } from './routes/feedback.js';
 import { captureRouter } from './routes/capture.js';
 import { searchRouter } from './routes/search.js';
+import { collectionsRouter } from './routes/collections.js';
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/api', dnaRouter);
 app.use('/api', feedbackRouter);
 app.use('/api', captureRouter);
 app.use('/api', searchRouter);
+app.use('/api', collectionsRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

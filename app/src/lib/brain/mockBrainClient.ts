@@ -1,5 +1,5 @@
 import type { BrainClient } from './BrainClient';
-import type { ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
+import type { Collection, ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
@@ -73,6 +73,8 @@ const memory = {
     { id: 'd6', label: 'Palermo · Chacarita' },
   ] as DnaTag[],
   dnaCounter: 6,
+  collections: [{ id: 'c1', name: 'Sushi', restaurantIds: ['osaka'] }] as Collection[],
+  collectionCounter: 1,
 };
 
 export const mockBrainClient: BrainClient = {
@@ -171,5 +173,39 @@ export const mockBrainClient: BrainClient = {
 
   async search(query, limit = 8) {
     return delay(searchCatalog(query, limit), 200);
+  },
+
+  async getCollections() {
+    return delay(memory.collections, 150);
+  },
+
+  async createCollection(name) {
+    memory.collectionCounter += 1;
+    const collection: Collection = { id: `c-${memory.collectionCounter}`, name, restaurantIds: [] };
+    memory.collections.push(collection);
+    return delay(collection, 150);
+  },
+
+  async addRestaurantToCollectionByName(name, restaurantId) {
+    const trimmed = name.trim();
+    let collection = memory.collections.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (!collection) {
+      memory.collectionCounter += 1;
+      collection = { id: `c-${memory.collectionCounter}`, name: trimmed, restaurantIds: [] };
+      memory.collections.push(collection);
+    }
+    if (!collection.restaurantIds.includes(restaurantId)) collection.restaurantIds.push(restaurantId);
+    return delay(collection, 200);
+  },
+
+  async removeFromCollection(collectionId, restaurantId) {
+    const collection = memory.collections.find((c) => c.id === collectionId);
+    if (collection) collection.restaurantIds = collection.restaurantIds.filter((id) => id !== restaurantId);
+    return delay(undefined, 100);
+  },
+
+  async deleteCollection(id) {
+    memory.collections = memory.collections.filter((c) => c.id !== id);
+    return delay(undefined, 100);
   },
 };
