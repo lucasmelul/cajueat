@@ -1,0 +1,19 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Map pin palette" subtitle="Contained, typed markers — never a rainbow" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; padding:22px; background:var(--paper); display:flex; gap:20px; flex-wrap:wrap; align-items:center; }
+  .pin { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .dot { width:34px; height:34px; border-radius:50%; box-shadow:var(--elev-pin); }
+  .pin b { font-family:var(--font-sans); font-size:12px; font-weight:600; color:var(--ink-700); }
+  .pin span { font-family:var(--font-mono); font-size:10px; color:var(--ink-400); margin-top:-4px; }
+</style></head>
+<body>
+<div class="pin"><div class="dot" style="background:var(--pin-recommended)"></div><b>Recomendado</b><span>caju</span></div>
+<div class="pin"><div class="dot" style="background:var(--pin-new)"></div><b>Nuevo</b><span>amber</span></div>
+<div class="pin"><div class="dot" style="background:var(--pin-saved)"></div><b>Guardado</b><span>ink</span></div>
+<div class="pin"><div class="dot" style="background:var(--pin-visited)"></div><b>Visitado</b><span>leaf</span></div>
+<div class="pin"><div class="dot" style="background:var(--pin-event)"></div><b>Evento</b><span>slate</span></div>
+<div class="pin"><div class="dot" style="background:var(--pin-collection)"></div><b>Colección</b><span>plum</span></div>
+</body></html>

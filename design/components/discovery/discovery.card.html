@@ -1,0 +1,85 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Discovery — RestaurantCard, MapPin, CajuPoints" subtitle="Restaurants as decisions, typed map pins, knowledge points" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; padding: 24px; background: var(--paper); }
+  .cols { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+  .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); margin: 0 0 12px; }
+  .pins { position: relative; height: 190px; border-radius: var(--r-lg); overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 15% 10%, #EAF0EC, transparent 60%),
+      linear-gradient(160deg,#F1EEE7,#E9E4DA);
+    box-shadow: var(--ring-hairline); }
+  .pins::before { content:''; position:absolute; inset:0;
+    background-image: linear-gradient(var(--line-soft) 1px, transparent 1px), linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 34px 34px; opacity: .7; }
+  .pin-at { position: absolute; }
+  .pts-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.CajuEatDesignSystem_dbeea0;
+  const { RestaurantCard, MapPin, CajuPoints, Badge } = NS;
+
+  function Demo() {
+    const [saved, setSaved] = React.useState(true);
+    const [sel, setSel] = React.useState('osaka');
+    return (
+      <div>
+        <div className="cols">
+          <div>
+            <p className="lbl">RestaurantCard — full</p>
+            <RestaurantCard
+              name="Osaka" cuisine="Nikkei" neighborhood="Palermo" price="$$$"
+              why="Barra japonesa clásica, con foco total en el producto."
+              tags={['En pareja', 'Reserva', '40 min']}
+              trust="high" saved={saved} onSave={setSaved}
+              badge={<Badge tone="brand">Recomendado</Badge>}
+            />
+            <p className="lbl" style={{marginTop:20}}>RestaurantCard — compact</p>
+            <RestaurantCard compact
+              name="Anafe" cuisine="Bodegón moderno" neighborhood="Chacarita" price="$$"
+              tags={['Grupos', 'Sin reserva']} trust="mid" />
+          </div>
+
+          <div>
+            <p className="lbl">MapPin — typed, on a Living Map</p>
+            <div className="pins">
+              <span className="pin-at" style={{top:24,left:24}}>
+                <MapPin type="recommended" label="Osaka" selected={sel==='osaka'} onClick={()=>setSel('osaka')} /></span>
+              <span className="pin-at" style={{top:96,left:150}}>
+                <MapPin type="new" label="Anafe" selected={sel==='anafe'} onClick={()=>setSel('anafe')} /></span>
+              <span className="pin-at" style={{top:40,right:30}}><MapPin type="visited" dotOnly /></span>
+              <span className="pin-at" style={{bottom:26,left:60}}><MapPin type="saved" dotOnly /></span>
+              <span className="pin-at" style={{bottom:20,right:80}}>
+                <MapPin type="event" label="Feria · sáb" onClick={()=>setSel('feria')} selected={sel==='feria'} /></span>
+              <span className="pin-at" style={{top:120,right:120}}><MapPin type="collection" dotOnly /></span>
+            </div>
+
+            <p className="lbl" style={{marginTop:20}}>CajuPoints</p>
+            <div className="pts-row">
+              <CajuPoints value={1240} size="lg" unit="puntos" />
+              <CajuPoints value={30} delta={30} chip size="sm" />
+              <CajuPoints value={8} size="md" delta={8} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

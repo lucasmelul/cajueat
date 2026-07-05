@@ -1,0 +1,82 @@
+<!-- @dsCard group="Components" viewport="700x460" name="Core — Button, IconButton, Chip, Badge" subtitle="Primary actions, floating controls, context pills, status labels" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  body { margin: 0; padding: 24px; background: var(--paper); }
+  .row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+  .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); width: 100%; margin-bottom: -2px; }
+  .ico { width: 18px; height: 18px; display: inline-flex; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { Button, IconButton, Chip, Badge } = window.CajuEatDesignSystem_dbeea0;
+  const I = ({ n, s = 18 }) => <i data-lucide={n} style={{ width: s, height: s }}></i>;
+
+  function Demo() {
+    const [ctx, setCtx] = React.useState('open');
+    return (
+      <div>
+        <div className="row">
+          <span className="lbl">Button — variants</span>
+          <Button variant="primary" iconLeft={<I n="navigation" />}>Cómo llegar</Button>
+          <Button variant="secondary" iconLeft={<I n="bookmark" />}>Guardar</Button>
+          <Button variant="ghost">Comparar</Button>
+          <Button variant="brandGhost" iconLeft={<I n="sparkles" />}>Preguntar al Brain</Button>
+          <Button variant="primary" loading>Cargando</Button>
+          <Button variant="secondary" disabled>Deshabilitado</Button>
+        </div>
+
+        <div className="row">
+          <span className="lbl">Button — sizes</span>
+          <Button size="sm" variant="secondary">Small</Button>
+          <Button size="md" variant="secondary">Medium</Button>
+          <Button size="lg" variant="primary">Large primary</Button>
+        </div>
+
+        <div className="row">
+          <span className="lbl">IconButton</span>
+          <IconButton icon={<I n="locate-fixed" s={20} />} label="Ubicación" variant="float" />
+          <IconButton icon={<I n="crosshair" s={20} />} label="Recentrar" variant="float" />
+          <IconButton icon={<I n="layers" s={20} />} label="Capas" />
+          <IconButton icon={<I n="x" s={20} />} label="Cerrar" variant="plain" />
+          <IconButton icon={<I n="arrow-up" s={20} />} label="Enviar" variant="brand" />
+        </div>
+
+        <div className="row">
+          <span className="lbl">Chip — context</span>
+          <Chip selected={ctx==='near'} icon={<I n="map-pin" s={15} />} onClick={()=>setCtx('near')}>Cerca</Chip>
+          <Chip selected={ctx==='open'} icon={<I n="clock" s={15} />} onClick={()=>setCtx('open')}>Abierto ahora</Chip>
+          <Chip selected={ctx==='date'} icon={<I n="heart" s={15} />} onClick={()=>setCtx('date')}>Para una cita</Chip>
+          <Chip selected={ctx==='saved'} brand icon={<I n="bookmark" s={15} />} onClick={()=>setCtx('saved')}>Guardados</Chip>
+        </div>
+
+        <div className="row">
+          <span className="lbl">Badge</span>
+          <Badge tone="brand">Recomendado</Badge>
+          <Badge tone="new" dot>Nuevo</Badge>
+          <Badge tone="success" dot>Confianza alta</Badge>
+          <Badge tone="danger" dot>Tendencia a la baja</Badge>
+          <Badge tone="neutral">$$$</Badge>
+          <Badge tone="over">Brain Tips</Badge>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+  setTimeout(() => window.lucide && window.lucide.createIcons(), 50);
+</script>
+</body>
+</html>

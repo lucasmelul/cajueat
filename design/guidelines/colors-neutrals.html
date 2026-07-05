@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x200" name="Warm neutrals — paper & ink" subtitle="Slightly warm greys so the product reads calm, never clinical" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; padding:20px; background:var(--paper); }
+  .row { display:flex; gap:8px; margin-bottom:8px; }
+  .sw { flex:1; height:76px; border-radius:var(--r-md); display:flex; flex-direction:column;
+    justify-content:flex-end; padding:9px; box-shadow:var(--ring-hairline); }
+  .sw b { font-family:var(--font-sans); font-size:11px; font-weight:600; }
+  .sw span { font-family:var(--font-mono); font-size:10px; opacity:.65; }
+  .l b,.l span{color:#fff;} .d b,.d span{color:var(--ink-800);}
+</style></head>
+<body>
+<div class="row">
+  <div class="sw d" style="background:var(--paper)"><b>paper</b><span>#FCFBF8</span></div>
+  <div class="sw d" style="background:var(--paper-sunk)"><b>paper-sunk</b><span>#F5F2EC</span></div>
+  <div class="sw d" style="background:var(--surface);"><b>surface</b><span>#FFFFFF</span></div>
+  <div class="sw d" style="background:var(--line)"><b>line</b><span>#E7E1D6</span></div>
+  <div class="sw d" style="background:var(--ink-300)"><b>ink-300</b><span>disabled</span></div>
+</div>
+<div class="row">
+  <div class="sw d" style="background:var(--ink-400)"><b>ink-400</b><span>muted</span></div>
+  <div class="sw l" style="background:var(--ink-500)"><b>ink-500</b><span>secondary</span></div>
+  <div class="sw l" style="background:var(--ink-600)"><b>ink-600</b><span>body</span></div>
+  <div class="sw l" style="background:var(--ink-700)"><b>ink-700</b><span>strong</span></div>
+  <div class="sw l" style="background:var(--ink-900)"><b>ink-900</b><span>#191512</span></div>
+</div>
+</body></html>

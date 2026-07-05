@@ -1,0 +1,17 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Radius" subtitle="Floating map surfaces round more than inline controls" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; padding:22px; background:var(--paper); display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
+  .b { width:84px; height:70px; background:var(--surface); box-shadow:var(--shadow-md); display:flex; align-items:flex-end; padding:8px; }
+  .b span { font-family:var(--font-mono); font-size:10px; color:var(--ink-500); }
+</style></head>
+<body>
+<div class="b" style="border-radius:var(--r-sm)"><span>sm · 10</span></div>
+<div class="b" style="border-radius:var(--r-md)"><span>md · 14</span></div>
+<div class="b" style="border-radius:var(--r-lg)"><span>lg · 18 · card</span></div>
+<div class="b" style="border-radius:var(--r-xl)"><span>xl · 24 · float</span></div>
+<div class="b" style="border-radius:var(--r-2xl)"><span>2xl · 32 · sheet</span></div>
+<div class="b" style="border-radius:var(--r-full);width:70px;height:70px"><span>full</span></div>
+</body></html>

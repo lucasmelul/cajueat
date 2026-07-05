@@ -1,0 +1,19 @@
+/* ============================================================
+   CajuEat — Fonts
+   Loaded from Google Fonts. See README (Visual Foundations) for
+   the substitution note: no typefaces were specified in the
+   product docs, so these were chosen to match the brief
+   (premium, futuristic, calm, excellent legibility, few variants).
+
+   - Geist          : UI + body. Geometric-humanist grotesque,
+                      Linear/Vercel-grade neutrality & clarity.
+   - Geist Mono     : data, coordinates, Caju Points, trust scores.
+   - Newsreader     : the Brain's editorial voice — narrative
+                      restaurant summaries, big quotes. Used sparingly.
+   - Bricolage Grotesque: the CajuEat wordmark & brand headlines.
+
+   Consumers who want self-hosted binaries should replace this
+   @import with local @font-face rules pointing at /assets/fonts.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap');

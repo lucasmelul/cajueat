@@ -1,0 +1,103 @@
+/* ============================================================
+   CajuEat — Color tokens
+   Philosophy (SPEC-012): "Colores muy contenidos. La información
+   tiene prioridad. No el color." One warm brand accent (caju),
+   a warm-neutral ink/paper scale, a green trust signal, and a
+   small, deliberate palette for typed map pins.
+   ============================================================ */
+
+:root {
+  /* --- Warm neutrals (paper & ink) ------------------------- */
+  /* Slightly warm hue so the product reads appetizing & calm,
+     never clinical gray. */
+  --paper:        #FCFBF8;  /* app background            */
+  --paper-sunk:   #F5F2EC;  /* recessed areas, tracks    */
+  --surface:      #FFFFFF;  /* cards, sheets, popovers    */
+  --surface-2:    #FBFAF7;  /* nested surface            */
+  --scrim:        rgba(26, 22, 18, 0.44); /* modal backdrop */
+
+  --ink-900:      #191512;  /* headings, primary text    */
+  --ink-800:      #2C2621;
+  --ink-700:      #453D35;  /* body strong               */
+  --ink-600:      #5E554B;  /* body                      */
+  --ink-500:      #7C7267;  /* secondary text            */
+  --ink-400:      #9E948A;  /* muted / captions          */
+  --ink-300:      #C2B9AE;  /* disabled ink              */
+
+  --line:         #E7E1D6;  /* hairline border           */
+  --line-soft:    #F0ECE3;  /* faint divider             */
+  --line-strong:  #D8D0C3;  /* emphasized border         */
+
+  /* --- Caju (cashew) — the single brand accent ------------- */
+  /* The cashew apple: a warm coral that turns to amber. */
+  --caju-700:     #C0350E;  /* deep press                */
+  --caju-600:     #DB431A;  /* active / press            */
+  --caju-500:     #EF5A22;  /* PRIMARY brand             */
+  --caju-400:     #F87A45;  /* hover-light / illustration*/
+  --caju-300:     #FBA079;
+  --caju-200:     #FCC9B0;
+  --caju-100:     #FCE3D7;  /* tint surface              */
+  --caju-050:     #FDF3EC;  /* faintest wash             */
+
+  /* --- Amber (cashew nut) — secondary warmth -------------- */
+  --amber-600:    #CF8419;
+  --amber-500:    #E9A23B;
+  --amber-100:    #FBEBCE;
+  --amber-050:    #FDF6E9;
+
+  /* --- Leaf — trust / confidence positive ----------------- */
+  --leaf-700:     #14663F;
+  --leaf-600:     #1B8455;
+  --leaf-500:     #26A06B;
+  --leaf-100:     #D8EFE1;
+  --leaf-050:     #EDF8F1;
+
+  /* --- Terracotta — low trust / contradiction / danger ---- */
+  --clay-600:     #B23A2A;
+  --clay-500:     #CB5341;
+  --clay-100:     #F6DBD3;
+  --clay-050:     #FBEDE8;
+
+  /* --- Pin palette (typed map markers, contained) --------- */
+  --pin-recommended: var(--caju-500); /* Brain pick        */
+  --pin-new:         var(--amber-500);/* nuevo             */
+  --pin-saved:       #2C2621;         /* guardado (ink)    */
+  --pin-visited:     var(--leaf-600); /* visitado          */
+  --pin-event:       #4E7A93;         /* evento (slate)    */
+  --pin-collection:  #8A6BA6;         /* colección (plum)  */
+
+  /* --- Semantic aliases (use these in UI) ----------------- */
+  --bg-app:            var(--paper);
+  --bg-sunk:           var(--paper-sunk);
+  --surface-card:      var(--surface);
+  --surface-raised:    var(--surface);
+
+  --text-primary:      var(--ink-900);
+  --text-body:         var(--ink-600);
+  --text-secondary:    var(--ink-500);
+  --text-muted:        var(--ink-400);
+  --text-disabled:     var(--ink-300);
+  --text-on-caju:      #FFFFFF;
+  --text-brand:        var(--caju-600);
+
+  --border-hairline:   var(--line);
+  --border-soft:       var(--line-soft);
+  --border-strong:     var(--line-strong);
+
+  --accent:            var(--caju-500);
+  --accent-hover:      var(--caju-400);
+  --accent-press:      var(--caju-600);
+  --accent-tint:       var(--caju-100);
+  --accent-wash:       var(--caju-050);
+
+  --trust-high:        var(--leaf-600);
+  --trust-mid:         var(--amber-500);
+  --trust-low:         var(--clay-500);
+
+  --success:           var(--leaf-600);
+  --warning:           var(--amber-500);
+  --danger:            var(--clay-500);
+
+  /* Focus ring — always caju, always visible on paper */
+  --focus-ring:        rgba(239, 90, 34, 0.38);
+}

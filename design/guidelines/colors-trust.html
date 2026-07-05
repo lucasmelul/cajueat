@@ -1,0 +1,28 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="Trust & semantic" subtitle="Leaf = confidence, amber = partial, clay = conflict/danger" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; padding:20px; background:var(--paper); display:flex; gap:14px; }
+  .grp { flex:1; }
+  .grp h4 { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-400); margin:0 0 8px; }
+  .sw { height:60px; border-radius:var(--r-md); display:flex; flex-direction:column; justify-content:flex-end;
+    padding:8px; box-shadow:var(--ring-hairline); margin-bottom:6px; }
+  .sw b { font-size:11px; font-weight:600; font-family:var(--font-sans); }
+  .sw span { font-family:var(--font-mono); font-size:10px; opacity:.7; }
+</style></head>
+<body>
+<div class="grp"><h4>Confianza alta</h4>
+  <div class="sw" style="background:var(--leaf-600)"><b style="color:#fff">leaf-600</b><span style="color:#fff">#1B8455</span></div>
+  <div class="sw" style="background:var(--leaf-100)"><b style="color:var(--leaf-700)">leaf-100</b><span style="color:var(--leaf-700)">tint</span></div>
+</div>
+<div class="grp"><h4>Confianza media</h4>
+  <div class="sw" style="background:var(--amber-500)"><b style="color:#fff">amber-500</b><span style="color:#fff">#E9A23B</span></div>
+  <div class="sw" style="background:var(--amber-100)"><b style="color:var(--amber-600)">amber-100</b><span style="color:var(--amber-600)">tint</span></div>
+</div>
+<div class="grp"><h4>Conflicto / peligro</h4>
+  <div class="sw" style="background:var(--clay-500)"><b style="color:#fff">clay-500</b><span style="color:#fff">#CB5341</span></div>
+  <div class="sw" style="background:var(--clay-100)"><b style="color:var(--clay-600)">clay-100</b><span style="color:var(--clay-600)">tint</span></div>
+</div>
+</body></html>

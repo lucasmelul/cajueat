@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Motion" subtitle="Functional, never decorative. Apple-grade easing" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin:0; padding:22px 24px; background:var(--paper); font-family:var(--font-mono); }
+  .r { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .r .lbl { font-size:11px; color:var(--ink-500); width:150px; }
+  .track { flex:1; height:14px; position:relative; }
+  .dot { position:absolute; top:0; width:14px; height:14px; border-radius:50%; background:var(--caju-500); }
+  .a1 { animation:run 2.4s var(--ease-out) infinite alternate; }
+  .a2 { animation:run 2.4s var(--ease-spring) infinite alternate; }
+  .a3 { animation:run 2.4s var(--ease-in-out) infinite alternate; }
+  @keyframes run { from{left:0} to{left:calc(100% - 14px)} }
+  .cap { font-size:10px; color:var(--ink-400); margin-top:6px; }
+</style></head>
+<body>
+<div class="r"><span class="lbl">ease-out · entradas</span><div class="track"><div class="dot a1"></div></div></div>
+<div class="r"><span class="lbl">ease-spring · sheets</span><div class="track"><div class="dot a2"></div></div></div>
+<div class="r"><span class="lbl">ease-in-out · reversible</span><div class="track"><div class="dot a3"></div></div></div>
+<div class="cap">Durations: instant 90 · fast 160 · base 240 · slow 360 · slower 520 (ms). Press: scale .97</div>
+</body></html>

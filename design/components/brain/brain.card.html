@@ -1,0 +1,90 @@
+<!-- @dsCard group="Components" viewport="700x600" name="Brain — BrainCard, Chat, PromptBar, Trust, Sources" subtitle="The Brain's presence, voice, confidence and signals" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; padding: 24px; background: linear-gradient(160deg,#EFEAE0,#F6F3EC); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .panel { background: var(--surface); border-radius: var(--r-xl); padding: 18px; box-shadow: var(--shadow-md); }
+  .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); margin-bottom: 12px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .rowwrap { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.CajuEatDesignSystem_dbeea0;
+  const { BrainCard, ChatBubble, PromptBar, TrustMeter, SourceChip, Button } = NS;
+
+  function Demo() {
+    const [q, setQ] = React.useState('');
+    return (
+      <div>
+        <div style={{ marginBottom: 20 }}>
+          <BrainCard
+            eyebrow="CAJU · RECOMENDACIÓN"
+            message={<>A dos cuadras hay una <b>barra de sushi tradicional</b> que encaja con lo que te gustó anoche.</>}
+            sub="Sin fusiones, foco en el producto. Reserva recomendada."
+            actions={<>
+              <Button size="sm" variant="primary">Ver lugar</Button>
+              <Button size="sm" variant="ghost">Ahora no</Button>
+            </>}
+          />
+        </div>
+
+        <div className="grid">
+          <div className="panel">
+            <div className="lbl">Conversation</div>
+            <div className="stack">
+              <ChatBubble from="user">algo tranquilo para hablar, cerca</ChatBubble>
+              <ChatBubble from="brain">
+                Tres lugares con <b>buena acústica</b> a menos de 10 min. Ninguno necesita reserva un martes.
+              </ChatBubble>
+              <ChatBubble from="brain" thinking />
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="lbl">Trust Meter</div>
+            <div className="stack">
+              <TrustMeter level="high" pill />
+              <TrustMeter level="mid" pill />
+              <TrustMeter level="low" pill />
+              <div style={{height:1, background:'var(--line-soft)', margin:'4px 0'}}></div>
+              <TrustMeter level="low" label="Datos en revisión" />
+            </div>
+          </div>
+
+          <div className="panel" style={{ gridColumn: '1 / -1' }}>
+            <div className="lbl">Sources — ¿por qué te lo recomendé?</div>
+            <div className="rowwrap">
+              <SourceChip name="@buenospaladaires" kind="curator" weight="strong" />
+              <SourceChip name="Tu visita" kind="visit" weight="strong" />
+              <SourceChip name="42 personas" kind="community" weight="medium" />
+              <SourceChip name="@salt_argentina" kind="curator" weight="medium" />
+              <SourceChip name="La Nación" kind="press" weight="weak" />
+            </div>
+          </div>
+
+          <div className="panel" style={{ gridColumn: '1 / -1', background: 'transparent', boxShadow: 'none', padding: 0 }}>
+            <div className="lbl">Prompt Bar</div>
+            <PromptBar value={q} onChange={setQ} onSend={() => setQ('')} placeholder="Preguntá dónde comer…" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>
