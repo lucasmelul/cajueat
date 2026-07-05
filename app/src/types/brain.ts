@@ -9,10 +9,9 @@ export interface BrainCardData {
   restaurantId?: string;
 }
 
-/** Signals the (mocked) Recommendation Engine considers (SPEC-005, CP-023 Context Engine). */
+/** Signals the Recommendation Engine considers (SPEC-005, CP-023 Context Engine). Saved ids are Brain-owned memory now, not passed in. */
 export interface RecommendationContext {
   neighborhood?: string;
-  savedIds?: string[];
 }
 
 export interface Recommendations {

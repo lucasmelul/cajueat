@@ -3,6 +3,7 @@ import { Camera, Check, Clapperboard, FileText, Link2, Mic } from 'lucide-react'
 import { Badge, Button } from '../components/core';
 import { CajuPoints } from '../components/discovery';
 import { BrainMark } from '../components/brain';
+import { brain } from '../lib/brain';
 import { useAppStore } from '../lib/store/useAppStore';
 import './KnowledgeCapture.css';
 
@@ -20,15 +21,20 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const [stage, setStage] = useState<Stage>('pick');
   const [link, setLink] = useState('');
   const [step, setStep] = useState(0);
+  const [learned, setLearned] = useState('');
+  const [points, setPoints] = useState(0);
 
-  const start = () => {
+  const start = (kind: string) => {
     setStage('analyzing');
     setStep(0);
     setTimeout(() => setStep(1), 650);
     setTimeout(() => setStep(2), 1300);
-    setTimeout(() => {
+    setTimeout(async () => {
+      const result = await brain.submitCapture({ kind });
+      setLearned(result.learned);
+      setPoints(result.pointsAwarded);
+      addCajuPoints(result.pointsAwarded);
       setStage('done');
-      addCajuPoints(30);
     }, 2050);
   };
 
@@ -45,28 +51,28 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
               <p>Compartí lo que sepas y el Brain aprende. Menos de 30 segundos.</p>
             </div>
             <div className="cj-cap-grid">
-              <button className="cj-cap" onClick={start}>
+              <button className="cj-cap" onClick={() => start('voice')}>
                 <span className="cj-cap__ic cj-cap__ic--caju">
                   <Mic size={22} />
                 </span>
                 <span className="cj-cap__t">Voz</span>
                 <span className="cj-cap__s">Contá una experiencia</span>
               </button>
-              <button className="cj-cap" onClick={start}>
+              <button className="cj-cap" onClick={() => start('photo')}>
                 <span className="cj-cap__ic cj-cap__ic--amber">
                   <Camera size={22} />
                 </span>
                 <span className="cj-cap__t">Foto</span>
                 <span className="cj-cap__s">Plato, menú o ticket</span>
               </button>
-              <button className="cj-cap" onClick={start}>
+              <button className="cj-cap" onClick={() => start('reel')}>
                 <span className="cj-cap__ic cj-cap__ic--leaf">
                   <Clapperboard size={22} />
                 </span>
                 <span className="cj-cap__t">Reel / TikTok</span>
                 <span className="cj-cap__s">Pegá un link</span>
               </button>
-              <button className="cj-cap" onClick={start}>
+              <button className="cj-cap" onClick={() => start('note')}>
                 <span className="cj-cap__ic cj-cap__ic--slate">
                   <FileText size={22} />
                 </span>
@@ -77,7 +83,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             <div className="cj-cap-link">
               <Link2 size={18} />
               <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="o pegá un link de Instagram, YouTube…" />
-              <Button size="sm" variant="primary" onClick={start} disabled={!link.trim()}>
+              <Button size="sm" variant="primary" onClick={() => start('link')} disabled={!link.trim()}>
                 Enviar
               </Button>
             </div>
@@ -110,13 +116,11 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             <h2>¡Gracias! El Brain aprendió algo nuevo.</h2>
             <div className="cj-cap-learn">
               <Badge tone="over">Lo que guardé</Badge>
-              <p>
-                "En <b>Anafe</b> la pesca del día cambia cada semana y vale la pena preguntarla."
-              </p>
+              <p>{learned}</p>
             </div>
             <div className="cj-cap-award">
               <span>Ganaste</span>
-              <CajuPoints value={30} delta={30} chip size="sm" />
+              <CajuPoints value={points} delta={points} chip size="sm" />
             </div>
             <Button variant="primary" size="lg" block onClick={onClose}>
               Listo

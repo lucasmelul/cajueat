@@ -1,5 +1,5 @@
 import type { BrainClient } from './BrainClient';
-import type { ConversationTurn, RecommendationContext } from '../../types';
+import type { ConversationTurn, DnaTag, RecommendationContext } from '../../types';
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
 
 /** Simulates real network/thinking latency so loading states aren't instant (SPEC-001/SPEC-002). */
@@ -40,9 +40,24 @@ function replyTextForQuery(text: string, matches: typeof FIXTURE_RESTAURANTS): s
   return 'No estoy seguro de haber entendido del todo, pero esto es lo que más se acerca a lo que buscás.';
 }
 
+/** Mock's own in-memory "Memory Engine" — kept simple, mirrors the real Brain's shape (SPEC-006). */
+const memory = {
+  user: { ...FIXTURE_USER },
+  saved: { osaka: true, cuervo: true } as Record<string, boolean>,
+  dna: [
+    { id: 'd1', label: 'Sushi tradicional' },
+    { id: 'd2', label: 'Barras de chef' },
+    { id: 'd3', label: 'Pescado' },
+    { id: 'd4', label: 'Café de especialidad' },
+    { id: 'd5', label: 'Poco ruido' },
+    { id: 'd6', label: 'Palermo · Chacarita' },
+  ] as DnaTag[],
+  dnaCounter: 6,
+};
+
 export const mockBrainClient: BrainClient = {
   async getUser() {
-    return delay(FIXTURE_USER, 150);
+    return delay(memory.user, 150);
   },
 
   async getRecommendations(_context?: RecommendationContext) {
@@ -92,5 +107,45 @@ export const mockBrainClient: BrainClient = {
       createdAt: Date.now(),
     };
     return delay(turn, 650);
+  },
+
+  async getSavedIds() {
+    return delay(Object.entries(memory.saved).filter(([, v]) => v).map(([id]) => id), 100);
+  },
+
+  async toggleSaved(id, saved) {
+    memory.saved[id] = saved;
+    return delay(undefined, 100);
+  },
+
+  async getDna() {
+    return delay(memory.dna, 100);
+  },
+
+  async addDnaTag(label) {
+    memory.dnaCounter += 1;
+    const tag: DnaTag = { id: `d-${memory.dnaCounter}`, label };
+    memory.dna.push(tag);
+    return delay(tag, 150);
+  },
+
+  async removeDnaTag(id) {
+    memory.dna = memory.dna.filter((d) => d.id !== id);
+    return delay(undefined, 100);
+  },
+
+  async submitFeedback({ restaurantId, answers }) {
+    const restaurant = FIXTURE_RESTAURANTS.find((r) => r.id === restaurantId);
+    memory.user.cajuPoints += 45;
+    const learned = answers.length
+      ? `Aprendimos que tu experiencia en ${restaurant?.name ?? 'ese lugar'} fue: ${answers.join(', ')}.`
+      : `Gracias por contarnos sobre tu visita a ${restaurant?.name ?? 'ese lugar'}.`;
+    return delay({ learned, pointsAwarded: 45 }, 300);
+  },
+
+  async submitCapture({ kind }) {
+    memory.user.cajuPoints += 30;
+    const learned = `Gracias por compartir ${kind === 'photo' ? 'una foto' : kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
+    return delay({ learned, pointsAwarded: 30 }, 300);
   },
 };

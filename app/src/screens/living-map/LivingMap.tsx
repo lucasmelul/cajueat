@@ -16,7 +16,7 @@ type ContextChip = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 export function LivingMap() {
   const navigate = useNavigate();
-  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser } = useAppStore();
+  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser, hydrateMemory } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -31,6 +31,7 @@ export function LivingMap() {
   // visit would stomp any Caju Points earned via Feedback/Knowledge Capture meanwhile.
   useEffect(() => {
     let alive = true;
+    hydrateMemory();
     Promise.all([brain.getRecommendations(), brain.getEvents(), user ? null : brain.getUser()]).then(([recs, evts, u]) => {
       if (!alive) return;
       setRestaurants(recs.restaurants);

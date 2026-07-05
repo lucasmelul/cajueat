@@ -24,7 +24,8 @@ export function Feedback({ restaurantId = 'osaka', onClose }: FeedbackProps) {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
-  const [rewarded, setRewarded] = useState(false);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [result, setResult] = useState<{ learned: string; pointsAwarded: number } | null>(null);
 
   useEffect(() => {
     brain.getRestaurant(restaurantId).then((r) => setRestaurant(r ?? null));
@@ -39,15 +40,19 @@ export function Feedback({ restaurantId = 'osaka', onClose }: FeedbackProps) {
   const done = step >= questions.length;
 
   useEffect(() => {
-    if (done && !rewarded) {
-      setRewarded(true);
-      addCajuPoints(45);
+    if (done && !result) {
+      brain.submitFeedback({ restaurantId, answers }).then((r) => {
+        setResult(r);
+        addCajuPoints(r.pointsAwarded);
+      });
     }
-  }, [done, rewarded, addCajuPoints]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
 
   const pick = (answer: string) => {
     setPicked(answer);
     setTimeout(() => {
+      setAnswers((prev) => [...prev, answer]);
       setStep((s) => s + 1);
       setPicked(null);
     }, 280);
@@ -87,14 +92,18 @@ export function Feedback({ restaurantId = 'osaka', onClose }: FeedbackProps) {
             </div>
             <h2>¡Gracias{user?.name ? `, ${user.name}` : ''}!</h2>
             <p className="cj-fb-sub">El Brain va a recomendar mejor gracias a esto.</p>
-            <div className="cj-cap-learn">
-              <Badge tone="over">Lo que aprendí de vos</Badge>
-              <p>"{user?.name ?? 'Vos'} preferís la barra y valorás la espera corta."</p>
-            </div>
-            <div className="cj-cap-award">
-              <span>Ganaste</span>
-              <CajuPoints value={45} delta={45} chip size="sm" />
-            </div>
+            {result && (
+              <>
+                <div className="cj-cap-learn">
+                  <Badge tone="over">Lo que aprendí de vos</Badge>
+                  <p>{result.learned}</p>
+                </div>
+                <div className="cj-cap-award">
+                  <span>Ganaste</span>
+                  <CajuPoints value={result.pointsAwarded} delta={result.pointsAwarded} chip size="sm" />
+                </div>
+              </>
+            )}
             <Button variant="primary" size="lg" block onClick={onClose}>
               Volver al mapa
             </Button>

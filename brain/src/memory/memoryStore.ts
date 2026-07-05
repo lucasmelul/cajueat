@@ -1,0 +1,111 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { DnaTag, User } from '../types.js';
+
+/**
+ * SPEC-006 Memory Engine: what the Brain remembers about the (single, MVP)
+ * user, persisted to disk so it survives restarts and page reloads —
+ * memory stops living in the browser's Zustand store. A JSON file is
+ * enough for one user; a real database is a later step once there's
+ * auth/multi-user (see the plan's explicit scope note).
+ */
+
+interface Contribution {
+  label: string;
+  points: number;
+  when: number;
+}
+
+interface MemoryState {
+  user: User;
+  saved: Record<string, boolean>;
+  dna: DnaTag[];
+  contributions: Contribution[];
+}
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = join(__dirname, '../../data');
+const DATA_FILE = join(DATA_DIR, 'memory.json');
+
+const DEFAULT_STATE: MemoryState = {
+  user: { id: 'u1', name: 'Lucas', initials: 'L', cajuPoints: 1240 },
+  saved: { osaka: true, cuervo: true },
+  dna: [
+    { id: 'd1', label: 'Sushi tradicional' },
+    { id: 'd2', label: 'Barras de chef' },
+    { id: 'd3', label: 'Pescado' },
+    { id: 'd4', label: 'Café de especialidad' },
+    { id: 'd5', label: 'Poco ruido' },
+    { id: 'd6', label: 'Palermo · Chacarita' },
+  ],
+  contributions: [
+    { label: 'Confirmaste horarios de Anafe', points: 15, when: Date.now() - 2 * 86400_000 },
+    { label: 'Subiste una foto del omakase', points: 20, when: Date.now() - 7 * 86400_000 },
+    { label: 'Respondiste un quiz de ambiente', points: 10, when: Date.now() - 14 * 86400_000 },
+  ],
+};
+
+let state: MemoryState;
+let dnaCounter = 0;
+
+function load(): MemoryState {
+  if (!existsSync(DATA_FILE)) return structuredClone(DEFAULT_STATE);
+  try {
+    return JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as MemoryState;
+  } catch {
+    return structuredClone(DEFAULT_STATE);
+  }
+}
+
+function persist() {
+  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+  writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
+}
+
+state = load();
+dnaCounter = state.dna.length;
+
+export function getProfile() {
+  return { user: state.user, saved: state.saved, dna: state.dna, contributions: state.contributions };
+}
+
+export function isSaved(restaurantId: string): boolean {
+  return !!state.saved[restaurantId];
+}
+
+export function getSavedIds(): string[] {
+  return Object.entries(state.saved)
+    .filter(([, saved]) => saved)
+    .map(([id]) => id);
+}
+
+export function setSaved(restaurantId: string, saved: boolean) {
+  state.saved[restaurantId] = saved;
+  persist();
+}
+
+export function addDnaTag(label: string): DnaTag {
+  dnaCounter += 1;
+  const tag: DnaTag = { id: `d-${dnaCounter}`, label };
+  state.dna.push(tag);
+  persist();
+  return tag;
+}
+
+export function removeDnaTag(id: string) {
+  state.dna = state.dna.filter((d) => d.id !== id);
+  persist();
+}
+
+export function addCajuPoints(n: number): number {
+  state.user.cajuPoints += n;
+  persist();
+  return state.user.cajuPoints;
+}
+
+export function recordContribution(label: string, points: number) {
+  state.contributions.unshift({ label, points, when: Date.now() });
+  state.contributions = state.contributions.slice(0, 20);
+  addCajuPoints(points);
+}

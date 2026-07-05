@@ -1,23 +1,13 @@
 import { create } from 'zustand';
+import { brain } from '../brain';
 import type { DnaTag, User } from '../../types';
 
 export type OverlayKind = 'capture' | 'feedback' | null;
 
-const INITIAL_DNA: DnaTag[] = [
-  { id: 'd1', label: 'Sushi tradicional' },
-  { id: 'd2', label: 'Barras de chef' },
-  { id: 'd3', label: 'Pescado' },
-  { id: 'd4', label: 'Café de especialidad' },
-  { id: 'd5', label: 'Poco ruido' },
-  { id: 'd6', label: 'Palermo · Chacarita' },
-];
-
-let dnaTagCounter = 0;
-
 interface AppState {
-  /** Restaurant ids the user saved (CP-019 Collections — MVP: a single flat set). */
+  /** Restaurant ids the user saved (CP-019 Collections). Server-authoritative (SPEC-006) — this is a cache. */
   saved: Record<string, boolean>;
-  toggleSaved: (id: string) => void;
+  toggleSaved: (id: string) => Promise<void>;
 
   /** Selected pin on the Living Map — only one at a time (SPEC-001). */
   selectedRestaurantId: string | null;
@@ -30,7 +20,9 @@ interface AppState {
   /**
    * Shared across screens so Caju Points earned in one place (Feedback,
    * Knowledge Capture) show up everywhere (Living Map header, Profile)
-   * without re-fetching. Hydrated once from the Brain, then mutated locally.
+   * without re-fetching. Hydrated once from the Brain, then mutated locally
+   * (optimistic — the Brain already recorded the points server-side when
+   * submitFeedback/submitCapture resolved).
    */
   user: User | null;
   setUser: (u: User) => void;
@@ -41,18 +33,23 @@ interface AppState {
   openOverlay: (kind: Exclude<OverlayKind, null>) => void;
   closeOverlay: () => void;
 
-  /** ADN gastronómico — how the Brain currently understands the user (CP-011, SPEC-010), editable. */
+  /** ADN gastronómico (CP-011, SPEC-010) — server-authoritative cache, same pattern as `saved`. */
   dna: DnaTag[];
-  removeDnaTag: (id: string) => void;
-  addDnaTag: (label: string) => void;
+  removeDnaTag: (id: string) => Promise<void>;
+  addDnaTag: (label: string) => Promise<void>;
+
+  /** Guards against re-fetching saved/dna on every screen mount once loaded. */
+  memoryHydrated: boolean;
+  hydrateMemory: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  saved: { osaka: true, cuervo: true },
-  toggleSaved: (id) =>
-    set((state) => ({
-      saved: { ...state.saved, [id]: !state.saved[id] },
-    })),
+export const useAppStore = create<AppState>((set, get) => ({
+  saved: {},
+  toggleSaved: async (id) => {
+    const next = !get().saved[id];
+    set((state) => ({ saved: { ...state.saved, [id]: next } }));
+    await brain.toggleSaved(id, next);
+  },
 
   selectedRestaurantId: null,
   setSelectedRestaurantId: (id) => set({ selectedRestaurantId: id }),
@@ -69,11 +66,21 @@ export const useAppStore = create<AppState>((set) => ({
   openOverlay: (kind) => set({ overlay: kind }),
   closeOverlay: () => set({ overlay: null }),
 
-  dna: INITIAL_DNA,
-  removeDnaTag: (id) => set((state) => ({ dna: state.dna.filter((d) => d.id !== id) })),
-  addDnaTag: (label) =>
-    set((state) => {
-      dnaTagCounter += 1;
-      return { dna: [...state.dna, { id: `d-new-${dnaTagCounter}`, label }] };
-    }),
+  dna: [],
+  removeDnaTag: async (id) => {
+    set((state) => ({ dna: state.dna.filter((d) => d.id !== id) }));
+    await brain.removeDnaTag(id);
+  },
+  addDnaTag: async (label) => {
+    const tag = await brain.addDnaTag(label);
+    set((state) => ({ dna: [...state.dna, tag] }));
+  },
+
+  memoryHydrated: false,
+  hydrateMemory: async () => {
+    if (get().memoryHydrated) return;
+    set({ memoryHydrated: true });
+    const [savedIds, dna] = await Promise.all([brain.getSavedIds(), brain.getDna()]);
+    set({ saved: Object.fromEntries(savedIds.map((id) => [id, true])), dna });
+  },
 }));

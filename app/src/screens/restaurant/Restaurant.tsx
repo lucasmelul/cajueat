@@ -64,7 +64,7 @@ async function shareRestaurant(r: RestaurantData) {
 export function Restaurant() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { saved, toggleSaved, setPendingQuery } = useAppStore();
+  const { saved, toggleSaved, setPendingQuery, hydrateMemory } = useAppStore();
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [similar, setSimilar] = useState<RestaurantData[]>([]);
@@ -74,6 +74,7 @@ export function Restaurant() {
     if (!id) return;
     let alive = true;
     setLoading(true);
+    hydrateMemory();
     Promise.all([brain.getRestaurant(id), brain.getSimilarRestaurants(id, 2)]).then(([r, sim]) => {
       if (!alive) return;
       setRestaurant(r ?? null);

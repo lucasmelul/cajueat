@@ -18,12 +18,13 @@ const CONTRIBUTIONS = [
 /** How the Brain understands the user — not a social profile (SPEC-010, CP-011). */
 export function Profile() {
   const navigate = useNavigate();
-  const { user, setUser, saved, dna, removeDnaTag, addDnaTag, openOverlay } = useAppStore();
+  const { user, setUser, saved, dna, removeDnaTag, addDnaTag, openOverlay, hydrateMemory } = useAppStore();
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
+    hydrateMemory();
     brain.getAllRestaurants().then(setAllRestaurants);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
