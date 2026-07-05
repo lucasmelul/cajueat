@@ -78,6 +78,23 @@
   color: var(--ink-900);
   min-width: 0;
 }
+.cj-cap-note textarea {
+  width: 100%;
+  min-height: 120px;
+  margin: 18px 0 14px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  outline: 0;
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.cj-cap-note textarea:focus {
+  border-color: var(--ink-300);
+}
 .cj-cap-analyze {
   display: flex;
   flex-direction: column;

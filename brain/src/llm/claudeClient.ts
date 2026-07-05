@@ -111,3 +111,49 @@ export async function explainRecommendation(input: { restaurant: Restaurant; sig
   const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
   return textBlock?.text.trim() ?? input.restaurant.why;
 }
+
+export interface NoteExtraction {
+  restaurantId: string | null;
+  learned: string;
+}
+
+const NOTE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te escribió una nota libre contando algo que
+vivió o sabe sobre un lugar. Tu trabajo: identificar, ÚNICAMENTE de la lista de restaurantes reales que te paso,
+a cuál se refiere la nota (o null si no se refiere a ninguno de la lista), y resumir en UNA oración corta qué
+aprendiste, basándote solo en lo que el usuario escribió — nunca inventes datos que no estén en la nota. Español,
+tono cercano.`;
+
+export async function extractNoteKnowledge(input: { text: string; catalog: Restaurant[] }): Promise<NoteExtraction> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 300,
+    system: NOTE_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nNota del usuario: "${input.text}"`,
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            restaurantId: { type: ['string', 'null'] },
+            learned: { type: 'string' },
+          },
+          required: ['restaurantId', 'learned'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const parsed = textBlock ? (JSON.parse(textBlock.text) as NoteExtraction) : { restaurantId: null, learned: '' };
+
+  // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
+  const knownIds = new Set(input.catalog.map((r) => r.id));
+  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+}

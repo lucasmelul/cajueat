@@ -165,8 +165,17 @@ export const mockBrainClient: BrainClient = {
     return delay({ learned, pointsAwarded: 45 }, 300);
   },
 
-  async submitCapture({ kind }) {
+  async submitCapture({ kind, text }) {
     memory.user.cajuPoints += 30;
+    // No Claude access in the mock — simple keyword match standing in for extractNoteKnowledge.
+    if (kind === 'note' && text?.trim()) {
+      const q = text.toLowerCase();
+      const restaurant = FIXTURE_RESTAURANTS.find((r) => q.includes(r.name.toLowerCase()));
+      const learned = restaurant
+        ? `Sumamos lo que contaste sobre ${restaurant.name} a su conocimiento.`
+        : 'Gracias por la nota. El Brain la sumó a su conocimiento sobre la zona.';
+      return delay({ learned, pointsAwarded: 30 }, 300);
+    }
     const learned = `Gracias por compartir ${kind === 'photo' ? 'una foto' : kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
     return delay({ learned, pointsAwarded: 30 }, 300);
   },

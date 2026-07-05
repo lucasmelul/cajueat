@@ -7,7 +7,7 @@ import { brain } from '../lib/brain';
 import { useAppStore } from '../lib/store/useAppStore';
 import './KnowledgeCapture.css';
 
-type Stage = 'pick' | 'analyzing' | 'done';
+type Stage = 'pick' | 'noteInput' | 'analyzing' | 'done';
 
 const ANALYSIS_STEPS = ['Detectando lugar', 'Identificando platos', 'Ponderando confianza'];
 
@@ -20,17 +20,18 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const addCajuPoints = useAppStore((s) => s.addCajuPoints);
   const [stage, setStage] = useState<Stage>('pick');
   const [link, setLink] = useState('');
+  const [note, setNote] = useState('');
   const [step, setStep] = useState(0);
   const [learned, setLearned] = useState('');
   const [points, setPoints] = useState(0);
 
-  const start = (kind: string) => {
+  const start = (kind: string, text?: string) => {
     setStage('analyzing');
     setStep(0);
     setTimeout(() => setStep(1), 650);
     setTimeout(() => setStep(2), 1300);
     setTimeout(async () => {
-      const result = await brain.submitCapture({ kind });
+      const result = await brain.submitCapture({ kind, text });
       setLearned(result.learned);
       setPoints(result.pointsAwarded);
       addCajuPoints(result.pointsAwarded);
@@ -72,7 +73,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
                 <span className="cj-cap__t">Reel / TikTok</span>
                 <span className="cj-cap__s">Pegá un link</span>
               </button>
-              <button className="cj-cap" onClick={() => start('note')}>
+              <button className="cj-cap" onClick={() => setStage('noteInput')}>
                 <span className="cj-cap__ic cj-cap__ic--slate">
                   <FileText size={22} />
                 </span>
@@ -88,6 +89,24 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
               </Button>
             </div>
           </>
+        )}
+
+        {stage === 'noteInput' && (
+          <div className="cj-cap-note">
+            <div className="cj-ov-head">
+              <h2>Contale al Brain</h2>
+              <p>Escribí lo que sepas de un lugar — el Brain lo entiende y lo suma.</p>
+            </div>
+            <textarea
+              autoFocus
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ej: en Osaka el omakase de los jueves tiene una lista de espera larga…"
+            />
+            <Button variant="primary" size="lg" block disabled={!note.trim()} onClick={() => start('note', note.trim())}>
+              Analizar
+            </Button>
+          </div>
         )}
 
         {stage === 'analyzing' && (
