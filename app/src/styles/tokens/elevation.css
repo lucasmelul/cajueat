@@ -1,0 +1,41 @@
+/* ============================================================
+   CajuEat — Elevation
+   Warm-tinted, soft, low-spread shadows. Surfaces float over a
+   live map, so elevation reads as "lifted paper", never as a
+   hard drop-shadow. Each level pairs a crisp hairline ring with
+   a diffuse ambient shadow.
+   ============================================================ */
+
+:root {
+  /* Shadow ink is warm (matches --ink-900 hue), never pure black */
+  --shadow-color:      26, 22, 18; /* @kind other */
+
+  --shadow-xs:
+    0 1px 2px rgba(var(--shadow-color), 0.05);
+
+  --shadow-sm:
+    0 1px 2px rgba(var(--shadow-color), 0.05),
+    0 2px 6px -2px rgba(var(--shadow-color), 0.06);
+
+  --shadow-md:            /* resting cards               */
+    0 2px 4px -1px rgba(var(--shadow-color), 0.05),
+    0 6px 18px -6px rgba(var(--shadow-color), 0.12);
+
+  --shadow-lg:            /* floating brain card / chips */
+    0 4px 8px -2px rgba(var(--shadow-color), 0.06),
+    0 14px 34px -10px rgba(var(--shadow-color), 0.16);
+
+  --shadow-xl:            /* bottom sheet / popovers     */
+    0 8px 16px -4px rgba(var(--shadow-color), 0.08),
+    0 28px 64px -16px rgba(var(--shadow-color), 0.22);
+
+  /* Hairline ring for crisp edges on light surfaces */
+  --ring-hairline:  inset 0 0 0 1px rgba(var(--shadow-color), 0.06);
+  --ring-accent:    0 0 0 3px var(--focus-ring);
+
+  /* --- Semantic ------------------------------------------- */
+  --elev-card:     var(--shadow-md);
+  --elev-float:    var(--shadow-lg);
+  --elev-sheet:    var(--shadow-xl);
+  --elev-pin:      0 3px 8px -1px rgba(var(--shadow-color), 0.28);
+}

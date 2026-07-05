@@ -1,0 +1,52 @@
+.cj-tabbar {
+  /* absolute (not fixed): stays confined to the 440px canvas on wide viewports */
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: calc(64px + var(--safe-bottom));
+  padding: 0 8px var(--safe-bottom);
+  background: rgba(252, 251, 248, 0.92);
+  backdrop-filter: saturate(1.3) blur(16px);
+  border-top: 1px solid var(--line-soft);
+}
+.cj-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  width: 60px;
+  padding: 6px 0;
+  transition: color var(--motion-control);
+}
+.cj-tab.on {
+  color: var(--caju-600);
+}
+.cj-tab-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: 0;
+  cursor: pointer;
+  margin-top: -14px;
+  background: var(--caju-500);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 22px -8px rgba(219, 67, 26, 0.8);
+  transition: transform var(--motion-press);
+}
+.cj-tab-fab:active {
+  transform: scale(0.94);
+}

@@ -1,0 +1,57 @@
+.caju-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 5px;
+  border-radius: var(--r-full);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-family: var(--font-sans);
+}
+.caju-source__av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--w-medium);
+  color: #fff;
+  background: var(--ink-700);
+  text-transform: uppercase;
+  background-size: cover;
+  background-position: center;
+}
+.caju-source__meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.caju-source__name {
+  font-size: var(--t-xs);
+  font-weight: var(--w-semibold);
+  color: var(--ink-800);
+}
+.caju-source__kind {
+  font-size: 10px;
+  color: var(--ink-400);
+  letter-spacing: 0.02em;
+}
+.caju-source__weight {
+  margin-left: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.caju-source__weight--strong {
+  background: var(--leaf-500);
+}
+.caju-source__weight--medium {
+  background: var(--amber-500);
+}
+.caju-source__weight--weak {
+  background: var(--ink-300);
+}

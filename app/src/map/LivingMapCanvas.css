@@ -1,0 +1,10 @@
+.cj-maplibre {
+  position: absolute;
+  inset: 0;
+}
+
+/* Mute MapLibre's default control chrome to match the calm, contained aesthetic. */
+.cj-maplibre .maplibregl-ctrl-logo,
+.cj-maplibre .maplibregl-ctrl-attrib {
+  display: none;
+}

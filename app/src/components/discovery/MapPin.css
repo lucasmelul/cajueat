@@ -1,0 +1,79 @@
+.caju-pin {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border: 0;
+  cursor: pointer;
+  background: var(--surface);
+  border-radius: var(--r-full);
+  box-shadow: var(--elev-pin), var(--ring-hairline);
+  font-family: var(--font-sans);
+  font-size: var(--t-xs);
+  font-weight: var(--w-semibold);
+  color: var(--ink-800);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--motion-card),
+    box-shadow var(--motion-card);
+}
+.caju-pin__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.caju-pin__dot svg {
+  width: 10px;
+  height: 10px;
+}
+.caju-pin:active {
+  transform: scale(0.95);
+}
+
+.caju-pin--dot {
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  justify-content: center;
+}
+.caju-pin--dot .caju-pin__dot {
+  width: 14px;
+  height: 14px;
+}
+.caju-pin--dot .caju-pin__label {
+  display: none;
+}
+
+.caju-pin--selected {
+  transform: scale(1.06);
+  box-shadow: var(--shadow-lg), 0 0 0 3px var(--focus-ring);
+}
+.caju-pin--selected:active {
+  transform: scale(1.02);
+}
+
+.caju-pin--recommended .caju-pin__dot {
+  background: var(--pin-recommended);
+}
+.caju-pin--new .caju-pin__dot {
+  background: var(--pin-new);
+}
+.caju-pin--saved .caju-pin__dot {
+  background: var(--pin-saved);
+}
+.caju-pin--visited .caju-pin__dot {
+  background: var(--pin-visited);
+}
+.caju-pin--event .caju-pin__dot {
+  background: var(--pin-event);
+}
+.caju-pin--collection .caju-pin__dot {
+  background: var(--pin-collection);
+}

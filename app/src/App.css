@@ -1,0 +1,25 @@
+.cj-canvas-wrap {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: radial-gradient(120% 90% at 50% 0%, #f3efe7, #e7e1d6);
+}
+.cj-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg-app);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+}
+.cj-canvas__main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

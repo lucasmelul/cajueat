@@ -1,0 +1,47 @@
+.caju-wm {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-feature-settings: 'ss01' 1;
+  white-space: nowrap;
+  user-select: none;
+}
+.caju-wm__a {
+  color: var(--ink-900);
+}
+.caju-wm__b {
+  color: var(--caju-500);
+}
+.caju-wm__seed {
+  align-self: flex-start;
+  width: 0.42em;
+  height: 0.42em;
+  margin-left: 0.12em;
+  margin-top: 0.04em;
+  flex-shrink: 0;
+}
+.caju-wm__seed path {
+  fill: var(--caju-500);
+}
+
+.caju-wm--inverse .caju-wm__a {
+  color: #fff;
+}
+.caju-wm--inverse .caju-wm__b {
+  color: var(--caju-300);
+}
+.caju-wm--inverse .caju-wm__seed path {
+  fill: var(--caju-300);
+}
+
+.caju-wm--mono .caju-wm__a,
+.caju-wm--mono .caju-wm__b {
+  color: currentColor;
+}
+.caju-wm--mono .caju-wm__seed path {
+  fill: currentColor;
+}

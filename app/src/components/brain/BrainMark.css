@@ -1,0 +1,30 @@
+.caju-mark {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: radial-gradient(120% 120% at 30% 20%, var(--caju-400), var(--caju-600));
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 6px 16px -6px rgba(219, 67, 26, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.caju-mark svg {
+  width: 22px;
+  height: 22px;
+}
+.caju-mark--thinking svg {
+  animation: caju-mark-pulse 1.6s var(--ease-in-out) infinite;
+}
+@keyframes caju-mark-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

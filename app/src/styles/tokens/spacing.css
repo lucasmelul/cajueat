@@ -1,0 +1,42 @@
+/* ============================================================
+   CajuEat — Spacing & layout
+   4px base grid. "Respirar. Mucho espacio. Poca densidad."
+   ============================================================ */
+
+:root {
+  --space-0:   0;
+  --space-1:   2px;
+  --space-2:   4px;
+  --space-3:   8px;
+  --space-4:   12px;
+  --space-5:   16px;
+  --space-6:   20px;
+  --space-7:   24px;
+  --space-8:   32px;
+  --space-9:   40px;
+  --space-10:  48px;
+  --space-11:  64px;
+  --space-12:  80px;
+  --space-13:  96px;
+
+  /* --- Semantic spacing ----------------------------------- */
+  --gutter:          16px;  /* screen edge padding (mobile)   */
+  --gutter-lg:       24px;  /* larger surfaces                */
+  --card-pad:        16px;
+  --card-pad-lg:     20px;
+  --stack-tight:     8px;
+  --stack:           12px;
+  --stack-loose:     20px;
+  --section-gap:     32px;
+
+  /* --- Layout constants ----------------------------------- */
+  --app-max-w:       440px;  /* PWA canvas width (mobile-first)*/
+  --safe-top:        env(safe-area-inset-top, 0px);
+  --safe-bottom:     env(safe-area-inset-bottom, 0px);
+
+  --tap-min:         44px;   /* min hit target (SPEC-001)      */
+  --promptbar-h:     56px;
+  --tabbar-h:        64px;
+  --sheet-peek:      132px;  /* bottom sheet peek state        */
+  --sheet-grip:      36px;   /* drag handle width              */
+}

@@ -1,0 +1,46 @@
+/* ============================================================
+   CajuEat — Motion
+   "Siempre funcional. Nunca decorativo." (SPEC-012)
+   Apple-grade: subtle, quick, spatially honest. Motion explains
+   where things came from and where they went — never ornament.
+   ============================================================ */
+
+:root {
+  /* --- Durations ------------------------------------------ */
+  --dur-instant:  90ms;    /* @kind other */
+  --dur-fast:     160ms;   /* @kind other */
+  --dur-base:     240ms;   /* @kind other */
+  --dur-slow:     360ms;   /* @kind other */
+  --dur-slower:   520ms;   /* @kind other */
+
+  /* --- Easing --------------------------------------------- */
+  /* Standard decelerate — entrances & most moves */
+  --ease-out:     cubic-bezier(0.22, 0.85, 0.24, 1);   /* @kind other */
+  /* Accelerate — exits */
+  --ease-in:      cubic-bezier(0.5, 0, 0.75, 0.3);      /* @kind other */
+  /* Symmetric — reversible states */
+  --ease-in-out:  cubic-bezier(0.65, 0, 0.35, 1);      /* @kind other */
+  /* Gentle overshoot — sheet snap, brain card arrival (subtle!) */
+  --ease-spring:  cubic-bezier(0.34, 1.28, 0.5, 1);    /* @kind other */
+
+  /* --- Semantic ------------------------------------------- */
+  --motion-hover:   var(--dur-instant) var(--ease-out); /* @kind other */
+  --motion-press:   var(--dur-instant) var(--ease-out); /* @kind other */
+  --motion-control: var(--dur-fast) var(--ease-out); /* @kind other */
+  --motion-card:    var(--dur-base) var(--ease-out); /* @kind other */
+  --motion-sheet:   var(--dur-slow) var(--ease-spring); /* @kind other */
+  --motion-page:    var(--dur-slow) var(--ease-in-out); /* @kind other */
+
+  /* Press affordance: controls shrink slightly, never bounce */
+  --press-scale: 0.97; /* @kind other */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms; /* @kind other */
+    --dur-fast: 1ms; /* @kind other */
+    --dur-base: 1ms; /* @kind other */
+    --dur-slow: 1ms; /* @kind other */
+    --dur-slower: 1ms; /* @kind other */
+  }
+}

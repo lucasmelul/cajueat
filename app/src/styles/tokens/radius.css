@@ -1,0 +1,22 @@
+/* ============================================================
+   CajuEat — Radius
+   Soft, premium corners. Floating map surfaces round more than
+   inline controls. Never fully-pill everything.
+   ============================================================ */
+
+:root {
+  --r-xs:    6px;
+  --r-sm:    10px;   /* chips, small controls        */
+  --r-md:    14px;   /* buttons, inputs              */
+  --r-lg:    18px;   /* cards                        */
+  --r-xl:    24px;   /* floating cards, bottom sheet */
+  --r-2xl:   32px;   /* hero surfaces, sheet full    */
+  --r-full:  999px;  /* pins, avatars, pills, FAB    */
+
+  /* --- Semantic ------------------------------------------- */
+  --r-control:   var(--r-md);
+  --r-card:      var(--r-lg);
+  --r-float:     var(--r-xl);
+  --r-sheet:     var(--r-2xl);
+  --r-pill:      var(--r-full);
+}
