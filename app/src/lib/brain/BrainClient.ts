@@ -14,6 +14,8 @@ export interface BrainClient {
   getUser(): Promise<User>;
   getRecommendations(context?: RecommendationContext): Promise<Recommendations>;
   getEvents(): Promise<MapEvent[]>;
+  /** Every known restaurant — used by Profile to resolve the user's saved ids into cards. */
+  getAllRestaurants(): Promise<Restaurant[]>;
   getRestaurant(id: string): Promise<Restaurant | undefined>;
   getSimilarRestaurants(id: string, limit?: number): Promise<Restaurant[]>;
   sendMessage(input: { text: string; history: ConversationTurn[] }): Promise<ConversationTurn>;

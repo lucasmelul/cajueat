@@ -1,0 +1,60 @@
+@import '../styles/overlay.css';
+
+.cj-fb {
+  min-height: 340px;
+}
+.cj-fb-progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.cj-fb-progress span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background var(--motion-control);
+}
+.cj-fb-progress span.on {
+  background: var(--caju-500);
+}
+.cj-fb-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--ink-400);
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+.cj-fb-q {
+  animation: cjQ var(--dur-base) var(--ease-out);
+}
+@keyframes cjQ {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.cj-fb-q h2 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--ink-900);
+  font-weight: 400;
+  margin-bottom: 18px;
+  letter-spacing: -0.01em;
+}
+.cj-fb-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cj-fb-answers .caju-chip {
+  height: 44px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+.cj-fb-sub {
+  color: var(--ink-500);
+  font-size: 14px;
+}

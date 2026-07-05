@@ -66,6 +66,10 @@ export const mockBrainClient: BrainClient = {
     return delay(FIXTURE_EVENTS, 150);
   },
 
+  async getAllRestaurants() {
+    return delay(FIXTURE_RESTAURANTS, 200);
+  },
+
   async getRestaurant(id: string) {
     return delay(FIXTURE_RESTAURANTS.find((r) => r.id === id), 250);
   },

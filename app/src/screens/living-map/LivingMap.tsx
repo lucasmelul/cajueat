@@ -9,38 +9,40 @@ import { BrainCard, PromptBar, highlightText } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { DEFAULT_MAP_CENTER } from '../../lib/brain/fixtures';
 import { useAppStore } from '../../lib/store/useAppStore';
-import type { BrainCardData, MapEvent, Restaurant, User } from '../../types';
+import type { BrainCardData, MapEvent, Restaurant } from '../../types';
 import './LivingMap.css';
 
 type ContextChip = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 export function LivingMap() {
   const navigate = useNavigate();
-  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery } = useAppStore();
+  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [brainCard, setBrainCard] = useState<BrainCardData | null>(null);
   const [events, setEvents] = useState<MapEvent[]>([]);
-  const [user, setUser] = useState<User | null>(null);
   const [activeChip, setActiveChip] = useState<ContextChip>('open');
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
 
   // Never an empty map: fetch recommendations as soon as the screen mounts (SPEC-001).
+  // The user is hydrated once into the shared store — re-fetching it here on a later
+  // visit would stomp any Caju Points earned via Feedback/Knowledge Capture meanwhile.
   useEffect(() => {
     let alive = true;
-    Promise.all([brain.getRecommendations(), brain.getEvents(), brain.getUser()]).then(([recs, evts, u]) => {
+    Promise.all([brain.getRecommendations(), brain.getEvents(), user ? null : brain.getUser()]).then(([recs, evts, u]) => {
       if (!alive) return;
       setRestaurants(recs.restaurants);
       setBrainCard(recs.brainCard);
       setEvents(evts);
-      setUser(u);
+      if (u) setUser(u);
       setLoading(false);
     });
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selected = restaurants.find((r) => r.id === selectedRestaurantId) ?? null;
@@ -86,7 +88,7 @@ export function LivingMap() {
         <Wordmark size={19} />
         <div className="cj-map-head__right">
           {user && <CajuPoints value={user.cajuPoints} size="sm" chip />}
-          <button className="cj-avatar" aria-label="Perfil">
+          <button className="cj-avatar" aria-label="Perfil" onClick={() => navigate('/profile')}>
             {user?.initials ?? '…'}
           </button>
         </div>
