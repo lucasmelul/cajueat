@@ -60,6 +60,14 @@ export async function getRecommendations(context: RecommendationContext = {}): P
   if (context.neighborhood) {
     candidates = candidates.filter((r) => r.neighborhood.toLowerCase() === context.neighborhood!.toLowerCase());
   }
+  if (context.filter === 'date') {
+    candidates = candidates.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
+  } else if (context.filter === 'work') {
+    candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
+  } else if (context.filter === 'saved') {
+    candidates = candidates.filter((r) => savedIds.has(r.id));
+  }
+  // 'near'/'open' have no real geolocation/hours signal yet — pass through unfiltered rather than fake it.
   if (candidates.length === 0) candidates = getCatalog(); // never an empty result (CP-018 Discovery Engine)
 
   const ranked = candidates.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score);

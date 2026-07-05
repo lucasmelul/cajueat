@@ -82,8 +82,19 @@ export const mockBrainClient: BrainClient = {
     return delay(memory.user, 150);
   },
 
-  async getRecommendations(_context?: RecommendationContext) {
-    const restaurants = FIXTURE_RESTAURANTS.slice(0, 5);
+  async getRecommendations(context?: RecommendationContext) {
+    let candidates = FIXTURE_RESTAURANTS;
+    if (context?.filter === 'date') {
+      candidates = candidates.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
+    } else if (context?.filter === 'work') {
+      candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
+    } else if (context?.filter === 'saved') {
+      candidates = candidates.filter((r) => memory.saved[r.id]);
+    }
+    // 'near'/'open' have no real geolocation/hours signal in the mock either — pass through unfiltered.
+    if (candidates.length === 0) candidates = FIXTURE_RESTAURANTS; // never empty (CP-018)
+
+    const restaurants = candidates.slice(0, 5);
     const pick = restaurants[0];
     return delay(
       {

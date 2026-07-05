@@ -32,19 +32,34 @@ export function LivingMap() {
   useEffect(() => {
     let alive = true;
     hydrateMemory();
-    Promise.all([brain.getRecommendations(), brain.getEvents(), user ? null : brain.getUser()]).then(([recs, evts, u]) => {
+    Promise.all([brain.getEvents(), user ? null : brain.getUser()]).then(([evts, u]) => {
       if (!alive) return;
-      setRestaurants(recs.restaurants);
-      setBrainCard(recs.brainCard);
       setEvents(evts);
       if (u) setUser(u);
-      setLoading(false);
     });
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Context Chips (Cerca, Abierto ahora, Para una cita, Trabajar, Guardados) re-ask the
+  // Recommendation Engine with the active filter — 'date'/'work'/'saved' genuinely narrow
+  // the catalog (idealFor/tags, saved ids); 'near'/'open' have no geolocation/hours data
+  // yet so the Brain returns them unfiltered.
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    brain.getRecommendations({ filter: activeChip }).then((recs) => {
+      if (!alive) return;
+      setRestaurants(recs.restaurants);
+      setBrainCard(recs.brainCard);
+      setLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeChip]);
 
   const selected = restaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 

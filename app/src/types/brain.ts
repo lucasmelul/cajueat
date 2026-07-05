@@ -9,9 +9,15 @@ export interface BrainCardData {
   restaurantId?: string;
 }
 
+/** Context Chips on the Living Map (SPEC-001). Only 'date'/'work'/'saved' have real
+ * signals to filter on today (idealFor/tags, saved ids) — 'near' needs geolocation and
+ * 'open' needs opening-hours data that don't exist yet, so they're accepted but not filtered. */
+export type ContextFilter = 'near' | 'open' | 'date' | 'work' | 'saved';
+
 /** Signals the Recommendation Engine considers (SPEC-005, CP-023 Context Engine). Saved ids are Brain-owned memory now, not passed in. */
 export interface RecommendationContext {
   neighborhood?: string;
+  filter?: ContextFilter;
 }
 
 export interface Recommendations {
