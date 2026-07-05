@@ -30,10 +30,14 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 ### SPEC-007 — Trust Engine
 - [x] Consensus y Contradictions — resuelto, ver abajo.
 
+### PRD-010 — Onboarding
+- [x] Flujo de primer uso (Bienvenida → 2-3 preguntas opcionales → Living Map) — resuelto, ver abajo.
+- [ ] El método de autenticación real (OTP/SMS u otro) sigue sin definir — es una decisión de producto/infra separada, no tocada por este onboarding. Ver "Decisión abierta #1" en [product-decisions.md](product-decisions.md).
+
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
 - [ ] Persistencia en un JSON file, no en una base de datos real (decisión de scope explícita, ver el plan original).
-- [ ] PRD-011 a PRD-015 (Compare, Planning, Notifications, Onboarding — Collections ya resuelto en SPEC-009): sin spec ni implementación todavía. Ver "Decisión abierta #6" en [product-decisions.md](product-decisions.md).
+- [ ] PRD-011 a PRD-015 (Compare, Planning, Notifications — Collections ya resuelto en SPEC-009, Onboarding ya resuelto en PRD-010): Compare/Planning/Notifications siguen sin spec ni implementación. Ver "Decisión abierta #6" en [product-decisions.md](product-decisions.md).
 
 ## Resueltos
 
@@ -42,3 +46,4 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - **2026-07-05** — Context Chips "Para una cita", "Trabajar" y "Guardados" ahora filtran de verdad contra el Recommendation Engine (antes eran puramente visuales). Commit `6c43a31`.
 - **2026-07-05** — Catálogo ampliado de 3 a 6 restaurantes (Nonna Emma, Terraza Norte, Brote), mismo formato hand-authored. Da variedad real a diversify/search/trust (ahora sí aparece un ejemplo de confianza "low") y más de una opción por filtro de contexto. Sigue sin ser ingesta real de fuentes externas. Commit `3af1405`.
 - **2026-07-05** — Trust Engine ahora detecta contradicciones reales entre fuentes (`claim` + ejes de contradicción determinísticos) y las nombra en el rationale en vez de promediarlas en silencio; Consensus ya existía de forma implícita (diversidad de `kind`), quedó documentado como tal. De paso se descubrió que `trustRationale` se calculaba pero nunca llegaba a la UI — ahora se muestra en la ficha del restaurante. Anafe quedó con una contradicción real de ejemplo (ahora "Señales en conflicto"). Commit `55947e1`.
+- **2026-07-05** — Onboarding (PRD-010) implementado: Bienvenida → 3 preguntas opcionales (chip-based) → Living Map. Las respuestas se guardan como DNA tags reales y ya afectan recomendaciones reales (verificado: elegir "Palermo" hizo que la próxima Brain Card mencionara "está en tu barrio"). No toca el método de autenticación (sigue como decisión abierta separada). Commit `15015af`.
