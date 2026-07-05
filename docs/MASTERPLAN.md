@@ -77,6 +77,7 @@ Todo dato que entra al Brain pasa por el [Trust Engine](trust-engine.md), que de
 | [design-brief.md](design-brief.md) | Brief para diseño de experiencia |
 | [codex-brief.md](codex-brief.md) | Brief para ingeniería (Codex / Claude Code) |
 | [prds/](prds) | Especificación funcional feature por feature |
+| [PENDING-FEATURES.md](PENDING-FEATURES.md) | Gaps de implementación conocidos, spec por spec |
 
 ## Estado actual del proyecto
 
