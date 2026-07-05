@@ -27,4 +27,7 @@ export interface BrainClient {
   removeDnaTag(id: string): Promise<void>;
   submitFeedback(input: { restaurantId: string; answers: string[] }): Promise<{ learned: string; pointsAwarded: number }>;
   submitCapture(input: { kind: string }): Promise<{ learned: string; pointsAwarded: number }>;
+
+  /** SPEC-008 Search Experience — intent-lite matching, never returns an empty list. */
+  search(query: string, limit?: number): Promise<Restaurant[]>;
 }

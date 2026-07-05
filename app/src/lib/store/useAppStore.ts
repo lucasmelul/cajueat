@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { brain } from '../brain';
 import type { DnaTag, User } from '../../types';
 
-export type OverlayKind = 'capture' | 'feedback' | null;
+export type OverlayKind = 'capture' | 'feedback' | 'search' | null;
 
 interface AppState {
   /** Restaurant ids the user saved (CP-019 Collections). Server-authoritative (SPEC-006) — this is a cache. */
@@ -28,7 +28,7 @@ interface AppState {
   setUser: (u: User) => void;
   addCajuPoints: (n: number) => void;
 
-  /** Knowledge Capture / Feedback overlays — global because the FAB that opens them lives in the tab bar (SPEC-004, SPEC-011). */
+  /** Knowledge Capture / Feedback / Search overlays — global because their triggers live outside any single screen (SPEC-004, SPEC-011, SPEC-008). */
   overlay: OverlayKind;
   openOverlay: (kind: Exclude<OverlayKind, null>) => void;
   closeOverlay: () => void;

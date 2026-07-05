@@ -53,4 +53,6 @@ export const httpBrainClient: BrainClient = {
   submitFeedback: (input) => request('/feedback', { method: 'POST', body: JSON.stringify(input) }),
 
   submitCapture: (input) => request('/capture', { method: 'POST', body: JSON.stringify(input) }),
+
+  search: (query, limit = 8) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
 };

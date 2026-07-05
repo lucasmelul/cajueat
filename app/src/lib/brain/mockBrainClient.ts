@@ -1,6 +1,26 @@
 import type { BrainClient } from './BrainClient';
-import type { ConversationTurn, DnaTag, RecommendationContext } from '../../types';
+import type { ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
+
+const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
+
+/** Same deterministic keyword+trust scoring as brain/src/search/searchEngine.ts — never empty (SPEC-008). */
+function searchCatalog(query: string, limit = 8) {
+  const terms = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length > 1);
+  const searchableText = (r: (typeof FIXTURE_RESTAURANTS)[number]) =>
+    [r.name, r.cuisine, r.neighborhood, r.why, r.summary, ...r.tags, ...r.personality, ...r.idealFor].join(' ').toLowerCase();
+
+  return FIXTURE_RESTAURANTS.map((r) => ({
+    restaurant: r,
+    score: terms.filter((t) => searchableText(r).includes(t)).length * 3 + TRUST_POINTS[r.trust],
+  }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((s) => s.restaurant);
+}
 
 /** Simulates real network/thinking latency so loading states aren't instant (SPEC-001/SPEC-002). */
 function delay<T>(value: T, ms = 420): Promise<T> {
@@ -147,5 +167,9 @@ export const mockBrainClient: BrainClient = {
     memory.user.cajuPoints += 30;
     const learned = `Gracias por compartir ${kind === 'photo' ? 'una foto' : kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
     return delay({ learned, pointsAwarded: 30 }, 300);
+  },
+
+  async search(query, limit = 8) {
+    return delay(searchCatalog(query, limit), 200);
   },
 };

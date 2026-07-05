@@ -2,12 +2,13 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { TabBar } from './components/shell/TabBar';
 import { KnowledgeCapture } from './overlays/KnowledgeCapture';
 import { Feedback } from './overlays/Feedback';
+import { SearchOverlay } from './overlays/SearchOverlay';
 import { useAppStore } from './lib/store/useAppStore';
 import './App.css';
 
 const TOP_LEVEL_ROUTES = ['/', '/profile'];
 
-/** App shell: the 440px canvas, the routed screen, the tab bar (top-level destinations only — Conversation/Restaurant have their own header/back nav), and the Knowledge Capture / Feedback overlays. */
+/** App shell: the 440px canvas, the routed screen, the tab bar (top-level destinations only — Conversation/Restaurant have their own header/back nav), and the Knowledge Capture / Feedback / Search overlays. */
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,6 +30,12 @@ function App() {
               closeOverlay();
               navigate('/');
             }}
+          />
+        )}
+        {overlay === 'search' && (
+          <SearchOverlay
+            onClose={closeOverlay}
+            onSelectRestaurant={(id) => navigate(`/restaurant/${id}`)}
           />
         )}
       </div>

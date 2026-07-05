@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, ChevronDown, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon } from 'lucide-react';
+import { Bookmark, ChevronDown, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search } from 'lucide-react';
 import { LivingMapCanvas } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
@@ -16,7 +16,7 @@ type ContextChip = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 export function LivingMap() {
   const navigate = useNavigate();
-  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser, hydrateMemory } = useAppStore();
+  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser, hydrateMemory, openOverlay } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -118,6 +118,7 @@ export function LivingMap() {
       </div>
 
       <div className="cj-map-fabs">
+        <IconButton icon={<Search size={20} />} label="Buscar" variant="float" size="md" onClick={() => openOverlay('search')} />
         <IconButton icon={<Layers size={20} />} label="Capas" variant="float" size="md" />
         <IconButton icon={<LocateFixed size={20} />} label="Mi ubicación" variant="float" size="md" />
       </div>
