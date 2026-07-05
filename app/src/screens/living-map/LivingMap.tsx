@@ -176,7 +176,7 @@ export function LivingMap() {
             <BrainCard
               eyebrow="CAJU · PARA VOS"
               message={highlightText(brainCard.message)}
-              sub={brainCard.sub}
+              sub={brainCard.sub ? highlightText(brainCard.sub) : undefined}
               actions={
                 <>
                   {brainCard.restaurantId && (
