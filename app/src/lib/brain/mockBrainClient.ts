@@ -82,6 +82,11 @@ export const mockBrainClient: BrainClient = {
     return delay(memory.user, 150);
   },
 
+  async completeOnboarding() {
+    memory.user.onboarded = true;
+    return delay(undefined, 150);
+  },
+
   async getRecommendations(context?: RecommendationContext) {
     let candidates = FIXTURE_RESTAURANTS;
     if (context?.filter === 'date') {

@@ -71,6 +71,8 @@ export interface User {
   name: string;
   initials: string;
   cajuPoints: number;
+  /** Whether the first-run flow (PRD-010 Onboarding) has been completed. */
+  onboarded: boolean;
 }
 
 export interface DnaTag {

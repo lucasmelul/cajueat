@@ -6,7 +6,7 @@ import type { Restaurant, User, MapEvent } from '../../types';
  * Aires coordinates instead of the prototype's top/left percentages.
  */
 
-export const FIXTURE_USER: User = { id: 'u1', name: 'Lucas', cajuPoints: 1240, initials: 'L' };
+export const FIXTURE_USER: User = { id: 'u1', name: 'Lucas', cajuPoints: 1240, initials: 'L', onboarded: false };
 
 export const FIXTURE_RESTAURANTS: Restaurant[] = [
   {

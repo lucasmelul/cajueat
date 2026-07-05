@@ -16,6 +16,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const httpBrainClient: BrainClient = {
   getUser: () => request('/user'),
 
+  completeOnboarding: () => request('/onboarding/complete', { method: 'POST' }),
+
   getRecommendations: (context) => {
     const params = new URLSearchParams();
     if (context?.neighborhood) params.set('neighborhood', context.neighborhood);

@@ -4,6 +4,7 @@ import { LivingMap } from './screens/living-map/LivingMap';
 import { Conversation } from './screens/conversation/Conversation';
 import { Restaurant } from './screens/restaurant/Restaurant';
 import { Profile } from './screens/profile/Profile';
+import { Onboarding } from './screens/onboarding/Onboarding';
 
 export const router = createBrowserRouter([
   {
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
       { path: '/conversation', element: <Conversation /> },
       { path: '/restaurant/:id', element: <Restaurant /> },
       { path: '/profile', element: <Profile /> },
+      { path: '/onboarding', element: <Onboarding /> },
     ],
   },
 ]);

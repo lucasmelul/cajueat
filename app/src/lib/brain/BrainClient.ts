@@ -11,6 +11,8 @@ import type { Collection, ConversationTurn, DnaTag, MapEvent, RecommendationCont
  */
 export interface BrainClient {
   getUser(): Promise<User>;
+  /** Marks the first-run flow (PRD-010 Onboarding) as done — never shown again for this user. */
+  completeOnboarding(): Promise<void>;
   getRecommendations(context?: RecommendationContext): Promise<Recommendations>;
   getEvents(): Promise<MapEvent[]>;
   /** Every known restaurant — used by Profile to resolve the user's saved ids into cards. */

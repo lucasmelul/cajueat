@@ -30,7 +30,7 @@ const DATA_DIR = join(__dirname, '../../data');
 const DATA_FILE = join(DATA_DIR, 'memory.json');
 
 const DEFAULT_STATE: MemoryState = {
-  user: { id: 'u1', name: 'Lucas', initials: 'L', cajuPoints: 1240 },
+  user: { id: 'u1', name: 'Lucas', initials: 'L', cajuPoints: 1240, onboarded: false },
   saved: { osaka: true, cuervo: true },
   dna: [
     { id: 'd1', label: 'Sushi tradicional' },
@@ -56,8 +56,13 @@ function load(): MemoryState {
   if (!existsSync(DATA_FILE)) return structuredClone(DEFAULT_STATE);
   try {
     const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<MemoryState>;
-    // Backward-compatible with memory.json files written before `collections` existed.
-    return { ...structuredClone(DEFAULT_STATE), ...parsed, collections: parsed.collections ?? structuredClone(DEFAULT_STATE.collections) };
+    // Backward-compatible with memory.json files written before `collections`/`user.onboarded` existed.
+    return {
+      ...structuredClone(DEFAULT_STATE),
+      ...parsed,
+      user: { ...structuredClone(DEFAULT_STATE.user), ...parsed.user },
+      collections: parsed.collections ?? structuredClone(DEFAULT_STATE.collections),
+    };
   } catch {
     return structuredClone(DEFAULT_STATE);
   }
@@ -101,6 +106,11 @@ export function addDnaTag(label: string): DnaTag {
 
 export function removeDnaTag(id: string) {
   state.dna = state.dna.filter((d) => d.id !== id);
+  persist();
+}
+
+export function completeOnboarding() {
+  state.user.onboarded = true;
   persist();
 }
 
