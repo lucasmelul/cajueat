@@ -20,8 +20,9 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [x] Texto libre ("Nota") — resuelto, ver abajo.
 
 ### SPEC-005 — Recommendation Engine
-- [ ] Sin señales externas (curadores/foodies) — el catálogo son 3 restaurantes hand-authored, no hay ingesta real de fuentes (eso es SPEC-004 a nivel de fuente, no de captura de usuario).
+- [ ] Sin señales externas (curadores/foodies) — el catálogo son 6 restaurantes hand-authored (subieron de 3), no hay ingesta real de fuentes (eso es SPEC-004 a nivel de fuente, no de captura de usuario).
 - [x] Context Chips con filtro real (date/work/saved) — resuelto, ver abajo.
+- [x] Catálogo ampliado de 3 a 6 restaurantes — resuelto, ver abajo.
 
 ### SPEC-006 — Memory Engine
 - [ ] Solo modela guardados + ADN (tags planos) + puntos + colecciones. Los tipos de memoria más ricos del spec (hábitos, patrones, contextual, temporal) no están implementados.
@@ -39,3 +40,4 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - **2026-07-05** — Nota de texto libre en Knowledge Capture ahora es genuinamente Claude-backed (`extractNoteKnowledge`), en vez de una respuesta plantilla para cualquier tipo de aporte. Commit `480a371`.
 - **2026-07-05** — Bug: el `sub` de la Brain Card no pasaba por `highlightText()`, mostrando `**asteriscos**` literales en vez de negrita. Commit `347ba18`.
 - **2026-07-05** — Context Chips "Para una cita", "Trabajar" y "Guardados" ahora filtran de verdad contra el Recommendation Engine (antes eran puramente visuales). Commit `6c43a31`.
+- **2026-07-05** — Catálogo ampliado de 3 a 6 restaurantes (Nonna Emma, Terraza Norte, Brote), mismo formato hand-authored. Da variedad real a diversify/search/trust (ahora sí aparece un ejemplo de confianza "low") y más de una opción por filtro de contexto. Sigue sin ser ingesta real de fuentes externas. Commit `3af1405`.
