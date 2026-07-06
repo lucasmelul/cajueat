@@ -3,11 +3,11 @@ import { Camera, Check, Clapperboard, FileText, Link2, Mic, Square } from 'lucid
 import { Badge, Button } from '../components/core';
 import { CajuPoints } from '../components/discovery';
 import { BrainMark } from '../components/brain';
-import { brain } from '../lib/brain';
+import { brain, BrainSyncRequiredError } from '../lib/brain';
 import { useAppStore } from '../lib/store/useAppStore';
 import './KnowledgeCapture.css';
 
-type Stage = 'pick' | 'noteInput' | 'photoInput' | 'voiceInput' | 'analyzing' | 'done';
+type Stage = 'pick' | 'noteInput' | 'photoInput' | 'voiceInput' | 'analyzing' | 'done' | 'error';
 
 const ANALYSIS_STEPS = ['Detectando lugar', 'Identificando platos', 'Ponderando confianza'];
 
@@ -55,6 +55,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const [step, setStep] = useState(0);
   const [learned, setLearned] = useState('');
   const [points, setPoints] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
@@ -68,11 +69,21 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
     setTimeout(() => setStep(1), 650);
     setTimeout(() => setStep(2), 1300);
     setTimeout(async () => {
-      const result = await brain.submitCapture({ kind, text, image, mediaType });
-      setLearned(result.learned);
-      setPoints(result.pointsAwarded);
-      addCajuPoints(result.pointsAwarded);
-      setStage('done');
+      try {
+        const result = await brain.submitCapture({ kind, text, image, mediaType });
+        setLearned(result.learned);
+        setPoints(result.pointsAwarded);
+        addCajuPoints(result.pointsAwarded);
+        setStage('done');
+      } catch (err) {
+        // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
+        setErrorMessage(
+          err instanceof BrainSyncRequiredError
+            ? 'Llegaste al límite de aportes de hoy sin un Brain guardado. Sincronizalo desde tu perfil para seguir sin límite.'
+            : 'Algo falló de este lado. Probá de nuevo en un momento.',
+        );
+        setStage('error');
+      }
     }, 2050);
   };
 
@@ -275,6 +286,21 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             </div>
             <Button variant="primary" size="lg" block onClick={onClose}>
               Listo
+            </Button>
+          </div>
+        )}
+
+        {stage === 'error' && (
+          <div className="cj-cap-done">
+            <div className="cj-cap-done__seed">
+              <BrainMark size={52} radius={16} />
+            </div>
+            <h2>No pudimos guardarlo</h2>
+            <div className="cj-cap-learn">
+              <p>{errorMessage}</p>
+            </div>
+            <Button variant="primary" size="lg" block onClick={onClose}>
+              Entendido
             </Button>
           </div>
         )}

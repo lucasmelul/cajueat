@@ -4,7 +4,7 @@ import { ChevronLeft, Map as MapIcon } from 'lucide-react';
 import { BrainMark, ChatBubble, PromptBar, highlightText } from '../../components/brain';
 import { Chip } from '../../components/core';
 import { RestaurantCard } from '../../components/discovery';
-import { brain } from '../../lib/brain';
+import { brain, BrainSyncRequiredError } from '../../lib/brain';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { ConversationTurn } from '../../types';
 import './Conversation.css';
@@ -29,9 +29,19 @@ export function Conversation() {
   const respond = async (text: string) => {
     setTurns((t) => [...t, { id: nextLocalId(), role: 'user', text, createdAt: Date.now() }]);
     setThinking(true);
-    const reply = await brain.sendMessage({ text, history: turns });
-    setThinking(false);
-    setTurns((t) => [...t, reply]);
+    try {
+      const reply = await brain.sendMessage({ text, history: turns });
+      setThinking(false);
+      setTurns((t) => [...t, reply]);
+    } catch (err) {
+      setThinking(false);
+      // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
+      const message =
+        err instanceof BrainSyncRequiredError
+          ? 'Llegaste al límite de conversaciones de hoy sin un Brain guardado. Sincronizalo desde tu perfil para seguir sin límite.'
+          : 'Algo falló de este lado. Probá de nuevo en un momento.';
+      setTurns((t) => [...t, { id: nextLocalId(), role: 'brain', text: message, createdAt: Date.now() }]);
+    }
   };
 
   // SPEC-014 Compare: "Comparar con otro" invoca el flujo real cuando ya hay 2+

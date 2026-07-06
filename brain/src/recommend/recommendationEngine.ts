@@ -51,9 +51,9 @@ function buildSignals(scored: ScoredRestaurant): string[] {
   return signals;
 }
 
-export async function getRecommendations(context: RecommendationContext = {}): Promise<Recommendations> {
-  const { dna } = getProfile();
-  const savedIds = new Set(getSavedIds());
+export async function getRecommendations(userId: string, context: RecommendationContext = {}): Promise<Recommendations> {
+  const { dna } = getProfile(userId);
+  const savedIds = new Set(getSavedIds(userId));
   const dnaLabels = dna.map((d) => d.label);
 
   let candidates = getCatalog();

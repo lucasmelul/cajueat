@@ -1,14 +1,15 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Collection, DnaTag, User } from '../types.js';
 
 /**
- * SPEC-006 Memory Engine: what the Brain remembers about the (single, MVP)
- * user, persisted to disk so it survives restarts and page reloads —
- * memory stops living in the browser's Zustand store. A JSON file is
- * enough for one user; a real database is a later step once there's
- * auth/multi-user (see the plan's explicit scope note).
+ * SPEC-006 Memory Engine + SPEC-013 Deferred Identity: what the Brain
+ * remembers, keyed by userId (an anonymous client-generated UUID until a
+ * phone gets linked — same row either way, per SPEC-013's "no migration,
+ * no merge in the simple case"). A JSON file is enough for this MVP's
+ * user counts; a real database is a later step (explicit scope note).
  */
 
 interface Contribution {
@@ -17,134 +18,189 @@ interface Contribution {
   when: number;
 }
 
+interface UsageCounter {
+  day: string; // YYYY-MM-DD, resets counts when it no longer matches today
+  messages: number;
+  captures: number;
+}
+
 interface MemoryState {
   user: User;
   saved: Record<string, boolean>;
   dna: DnaTag[];
   contributions: Contribution[];
   collections: Collection[];
+  usage: UsageCounter;
 }
+
+interface Store {
+  users: Record<string, MemoryState>;
+  phoneIndex: Record<string, string>; // phone -> userId
+}
+
+/** Anonymous usage limits before Conversation/Knowledge Capture require "Guardá tu Brain" (SPEC-013's cost-abuse gate). Placeholder values — exact thresholds are an open product question. */
+const ANON_DAILY_LIMITS = { message: 15, capture: 8 } as const;
+type UsageKind = keyof typeof ANON_DAILY_LIMITS;
+
+/** OTP codes are short-lived secrets — kept in-memory only, never written to disk. */
+interface PendingOtp {
+  code: string;
+  expiresAt: number;
+}
+const pendingOtps = new Map<string, PendingOtp>();
+const OTP_TTL_MS = 5 * 60_000;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../../data');
 const DATA_FILE = join(DATA_DIR, 'memory.json');
 
-const DEFAULT_STATE: MemoryState = {
-  user: { id: 'u1', name: 'Lucas', initials: 'L', cajuPoints: 1240, onboarded: false },
-  saved: { osaka: true, cuervo: true },
-  dna: [
-    { id: 'd1', label: 'Sushi tradicional' },
-    { id: 'd2', label: 'Barras de chef' },
-    { id: 'd3', label: 'Pescado' },
-    { id: 'd4', label: 'Café de especialidad' },
-    { id: 'd5', label: 'Poco ruido' },
-    { id: 'd6', label: 'Palermo · Chacarita' },
-  ],
-  contributions: [
-    { label: 'Confirmaste horarios de Anafe', points: 15, when: Date.now() - 2 * 86400_000 },
-    { label: 'Subiste una foto del omakase', points: 20, when: Date.now() - 7 * 86400_000 },
-    { label: 'Respondiste un quiz de ambiente', points: 10, when: Date.now() - 14 * 86400_000 },
-  ],
-  collections: [{ id: 'c1', name: 'Sushi', restaurantIds: ['osaka'] }],
-};
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
-let state: MemoryState;
-let dnaCounter = 0;
-let collectionCounter = 1;
+function freshUsage(): UsageCounter {
+  return { day: todayKey(), messages: 0, captures: 0 };
+}
 
-function load(): MemoryState {
-  if (!existsSync(DATA_FILE)) return structuredClone(DEFAULT_STATE);
+/** Brand-new anonymous row — empty, per SPEC-013 ("el Brain crea una fila de usuario la primera vez que ve ese ID", no pre-populated history). */
+function freshState(userId: string): MemoryState {
+  return {
+    user: { id: userId, name: 'Vos', initials: '?', cajuPoints: 0, onboarded: false },
+    saved: {},
+    dna: [],
+    contributions: [],
+    collections: [],
+    usage: freshUsage(),
+  };
+}
+
+/** Seed data for the very first anonymous row this service ever sees — keeps the existing demo/preview experience intact instead of starting every fresh install completely blank. */
+function seededDemoState(userId: string): MemoryState {
+  return {
+    user: { id: userId, name: 'Lucas', initials: 'L', cajuPoints: 1240, onboarded: false },
+    saved: { osaka: true, cuervo: true },
+    dna: [
+      { id: randomUUID(), label: 'Sushi tradicional' },
+      { id: randomUUID(), label: 'Barras de chef' },
+      { id: randomUUID(), label: 'Pescado' },
+      { id: randomUUID(), label: 'Café de especialidad' },
+      { id: randomUUID(), label: 'Poco ruido' },
+      { id: randomUUID(), label: 'Palermo · Chacarita' },
+    ],
+    contributions: [
+      { label: 'Confirmaste horarios de Anafe', points: 15, when: Date.now() - 2 * 86400_000 },
+      { label: 'Subiste una foto del omakase', points: 20, when: Date.now() - 7 * 86400_000 },
+      { label: 'Respondiste un quiz de ambiente', points: 10, when: Date.now() - 14 * 86400_000 },
+    ],
+    collections: [{ id: randomUUID(), name: 'Sushi', restaurantIds: ['osaka'] }],
+    usage: freshUsage(),
+  };
+}
+
+let store: Store;
+
+function load(): Store {
+  if (!existsSync(DATA_FILE)) return { users: {}, phoneIndex: {} };
   try {
-    const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<MemoryState>;
-    // Backward-compatible with memory.json files written before `collections`/`user.onboarded` existed.
-    return {
-      ...structuredClone(DEFAULT_STATE),
-      ...parsed,
-      user: { ...structuredClone(DEFAULT_STATE.user), ...parsed.user },
-      collections: parsed.collections ?? structuredClone(DEFAULT_STATE.collections),
-    };
+    const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<Store>;
+    return { users: parsed.users ?? {}, phoneIndex: parsed.phoneIndex ?? {} };
   } catch {
-    return structuredClone(DEFAULT_STATE);
+    return { users: {}, phoneIndex: {} };
   }
 }
 
 function persist() {
   if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
+  writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
-state = load();
-dnaCounter = state.dna.length;
-collectionCounter = state.collections.length;
+store = load();
 
-export function getProfile() {
+function getOrCreateUser(userId: string): MemoryState {
+  let state = store.users[userId];
+  if (!state) {
+    state = Object.keys(store.users).length === 0 ? seededDemoState(userId) : freshState(userId);
+    store.users[userId] = state;
+    persist();
+  }
+  // Backward-compatible with rows persisted before `usage` existed.
+  if (!state.usage) {
+    state.usage = freshUsage();
+    persist();
+  }
+  return state;
+}
+
+export function getProfile(userId: string) {
+  const state = getOrCreateUser(userId);
   return { user: state.user, saved: state.saved, dna: state.dna, contributions: state.contributions };
 }
 
-export function isSaved(restaurantId: string): boolean {
-  return !!state.saved[restaurantId];
+export function isSaved(userId: string, restaurantId: string): boolean {
+  return !!getOrCreateUser(userId).saved[restaurantId];
 }
 
-export function getSavedIds(): string[] {
-  return Object.entries(state.saved)
+export function getSavedIds(userId: string): string[] {
+  return Object.entries(getOrCreateUser(userId).saved)
     .filter(([, saved]) => saved)
     .map(([id]) => id);
 }
 
-export function setSaved(restaurantId: string, saved: boolean) {
-  state.saved[restaurantId] = saved;
+export function setSaved(userId: string, restaurantId: string, saved: boolean) {
+  getOrCreateUser(userId).saved[restaurantId] = saved;
   persist();
 }
 
-export function addDnaTag(label: string): DnaTag {
-  dnaCounter += 1;
-  const tag: DnaTag = { id: `d-${dnaCounter}`, label };
-  state.dna.push(tag);
+export function addDnaTag(userId: string, label: string): DnaTag {
+  const tag: DnaTag = { id: randomUUID(), label };
+  getOrCreateUser(userId).dna.push(tag);
   persist();
   return tag;
 }
 
-export function removeDnaTag(id: string) {
+export function removeDnaTag(userId: string, id: string) {
+  const state = getOrCreateUser(userId);
   state.dna = state.dna.filter((d) => d.id !== id);
   persist();
 }
 
-export function completeOnboarding() {
-  state.user.onboarded = true;
+export function completeOnboarding(userId: string) {
+  getOrCreateUser(userId).user.onboarded = true;
   persist();
 }
 
-export function addCajuPoints(n: number): number {
+export function addCajuPoints(userId: string, n: number): number {
+  const state = getOrCreateUser(userId);
   state.user.cajuPoints += n;
   persist();
   return state.user.cajuPoints;
 }
 
-export function recordContribution(label: string, points: number) {
+export function recordContribution(userId: string, label: string, points: number) {
+  const state = getOrCreateUser(userId);
   state.contributions.unshift({ label, points, when: Date.now() });
   state.contributions = state.contributions.slice(0, 20);
-  addCajuPoints(points);
+  addCajuPoints(userId, points);
 }
 
-export function getCollections(): Collection[] {
-  return state.collections;
+export function getCollections(userId: string): Collection[] {
+  return getOrCreateUser(userId).collections;
 }
 
-export function createCollection(name: string): Collection {
-  collectionCounter += 1;
-  const collection: Collection = { id: `c-${collectionCounter}`, name, restaurantIds: [] };
-  state.collections.push(collection);
+export function createCollection(userId: string, name: string): Collection {
+  const collection: Collection = { id: randomUUID(), name, restaurantIds: [] };
+  getOrCreateUser(userId).collections.push(collection);
   persist();
   return collection;
 }
 
 /** Guardar es enseñar (CP-019): find-or-create by name, then add the restaurant. */
-export function addRestaurantToCollectionByName(name: string, restaurantId: string): Collection {
+export function addRestaurantToCollectionByName(userId: string, name: string, restaurantId: string): Collection {
+  const state = getOrCreateUser(userId);
   const trimmed = name.trim();
   let collection = state.collections.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
   if (!collection) {
-    collectionCounter += 1;
-    collection = { id: `c-${collectionCounter}`, name: trimmed, restaurantIds: [] };
+    collection = { id: randomUUID(), name: trimmed, restaurantIds: [] };
     state.collections.push(collection);
   }
   if (!collection.restaurantIds.includes(restaurantId)) {
@@ -154,13 +210,70 @@ export function addRestaurantToCollectionByName(name: string, restaurantId: stri
   return collection;
 }
 
-export function removeRestaurantFromCollection(collectionId: string, restaurantId: string) {
+export function removeRestaurantFromCollection(userId: string, collectionId: string, restaurantId: string) {
+  const state = getOrCreateUser(userId);
   const collection = state.collections.find((c) => c.id === collectionId);
   if (collection) collection.restaurantIds = collection.restaurantIds.filter((id) => id !== restaurantId);
   persist();
 }
 
-export function deleteCollection(id: string) {
+export function deleteCollection(userId: string, id: string) {
+  const state = getOrCreateUser(userId);
   state.collections = state.collections.filter((c) => c.id !== id);
   persist();
+}
+
+/**
+ * SPEC-013 abuse gate: Conversation and Knowledge Capture call Claude with
+ * real cost per request — an anonymous ID has no identity check behind it,
+ * so both are rate-limited per day until the user syncs a phone.
+ */
+export function checkAndConsumeUsage(userId: string, kind: UsageKind): { allowed: boolean; remaining: number } {
+  const state = getOrCreateUser(userId);
+  if (state.usage.day !== todayKey()) state.usage = freshUsage();
+
+  const key = kind === 'message' ? 'messages' : 'captures';
+  const limit = ANON_DAILY_LIMITS[kind];
+  if (state.usage[key] >= limit) return { allowed: false, remaining: 0 };
+
+  state.usage[key] += 1;
+  persist();
+  return { allowed: true, remaining: limit - state.usage[key] };
+}
+
+/**
+ * "Guardá tu Brain": generates a demo OTP. There's no SMS/WhatsApp vendor
+ * wired up yet (SPEC-013 leaves the OTP mechanism as an explicit open
+ * question) — the code is returned directly in the response so the flow
+ * is genuinely testable end to end instead of silently faked.
+ */
+export function requestOtp(phone: string): { code: string } {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  pendingOtps.set(phone, { code, expiresAt: Date.now() + OTP_TTL_MS });
+  return { code };
+}
+
+export type VerifyOtpResult =
+  | { ok: true; conflict: false }
+  | { ok: true; conflict: true; existingUserId: string }
+  | { ok: false; error: 'invalid_or_expired_code' };
+
+/** Never fuses two Brains silently (SPEC-013) — a phone already linked elsewhere comes back as a conflict for the client to resolve explicitly. */
+export function verifyOtp(userId: string, phone: string, code: string): VerifyOtpResult {
+  const pending = pendingOtps.get(phone);
+  if (!pending || pending.code !== code || pending.expiresAt < Date.now()) {
+    return { ok: false, error: 'invalid_or_expired_code' };
+  }
+  pendingOtps.delete(phone);
+
+  const existingUserId = store.phoneIndex[phone];
+  if (existingUserId && existingUserId !== userId) {
+    return { ok: true, conflict: true, existingUserId };
+  }
+
+  const state = getOrCreateUser(userId);
+  state.user.phone = phone;
+  store.phoneIndex[phone] = userId;
+  persist();
+  return { ok: true, conflict: false };
 }

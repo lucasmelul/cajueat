@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { ChevronRight, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Badge, Button, Chip, IconButton } from '../../components/core';
 import { CajuPoints, RestaurantCard } from '../../components/discovery';
 import { BrainMark } from '../../components/brain';
@@ -35,6 +35,11 @@ export function Profile() {
   } = useAppStore();
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [editing, setEditing] = useState(false);
+  const [syncStage, setSyncStage] = useState<'idle' | 'codeSent' | 'conflict'>('idle');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [devCode, setDevCode] = useState('');
+  const [syncError, setSyncError] = useState('');
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
@@ -55,6 +60,31 @@ export function Profile() {
   const addCollection = () => {
     const name = window.prompt('¿Cómo se llama la colección?')?.trim();
     if (name) createCollection(name);
+  };
+
+  // SPEC-013 "Guardá tu Brain": adjunta un teléfono a la fila anónima existente — nunca migra, nunca fusiona en silencio.
+  const sendCode = async () => {
+    if (!phone.trim()) return;
+    setSyncError('');
+    const { devCode: sentCode } = await brain.requestSyncCode(phone.trim());
+    setDevCode(sentCode ?? '');
+    setSyncStage('codeSent');
+  };
+
+  const confirmCode = async () => {
+    setSyncError('');
+    const result = await brain.verifySyncCode(phone.trim(), code.trim());
+    if (result.conflict) {
+      setSyncStage('conflict');
+      return;
+    }
+    if (!result.linked) {
+      setSyncError('Código incorrecto o vencido — pedí uno nuevo.');
+      return;
+    }
+    if (user) setUser({ ...user, phone: phone.trim() });
+    setSyncStage('idle');
+    setCode('');
   };
 
   return (
@@ -170,6 +200,49 @@ export function Profile() {
                 </div>
               </div>
             ))
+          )}
+        </section>
+
+        <section className="cj-prof-sec">
+          <Badge tone="over">Guardá tu Brain</Badge>
+          {user?.phone ? (
+            <div className="cj-sync-linked">
+              <ShieldCheck size={18} />
+              <span>Tu Brain está protegido — sincronizado con {user.phone}.</span>
+            </div>
+          ) : (
+            <>
+              <p className="cj-prof-lead">
+                Ya construiste algo acá — guardados, ADN, puntos. No es crear una cuenta, es no perderlo si cambiás de
+                dispositivo.
+              </p>
+              {syncStage === 'conflict' ? (
+                <p className="cj-sync-error">
+                  Ese número ya tiene un Brain guardado en otro dispositivo. Por ahora no fusionamos automáticamente —
+                  iniciá sesión desde ese dispositivo en vez de crear uno nuevo acá.
+                </p>
+              ) : syncStage === 'codeSent' ? (
+                <div className="cj-sync-form">
+                  {devCode && (
+                    <p className="cj-sync-devcode">Modo demo (sin SMS conectado todavía): tu código es {devCode}.</p>
+                  )}
+                  <div className="cj-sync-link">
+                    <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Código de 6 dígitos" inputMode="numeric" />
+                    <Button size="sm" variant="primary" onClick={confirmCode} disabled={!code.trim()}>
+                      Confirmar
+                    </Button>
+                  </div>
+                  {syncError && <p className="cj-sync-error">{syncError}</p>}
+                </div>
+              ) : (
+                <div className="cj-cap-link">
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Tu número de teléfono" inputMode="tel" />
+                  <Button size="sm" variant="primary" onClick={sendCode} disabled={!phone.trim()}>
+                    Enviar código
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
 

@@ -73,6 +73,8 @@ export interface User {
   cajuPoints: number;
   /** Whether the first-run flow (PRD-010 Onboarding) has been completed. */
   onboarded: boolean;
+  /** Set once "Guardá tu Brain" (SPEC-013) links a verified phone to this anonymous row. */
+  phone?: string;
 }
 
 export interface DnaTag {

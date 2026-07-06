@@ -262,4 +262,15 @@ export const mockBrainClient: BrainClient = {
     memory.collections = memory.collections.filter((c) => c.id !== id);
     return delay(undefined, 100);
   },
+
+  // No servicio de SMS en el mock — el código "enviado" es fijo y se devuelve directo, mismo honestidad que el Brain real en dev.
+  async requestSyncCode() {
+    return delay({ sent: true, devCode: '123456' }, 300);
+  },
+
+  async verifySyncCode(phone, code) {
+    if (code !== '123456') return delay({ linked: false }, 200);
+    memory.user.phone = phone;
+    return delay({ linked: true }, 200);
+  },
 };

@@ -43,4 +43,9 @@ export interface BrainClient {
   addRestaurantToCollectionByName(name: string, restaurantId: string): Promise<Collection>;
   removeFromCollection(collectionId: string, restaurantId: string): Promise<void>;
   deleteCollection(id: string): Promise<void>;
+
+  /** SPEC-013 "Guardá tu Brain" — step 1: no SMS vendor wired up yet, so devCode comes back directly in dev instead of faking delivery. */
+  requestSyncCode(phone: string): Promise<{ sent: boolean; devCode?: string }>;
+  /** Step 2: attaches the phone to this anonymous Brain. `conflict: true` means that phone is already linked elsewhere — never silently merged. */
+  verifySyncCode(phone: string, code: string): Promise<{ linked: boolean; conflict?: boolean }>;
 }

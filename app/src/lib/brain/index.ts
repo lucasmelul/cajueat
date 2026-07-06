@@ -1,6 +1,8 @@
 import { mockBrainClient } from './mockBrainClient';
-import { httpBrainClient } from './httpBrainClient';
+import { httpBrainClient, BrainSyncRequiredError } from './httpBrainClient';
 import type { BrainClient } from './BrainClient';
+
+export { BrainSyncRequiredError };
 
 // Chosen once at build time — memory is now server-authoritative (SPEC-006),
 // so swapping clients mid-session would desync state. Set VITE_BRAIN_URL to

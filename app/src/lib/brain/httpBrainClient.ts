@@ -1,12 +1,21 @@
 import type { BrainClient } from './BrainClient';
+import { getAnonId } from './identity';
 
 const BASE_URL = import.meta.env.VITE_BRAIN_URL as string;
 
+/** Thrown when SPEC-013's anonymous rate limit kicks in — screens catch this to nudge "Guardá tu Brain" instead of showing a generic error. */
+export class BrainSyncRequiredError extends Error {
+  constructor() {
+    super('Se alcanzó el límite de uso anónimo — hace falta sincronizar el Brain para seguir.');
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}/api${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Caju-User-Id': getAnonId() },
     ...init,
   });
+  if (res.status === 429) throw new BrainSyncRequiredError();
   if (!res.ok) throw new Error(`Brain request failed: ${init?.method ?? 'GET'} ${path} (${res.status})`);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -72,4 +81,8 @@ export const httpBrainClient: BrainClient = {
   removeFromCollection: (collectionId, restaurantId) => request(`/collections/${collectionId}/restaurants/${restaurantId}`, { method: 'DELETE' }),
 
   deleteCollection: (id) => request(`/collections/${id}`, { method: 'DELETE' }),
+
+  requestSyncCode: (phone) => request('/identity/otp/request', { method: 'POST', body: JSON.stringify({ phone }) }),
+
+  verifySyncCode: (phone, code) => request('/identity/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
 };

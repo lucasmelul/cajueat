@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
-import { recordContribution } from '../memory/memoryStore.js';
+import { requireUserId } from '../middleware/identity.js';
+import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
 
 export const captureRouter = Router();
 
@@ -15,13 +16,20 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const VALID_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const CLAUDE_BACKED_KINDS = new Set(['note', 'voice', 'photo']);
 
-captureRouter.post('/capture', async (req, res) => {
+captureRouter.post('/capture', requireUserId, async (req, res) => {
   const kind = typeof req.body?.kind === 'string' ? req.body.kind : 'note';
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
   const image = typeof req.body?.image === 'string' ? req.body.image : '';
   const mediaType = typeof req.body?.mediaType === 'string' ? req.body.mediaType : '';
   const label = KIND_LABEL[kind] ?? 'conocimiento nuevo';
+
+  // SPEC-013 abuse gate: only the Claude-backed kinds have real cost per request — link/reel stay unmetered.
+  if (CLAUDE_BACKED_KINDS.has(kind)) {
+    const usage = checkAndConsumeUsage(req.userId!, 'capture');
+    if (!usage.allowed) return res.status(429).json({ error: 'anon_limit_reached', requiresSync: true });
+  }
 
   // Texto libre (SPEC-004) y Voz ya transcripta (SPEC-015) pasan por el mismo camino — la voz,
   // una vez transcripta en el navegador, es texto, sin lógica nueva acá.
@@ -29,7 +37,7 @@ captureRouter.post('/capture', async (req, res) => {
     const extraction = await extractNoteKnowledge({ text, catalog: getCatalog() });
     const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
     const learned = extraction.learned || `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento.`;
-    recordContribution(restaurant ? `Aportaste ${label} sobre ${restaurant.name}` : `Aportaste ${label}`, POINTS);
+    recordContribution(req.userId!, restaurant ? `Aportaste ${label} sobre ${restaurant.name}` : `Aportaste ${label}`, POINTS);
     res.json({ learned, pointsAwarded: POINTS });
     return;
   }
@@ -43,13 +51,13 @@ captureRouter.post('/capture', async (req, res) => {
     });
     const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
     const learned = extraction.learned || 'Gracias por compartir la foto. El Brain la sumó a su conocimiento.';
-    recordContribution(restaurant ? `Aportaste una foto de ${restaurant.name}` : 'Aportaste una foto', POINTS);
+    recordContribution(req.userId!, restaurant ? `Aportaste una foto de ${restaurant.name}` : 'Aportaste una foto', POINTS);
     res.json({ learned, pointsAwarded: POINTS });
     return;
   }
 
   // Reel/TikTok/link: sigue como simulación honesta — requiere una decisión legal/de costo (SPEC-015), no técnica.
   const learned = `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento sobre la zona.`;
-  recordContribution(`Aportaste ${label}`, POINTS);
+  recordContribution(req.userId!, `Aportaste ${label}`, POINTS);
   res.json({ learned, pointsAwarded: POINTS });
 });

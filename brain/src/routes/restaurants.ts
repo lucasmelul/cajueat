@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getCatalog, getRestaurantById } from '../data/restaurants.js';
+import { requireUserId } from '../middleware/identity.js';
 import { isSaved, setSaved } from '../memory/memoryStore.js';
 
 export const restaurantsRouter = Router();
@@ -33,14 +34,14 @@ restaurantsRouter.get('/restaurants/:id/similar', (req, res) => {
   res.json(similar);
 });
 
-restaurantsRouter.post('/restaurants/:id/save', (req, res) => {
+restaurantsRouter.post('/restaurants/:id/save', requireUserId, (req, res) => {
   const restaurant = getRestaurantById(req.params.id);
   if (!restaurant) return res.status(404).json({ error: 'not_found' });
   const saved = req.body?.saved !== false;
-  setSaved(restaurant.id, saved);
+  setSaved(req.userId!, restaurant.id, saved);
   res.json({ ok: true });
 });
 
-restaurantsRouter.get('/saved', (_req, res) => {
-  res.json(getCatalog().filter((r) => isSaved(r.id)).map((r) => r.id));
+restaurantsRouter.get('/saved', requireUserId, (req, res) => {
+  res.json(getCatalog().filter((r) => isSaved(req.userId!, r.id)).map((r) => r.id));
 });

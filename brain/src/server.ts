@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { identityMiddleware } from './middleware/identity.js';
 import { userRouter } from './routes/user.js';
 import { restaurantsRouter } from './routes/restaurants.js';
 import { recommendationsRouter } from './routes/recommendations.js';
@@ -13,12 +14,15 @@ import { searchRouter } from './routes/search.js';
 import { collectionsRouter } from './routes/collections.js';
 import { onboardingRouter } from './routes/onboarding.js';
 import { compareRouter } from './routes/compare.js';
+import { identityRouter } from './routes/identity.js';
 
 const app = express();
 app.use(cors());
 // Default 100kb limit is too small for base64-encoded photos (SPEC-015 Knowledge Capture).
 app.use(express.json({ limit: '10mb' }));
+app.use(identityMiddleware);
 
+app.use('/api', identityRouter);
 app.use('/api', userRouter);
 app.use('/api', restaurantsRouter);
 app.use('/api', recommendationsRouter);
