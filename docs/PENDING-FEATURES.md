@@ -39,16 +39,19 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Especificado, no implementado todavía: identidad anónima server-side desde la primera apertura, sin login obligatorio; "Guardar mi Brain" adjunta un teléfono verificado a la fila ya existente en vez de crear una cuenta nueva. Requiere: Memory Engine multi-tenant (hoy asume un único usuario `u1` hardcodeado), IDs de ADN/colecciones pasando de contadores secuenciales a UUIDs, rate limiting anónimo en Conversation/Knowledge Capture (riesgo de costo real de Claude sin ningún gate de identidad). Ver [SPEC-013](specs/SPEC-013-deferred-identity.md).
 
 ### SPEC-014 — Compare Experience (nueva)
-- [ ] Especificado, no implementado: comparar 2-3 restaurantes que el usuario ya identificó, siempre con una conclusión (nunca una tabla), apoyado en Trust Engine + una nueva función grounded en `claudeClient.ts`. Recupera contenido real de CP-052, ya que PRD-012 (Compare) había quedado sin contenido. Ver [SPEC-014](specs/SPEC-014-compare-experience.md).
+- [ ] Especificado, no implementado: comparar 2-3 restaurantes que el usuario ya identificó, siempre con una conclusión (nunca una tabla), apoyado en Trust Engine + una nueva función grounded en `claudeClient.ts`. Desarrolla PRD-017 (Restaurant Comparison, vigente) + CP-052. Ver [SPEC-014](specs/SPEC-014-compare-experience.md).
 
 ### SPEC-016 — Notifications (nueva)
 - [ ] Especificado, no implementado: seis tipos de notificación (recomendaciones, recordatorios, cambios importantes, nuevos lugares, feedback pendiente, eventos), todos reusando lógica que el Recommendation/Trust Engine ya calculan — lo que falta es 100% infraestructura de entrega (push real), no lógica de negocio. Depende explícitamente de SPEC-013 (necesita una identidad server-side estable para atar una subscription). El service worker de `vite-plugin-pwa` hoy solo cachea/instala, no maneja push. Ver [SPEC-016](specs/SPEC-016-notifications.md).
 - Planning (CP-071) quedó deliberadamente sin especificar — no se ve útil para el uso actual de la app.
 
+### PRD-016 — Curators & Sources
+- [ ] Sin spec técnica todavía — el PRD vigente fija comportamiento (reputación independiente por fuente, el Brain nunca copia) pero no cómo el contenido de un curador real se convierte en `Source[]` dentro del Trust Engine. Sigue siendo la "Decisión abierta #2" en [product-decisions.md](product-decisions.md).
+
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
 - [ ] Persistencia en un JSON file, no en una base de datos real (decisión de scope explícita, ver el plan original).
-- [ ] PRD-013 (Planning): sin spec ni implementación, deliberadamente pospuesto. PRD-014 (Notifications) ya especificado en SPEC-016. Ver "Decisión abierta #6" en [product-decisions.md](product-decisions.md).
+- [ ] PRD-015 (Planning Engine): sin spec ni implementación, deliberadamente pospuesto por decisión de producto — no se lo considera útil para el uso actual de la app.
 
 ## Resueltos
 

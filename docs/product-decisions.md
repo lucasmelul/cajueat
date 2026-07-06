@@ -31,9 +31,9 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 ### 2. Fuentes y curadores iniciales
 
-**Contexto:** la idea de nutrir al Brain con listas de foodies/curadores (ej. @buenospaladaires_, @salt_argentina) es conceptual; no hay una lista cerrada ni acuerdos confirmados.
+**Contexto:** la idea de nutrir al Brain con listas de foodies/curadores (ej. @buenospaladaires_, @salt_argentina) es conceptual; no hay una lista cerrada ni acuerdos confirmados. El PRD vigente (PRD-016 — Curators & Sources) ya fija el comportamiento esencial (toda fuente tiene reputación independiente, el Brain nunca copia) pero no el detalle técnico de ingesta ni una spec de implementación.
 
-**Pendiente:** qué fuentes se incorporan primero, si existe curación editorial humana antes del lanzamiento, y si hay algún tipo de relación formal con esas fuentes. Ver [sources-and-curators.md](sources-and-curators.md).
+**Pendiente:** qué fuentes se incorporan primero, si existe curación editorial humana antes del lanzamiento, si hay algún tipo de relación formal con esas fuentes, y una spec técnica (aún no escrita) que defina cómo el contenido de un curador se convierte en `Source[]` real dentro del Trust Engine. Ver [sources-and-curators.md](sources-and-curators.md) y [PRD-016 — Curators & Sources](prds/PRD-016-curators-and-sources.md).
 
 ### 3. Ponderación exacta del Trust Engine
 
@@ -45,7 +45,7 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 **Contexto:** están definidas las acciones que otorgan puntos (ver [gamification.md](gamification.md)), pero no los valores exactos, niveles, ni si hay recompensas canjeables.
 
-**Pendiente:** definir en una iteración posterior de [PRD-006 — Caju Points](prds/PRD-006-caju-points.md).
+**Pendiente:** definir en una iteración posterior de [PRD-006 — Caju Points & Knowledge Rewards](prds/PRD-006-caju-points-and-knowledge-rewards.md).
 
 ### 5. Visualización de confianza
 
@@ -61,7 +61,9 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 **Pendiente:** decidir si estos PRDs adicionales se archivan, se fusionan con los PRDs canónicos correspondientes, o se renumeran como PRD-016 en adelante en una futura pasada de consolidación. No se tomó esta decisión en este trabajo porque el alcance solicitado fue explícitamente PRD-001 a PRD-010.
 
-**Actualización:** Collections, Onboarding, Compare y Notifications ya no están sin lugar — se resolvieron como SPEC-009, PRD-010, SPEC-014 y SPEC-016 respectivamente, con contenido nuevo (no una simple renumeración de los PRDs viejos, que en el caso de Compare y Notifications estaban vacíos o sin desarrollar). Planning (CP-071) queda deliberadamente sin especificar por decisión de producto — no se lo considera útil para el uso actual de la app.
+**Actualización (resuelto):** esta decisión quedó completamente superada por un trabajo posterior: `docs/prds/` pasó a contener un set nuevo y completo de PRD-001 a PRD-020 (con una numeración y alcance distintos de los descritos arriba — incluye, entre otros, PRD-015 Planning Engine, PRD-016 Curators & Sources, PRD-017 Restaurant Comparison, PRD-018 Search Experience, PRD-019 Voice Experience y PRD-020 Notifications), que reemplaza tanto al set canónico de 10 como a los PRD-011 a 015 mencionados acá. `docs/prds_old/` quedó archivado — ya no es la fuente vigente para ningún tema. (Nota de proceso: en una sesión posterior se citó por error un PRD-012 de `prds_old` como si fuera el vigente al escribir SPEC-014; se corrigió apenas se detectó.)
+
+Sobre esos PRD-015 a PRD-020 del set vigente: Compare (PRD-017) y Notifications (PRD-020) ya tienen spec de implementación (SPEC-014 y SPEC-016). Curators & Sources (PRD-016) todavía no tiene spec técnica — sigue siendo la Decisión abierta #2 de este documento. Planning (PRD-015) queda deliberadamente sin spec por decisión de producto explícita — no se lo considera útil para el uso actual de la app.
 
 ### 7. Timing del roadmap
 

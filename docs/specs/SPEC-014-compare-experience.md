@@ -7,12 +7,13 @@
 
 Depends On
 
+- PRD-017 Restaurant Comparison
 - CP-052 Restaurant Comparison Engine
 - SPEC-002 Conversation Experience
 - SPEC-005 Recommendation Engine
 - SPEC-007 Trust Engine
 
-Este documento reemplaza a PRD-012 (Compare), que quedó sin contenido en la consolidación original. Se recupera acá a partir de CP-052, el único documento previo con sustancia real sobre esta feature.
+Este documento desarrolla PRD-017 (Restaurant Comparison), que ya fija el comportamiento esencial ("conclusión, no solo diferencias") pero no el detalle de UI/entry points/integración técnica. Se corrige acá una referencia previa incorrecta: se había citado un PRD-012 vacío de `docs/prds_old/` — ese directorio es un set anterior y superado; el PRD vigente es PRD-017, en `docs/prds/`, y sí tiene contenido real.
 
 ---
 
