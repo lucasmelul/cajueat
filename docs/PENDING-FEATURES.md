@@ -45,13 +45,14 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Especificado, no implementado: seis tipos de notificación (recomendaciones, recordatorios, cambios importantes, nuevos lugares, feedback pendiente, eventos), todos reusando lógica que el Recommendation/Trust Engine ya calculan — lo que falta es 100% infraestructura de entrega (push real), no lógica de negocio. Depende explícitamente de SPEC-013 (necesita una identidad server-side estable para atar una subscription). El service worker de `vite-plugin-pwa` hoy solo cachea/instala, no maneja push. Ver [SPEC-016](specs/SPEC-016-notifications.md).
 - Planning (CP-071) quedó deliberadamente sin especificar — no se ve útil para el uso actual de la app.
 
-### PRD-016 — Curators & Sources
-- [ ] Sin spec técnica todavía — el PRD vigente fija comportamiento (reputación independiente por fuente, el Brain nunca copia) pero no cómo el contenido de un curador real se convierte en `Source[]` dentro del Trust Engine. Sigue siendo la "Decisión abierta #2" en [product-decisions.md](product-decisions.md).
+### SPEC-017 — Curators & Sources (nueva)
+- [ ] Especificado, no implementado: el curador pasa de ser un string repetido en `sources[]` a una Source Entity con reputación propia, específica por dominio (cocina/zona), recalculada con cada nueva evidencia — nunca un score fijo cargado una vez. Alimenta al Trust Engine existente, no lo duplica. Deja explícitamente afuera *cómo* entra el contenido de un curador (depende de PRD-009 Admin CMS, sin spec propia todavía). Ver [SPEC-017](specs/SPEC-017-curators-and-sources.md).
 
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
 - [ ] Persistencia en un JSON file, no en una base de datos real (decisión de scope explícita, ver el plan original).
 - [ ] PRD-015 (Planning Engine): sin spec ni implementación, deliberadamente pospuesto por decisión de producto — no se lo considera útil para el uso actual de la app.
+- [ ] PRD-009 (Admin CMS): sin spec ni implementación — es la vía prevista para que un operador cargue contenido real de curadores (ver SPEC-017), hoy no existe ningún cliente admin del Brain más allá de editar `brain/src/data/restaurants.ts` a mano.
 
 ## Resueltos
 
