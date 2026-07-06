@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { getAllCurators } from '../curators/curatorStore.js';
-import { addSourceToRestaurant, createRestaurant, getCatalog, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
+import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
+import { notifyNewPlaceIfMatches, notifyTrustChangeIfSaved } from '../notifications/triggers.js';
 import type { Source, SourceKind, SignalWeight } from '../types.js';
 
 /**
@@ -51,7 +52,10 @@ adminRouter.post('/admin/restaurants', (req, res) => {
     sources: body.sources ?? [],
   };
   try {
-    res.status(201).json(createRestaurant(input));
+    const created = createRestaurant(input);
+    res.status(201).json(created);
+    // SPEC-016 "Nuevos lugares" — after the response, never blocking it on a push send.
+    notifyNewPlaceIfMatches(created).catch((err) => console.error('notify_new_place_failed', err));
   } catch (err) {
     res.status(409).json({ error: (err as Error).message });
   }
@@ -76,6 +80,7 @@ adminRouter.post('/admin/restaurants/:id/sources', (req, res) => {
     res.status(400).json({ error: 'name_kind_weight_required' });
     return;
   }
+  const before = getRestaurantById(req.params.id);
   const source: Source = { name: name.trim(), kind, weight, capturedAt: new Date().toISOString(), ...(claim ? { claim: String(claim) } : {}) };
   const updated = addSourceToRestaurant(req.params.id, source);
   if (!updated) {
@@ -83,6 +88,8 @@ adminRouter.post('/admin/restaurants/:id/sources', (req, res) => {
     return;
   }
   res.json(updated);
+  // SPEC-016 "Cambios importantes" — only fires if the trust level actually moved for someone who already saved this place.
+  if (before) notifyTrustChangeIfSaved(updated, before.trust).catch((err) => console.error('notify_trust_change_failed', err));
 });
 
 /**

@@ -16,6 +16,7 @@ import { onboardingRouter } from './routes/onboarding.js';
 import { compareRouter } from './routes/compare.js';
 import { identityRouter } from './routes/identity.js';
 import { adminRouter } from './routes/admin.js';
+import { pushRouter } from './routes/push.js';
 
 const app = express();
 app.use(cors());
@@ -37,6 +38,7 @@ app.use('/api', collectionsRouter);
 app.use('/api', onboardingRouter);
 app.use('/api', compareRouter);
 app.use('/api', adminRouter);
+app.use('/api', pushRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
+import { Bell, ChevronRight, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Badge, Button, Chip, IconButton } from '../../components/core';
 import { CajuPoints, RestaurantCard } from '../../components/discovery';
 import { BrainMark } from '../../components/brain';
 import { brain } from '../../lib/brain';
+import { getCurrentSubscription, getPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../../lib/push/pushClient';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { Restaurant } from '../../types';
 import './Profile.css';
@@ -40,12 +41,21 @@ export function Profile() {
   const [code, setCode] = useState('');
   const [devCode, setDevCode] = useState('');
   const [syncError, setSyncError] = useState('');
+  const [pushState, setPushState] = useState<'idle' | 'checking' | 'granted' | 'denied' | 'unsupported'>('idle');
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
     hydrateMemory();
     loadCollections();
     brain.getAllRestaurants().then(setAllRestaurants);
+    if (!isPushSupported()) {
+      setPushState('unsupported');
+    } else {
+      getCurrentSubscription().then((sub) => {
+        if (sub) setPushState('granted');
+        else if (getPermissionState() === 'denied') setPushState('denied');
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -60,6 +70,18 @@ export function Profile() {
   const addCollection = () => {
     const name = window.prompt('¿Cómo se llama la colección?')?.trim();
     if (name) createCollection(name);
+  };
+
+  // SPEC-016 Notifications: pedido en contexto (acá, no al abrir la app por primera vez).
+  const enableNotifications = async () => {
+    setPushState('checking');
+    const ok = await subscribeToPush();
+    setPushState(ok ? 'granted' : getPermissionState() === 'denied' ? 'denied' : 'idle');
+  };
+
+  const disableNotifications = async () => {
+    await unsubscribeFromPush();
+    setPushState('idle');
   };
 
   // SPEC-013 "Guardá tu Brain": adjunta un teléfono a la fila anónima existente — nunca migra, nunca fusiona en silencio.
@@ -152,6 +174,38 @@ export function Profile() {
             )}
           </div>
         </section>
+
+        {savedList.length > 0 && pushState !== 'unsupported' && (
+          <section className="cj-prof-sec">
+            <Badge tone="over">Notificaciones</Badge>
+            {pushState === 'granted' ? (
+              <>
+                <div className="cj-sync-linked">
+                  <Bell size={18} />
+                  <span>Avisos activados — solo si aparece algo que matchea con vos, o cambia la confianza de un lugar guardado.</span>
+                </div>
+                <button className="cj-prof-edit" onClick={disableNotifications}>
+                  Desactivar
+                </button>
+              </>
+            ) : pushState === 'denied' ? (
+              <p className="cj-prof-lead">
+                Bloqueaste las notificaciones del navegador — para activarlas de nuevo, hacelo desde la configuración del
+                sitio.
+              </p>
+            ) : (
+              <>
+                <p className="cj-prof-lead">
+                  Te avisamos solo cuando aparece un lugar nuevo que matchea fuerte con tu ADN, o cambia la confianza de
+                  algo que guardaste — nunca promociones.
+                </p>
+                <Button size="sm" variant="primary" onClick={enableNotifications} loading={pushState === 'checking'}>
+                  Activar avisos
+                </Button>
+              </>
+            )}
+          </section>
+        )}
 
         <section className="cj-prof-sec">
           <div className="cj-prof-sech">

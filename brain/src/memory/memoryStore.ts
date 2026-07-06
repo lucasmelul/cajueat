@@ -146,6 +146,13 @@ export function getSavedIds(userId: string): string[] {
     .map(([id]) => id);
 }
 
+/** SPEC-016 "Cambios importantes": who needs to hear that a place they already saved just changed. */
+export function getUsersWhoSaved(restaurantId: string): string[] {
+  return Object.entries(store.users)
+    .filter(([, state]) => state.saved[restaurantId])
+    .map(([userId]) => userId);
+}
+
 export function setSaved(userId: string, restaurantId: string, saved: boolean) {
   getOrCreateUser(userId).saved[restaurantId] = saved;
   persist();

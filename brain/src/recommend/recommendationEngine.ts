@@ -18,11 +18,16 @@ interface ScoredRestaurant {
   matchedDna: string[];
 }
 
+/** Which of a user's DNA tags a restaurant actually matches — the same signal `scoreRestaurant` uses, and what SPEC-016's "Nuevos lugares" notification reuses instead of a second copy of this logic. */
+export function matchDna(r: Restaurant, dnaLabels: string[]): string[] {
+  const haystack = [r.cuisine, r.neighborhood, ...r.tags, ...r.personality].join(' ').toLowerCase();
+  return dnaLabels.filter((label) => haystack.includes(label.toLowerCase()) || label.toLowerCase().includes(r.cuisine.toLowerCase()));
+}
+
 function scoreRestaurant(r: Restaurant, dnaLabels: string[], savedIds: Set<string>): ScoredRestaurant {
   let score = TRUST_POINTS[r.trust];
 
-  const haystack = [r.cuisine, r.neighborhood, ...r.tags, ...r.personality].join(' ').toLowerCase();
-  const matchedDna = dnaLabels.filter((label) => haystack.includes(label.toLowerCase()) || label.toLowerCase().includes(r.cuisine.toLowerCase()));
+  const matchedDna = matchDna(r, dnaLabels);
   score += matchedDna.length * 2;
 
   if (savedIds.has(r.id)) score += 1;
