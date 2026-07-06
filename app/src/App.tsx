@@ -19,11 +19,14 @@ function App() {
 
   // First-run gate (PRD-010 Onboarding): route to /onboarding until the Brain says it's done,
   // and don't let an already-onboarded user land back on it (e.g. via a stale/direct URL).
+  // /admin is exempt — an operator (SPEC-018) is never an end user going through this quiz.
   const gate = (u: { onboarded: boolean }) => {
+    if (location.pathname === '/admin') return;
     if (!u.onboarded && location.pathname !== '/onboarding') navigate('/onboarding');
     else if (u.onboarded && location.pathname === '/onboarding') navigate('/');
   };
   useEffect(() => {
+    if (location.pathname === '/admin') return;
     if (user) {
       gate(user);
       return;

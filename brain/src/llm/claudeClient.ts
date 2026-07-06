@@ -269,3 +269,85 @@ export async function extractPhotoKnowledge(input: {
   const knownIds = new Set(input.catalog.map((r) => r.id));
   return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
 }
+
+export interface CuratorMatch {
+  restaurantId: string;
+  restaurantName: string;
+  claim: string;
+  suggestedWeight: 'strong' | 'medium' | 'weak';
+}
+
+export interface CuratorAnalysis {
+  matches: CuratorMatch[];
+  unmatchedMentions: string[];
+}
+
+/** SPEC-018 Admin CMS: an operator pastes real curator/Reel text they already read — this never reads the platform itself. */
+const CURATOR_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en modo operador (Admin CMS). Un miembro del equipo pegó texto
+real de un curador o post (caption, comentario, lista) que ya leyó — vos nunca leés la fuente original, solo este texto.
+Tu trabajo: identificar, ÚNICAMENTE contra la lista de restaurantes reales que te paso, cuáles menciona el texto, con
+qué afirmación concreta (claim) hace sobre cada uno y qué peso (strong/medium/weak) te parece razonable según cuán
+específico y respaldado suena ese fragmento — nunca inventes un restaurante que no esté en la lista ni un dato que el
+texto no diga. Si el texto menciona un lugar que no reconocés en la lista, incluilo en unmatchedMentions con el nombre
+tal como aparece, nunca lo descartes en silencio. Español.`;
+
+export async function analyzeCuratorContent(input: { text: string; catalog: Restaurant[] }): Promise<CuratorAnalysis> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 800,
+    system: CURATOR_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nTexto pegado por el operador:\n"""\n${input.text}\n"""`,
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            matches: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  restaurantId: { type: 'string' },
+                  claim: { type: 'string' },
+                  suggestedWeight: { type: 'string', enum: ['strong', 'medium', 'weak'] },
+                },
+                required: ['restaurantId', 'claim', 'suggestedWeight'],
+                additionalProperties: false,
+              },
+            },
+            unmatchedMentions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['matches', 'unmatchedMentions'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const parsed = textBlock
+    ? (JSON.parse(textBlock.text) as {
+        matches: { restaurantId: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
+        unmatchedMentions: string[];
+      })
+    : { matches: [], unmatchedMentions: [] };
+
+  // Grounding check: only a real, known restaurant can leave this function as a match.
+  const byId = new Map(input.catalog.map((r) => [r.id, r]));
+  const matches: CuratorMatch[] = parsed.matches
+    .filter((m) => byId.has(m.restaurantId))
+    .map((m) => ({
+      restaurantId: m.restaurantId,
+      restaurantName: byId.get(m.restaurantId)!.name,
+      claim: m.claim,
+      suggestedWeight: m.suggestedWeight,
+    }));
+
+  return { matches, unmatchedMentions: parsed.unmatchedMentions ?? [] };
+}

@@ -5,6 +5,7 @@ import { Conversation } from './screens/conversation/Conversation';
 import { Restaurant } from './screens/restaurant/Restaurant';
 import { Profile } from './screens/profile/Profile';
 import { Onboarding } from './screens/onboarding/Onboarding';
+import { Admin } from './screens/admin/Admin';
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: '/restaurant/:id', element: <Restaurant /> },
       { path: '/profile', element: <Profile /> },
       { path: '/onboarding', element: <Onboarding /> },
+      { path: '/admin', element: <Admin /> },
     ],
   },
 ]);
