@@ -38,13 +38,18 @@ const CONTRADICTION_AXES: [RegExp, RegExp][] = [
   [/grupos? grandes?/i, /[ií]ntim[oa]|de a dos/i],
 ];
 
-interface Contradiction {
+export interface Contradiction {
   a: Source;
   b: Source;
 }
 
-/** Nunca elegir arbitrariamente entre dos fuentes que dicen cosas distintas — se detecta y se nombra, no se promedia en silencio. */
-function detectContradiction(sources: Source[]): Contradiction | null {
+/**
+ * Nunca elegir arbitrariamente entre dos fuentes que dicen cosas distintas —
+ * se detecta y se nombra, no se promedia en silencio. Exportada porque
+ * SPEC-017 (Curators & Sources) reusa exactamente esta detección para saber
+ * si la reputación de un curador debe bajar — nunca una copia paralela.
+ */
+export function detectContradiction(sources: Source[]): Contradiction | null {
   const claimed = sources.filter((s): s is Source & { claim: string } => !!s.claim);
   for (let i = 0; i < claimed.length; i++) {
     for (let j = i + 1; j < claimed.length; j++) {

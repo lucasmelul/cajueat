@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { Badge, Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorAnalysis } from '../../lib/admin/adminClient';
+import type { CuratorAnalysis, CuratorRecord } from '../../lib/admin/adminClient';
 import type { Restaurant } from '../../types';
 import './Admin.css';
 
@@ -17,7 +17,9 @@ export function Admin() {
   const [gateError, setGateError] = useState('');
   const [gateLoading, setGateLoading] = useState(false);
   const [catalog, setCatalog] = useState<Restaurant[]>([]);
+  const [curators, setCurators] = useState<CuratorRecord[]>([]);
 
+  const [curatorHandle, setCuratorHandle] = useState('');
   const [curatorText, setCuratorText] = useState('');
   const [analysis, setAnalysis] = useState<CuratorAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -33,8 +35,9 @@ export function Admin() {
   const loadCatalog = async () => {
     setGateLoading(true);
     try {
-      const data = await adminClient.getCatalog();
+      const [data, curatorData] = await Promise.all([adminClient.getCatalog(), adminClient.getCurators()]);
       setCatalog(data);
+      setCurators(curatorData);
       setAuthed(true);
       setGateError('');
     } catch (err) {
@@ -65,7 +68,7 @@ export function Admin() {
   };
 
   const runAnalysis = async () => {
-    if (!curatorText.trim()) return;
+    if (!curatorText.trim() || !curatorHandle.trim()) return;
     setAnalyzing(true);
     setAnalysis(null);
     setConfirmedIdx(new Set());
@@ -77,11 +80,13 @@ export function Admin() {
   };
 
   // Nunca se escribe sola — el operador confirma cada sugerencia una por una (Confirmación Inteligente, CP-009).
+  // El handle real del curador (no un placeholder genérico) es lo que hace que su reputación por dominio
+  // se acumule bajo su propia identidad en vez de mezclarse con la de cualquier otro (SPEC-017).
   const confirmMatch = async (index: number) => {
-    if (!analysis) return;
+    if (!analysis || !curatorHandle.trim()) return;
     const match = analysis.matches[index];
     await adminClient.addSource(match.restaurantId, {
-      name: 'Operador (contenido analizado)',
+      name: curatorHandle.trim(),
       kind: 'curator',
       weight: match.suggestedWeight,
       claim: match.claim,
@@ -168,16 +173,44 @@ export function Admin() {
         </section>
 
         <section className="cj-admin-sec">
+          <Badge tone="over">Curadores · reputación</Badge>
+          <p className="cj-admin-lead">
+            Por dominio (cocina) — nunca un score único global. Se mueve solo con evidencia real confirmada acá abajo.
+          </p>
+          {curators.length === 0 && <p className="cj-admin-lead">Todavía no hay curadores con historial registrado.</p>}
+          <div className="cj-admin-table">
+            {curators.map((c) => (
+              <div className="cj-admin-row" key={c.handle}>
+                <b>{c.handle}</b>
+                <div className="cj-admin-curator__domains">
+                  {Object.entries(c.domains).map(([domain, rec]) => (
+                    <span className="cj-admin-curator__domain" key={domain}>
+                      {domain}: +{rec.sustained} / -{rec.contradicted}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="cj-admin-sec">
           <Badge tone="over">Analizar contenido de curador</Badge>
           <p className="cj-admin-lead">
             Pegá texto real que ya leíste (caption, comentario, lista) — nunca se lee la plataforma directamente.
           </p>
+          <input
+            className="cj-admin-curator-handle"
+            value={curatorHandle}
+            onChange={(e) => setCuratorHandle(e.target.value)}
+            placeholder="Handle del curador (ej: @buenospaladaires)"
+          />
           <textarea
             value={curatorText}
             onChange={(e) => setCuratorText(e.target.value)}
             placeholder="Ej: fui a Osaka de nuevo, la barra sigue espectacular…"
           />
-          <Button variant="primary" onClick={runAnalysis} loading={analyzing} disabled={!curatorText.trim()}>
+          <Button variant="primary" onClick={runAnalysis} loading={analyzing} disabled={!curatorText.trim() || !curatorHandle.trim()}>
             Analizar
           </Button>
 
@@ -193,7 +226,7 @@ export function Admin() {
                   <Button
                     size="sm"
                     variant={confirmedIdx.has(i) ? 'secondary' : 'primary'}
-                    disabled={confirmedIdx.has(i)}
+                    disabled={confirmedIdx.has(i) || !curatorHandle.trim()}
                     onClick={() => confirmMatch(i)}
                   >
                     {confirmedIdx.has(i) ? 'Agregado' : 'Confirmar y agregar como fuente'}

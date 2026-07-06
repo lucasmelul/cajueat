@@ -52,8 +52,15 @@ export interface CuratorAnalysis {
 
 export type CreateRestaurantInput = Pick<Restaurant, 'name' | 'cuisine' | 'neighborhood'> & Partial<Restaurant>;
 
+export interface CuratorRecord {
+  handle: string;
+  domains: Record<string, { sustained: number; contradicted: number }>;
+}
+
 export const adminClient = {
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
+
+  getCurators: () => request<CuratorRecord[]>('/admin/curators'),
 
   updateRestaurant: (id: string, patch: Partial<Restaurant>) =>
     request<Restaurant>(`/admin/restaurants/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),

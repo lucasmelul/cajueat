@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getAllCurators } from '../curators/curatorStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
@@ -17,6 +18,11 @@ adminRouter.use('/admin', requireOperator);
 /** Read-only overview — trust/trustRationale/sources for the whole catalog at once, which no end-user screen ever shows. */
 adminRouter.get('/admin/restaurants', (_req, res) => {
   res.json(getCatalog());
+});
+
+/** SPEC-017: curator reputation per domain — internal to the operator view only, per the spec's own open question on end-user visibility (kept unresolved, so kept unexposed). */
+adminRouter.get('/admin/curators', (_req, res) => {
+  res.json(getAllCurators());
 });
 
 adminRouter.post('/admin/restaurants', (req, res) => {
