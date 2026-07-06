@@ -61,7 +61,7 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 **Pendiente:** decidir si estos PRDs adicionales se archivan, se fusionan con los PRDs canónicos correspondientes, o se renumeran como PRD-016 en adelante en una futura pasada de consolidación. No se tomó esta decisión en este trabajo porque el alcance solicitado fue explícitamente PRD-001 a PRD-010.
 
-**Actualización:** Collections, Onboarding y Compare ya no están sin lugar — se resolvieron como SPEC-009, PRD-010 y SPEC-014 respectivamente, con contenido nuevo (no una simple renumeración de los PRDs viejos, que en el caso de Compare estaba vacío). Planning y Notifications siguen sin spec.
+**Actualización:** Collections, Onboarding, Compare y Notifications ya no están sin lugar — se resolvieron como SPEC-009, PRD-010, SPEC-014 y SPEC-016 respectivamente, con contenido nuevo (no una simple renumeración de los PRDs viejos, que en el caso de Compare y Notifications estaban vacíos o sin desarrollar). Planning (CP-071) queda deliberadamente sin especificar por decisión de producto — no se lo considera útil para el uso actual de la app.
 
 ### 7. Timing del roadmap
 
