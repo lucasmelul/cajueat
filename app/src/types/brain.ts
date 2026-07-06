@@ -25,6 +25,13 @@ export interface Recommendations {
   restaurants: Restaurant[];
 }
 
+/** SPEC-014 Compare Experience — always a conclusion, never just data side by side. */
+export interface CompareResult {
+  recommendedId: string | null;
+  reasoning: string;
+  whenToChooseOther: string | null;
+}
+
 export type ConversationRole = 'user' | 'brain';
 
 /** One turn in a Conversation session (SPEC-002). Brain turns render on-canvas: text + cards + chips. */

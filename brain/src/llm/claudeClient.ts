@@ -157,3 +157,115 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
   const knownIds = new Set(input.catalog.map((r) => r.id));
   return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
 }
+
+export interface CompareResult {
+  recommendedId: string | null;
+  reasoning: string;
+  whenToChooseOther: string | null;
+}
+
+const COMPARE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario ya redujo sus opciones a 2 o 3 restaurantes reales
+y necesita ayuda para elegir — no queremos una tabla comparativa, queremos criterio. Siempre das una conclusión.
+Si hay una opción claramente mejor para lo que pide (o para el contexto más probable si no especifica), elegila
+como recomendedId y explicá por qué usando solo comida/ambiente/precio/personalidad/confianza reales — nunca
+inventes datos fuera de lo que te paso. Sumá en qué caso la opción NO recomendada también sería válida (nunca la
+descartes sin más). Si de verdad no hay evidencia suficiente para preferir una sobre otra, recomendedId debe ser
+null y reasoning debe decirlo con honestidad, sugiriendo qué criterio ayudaría a desempatar. Español, tono cercano,
+1-2 oraciones por campo.`;
+
+export async function compareRestaurants(input: {
+  restaurants: Restaurant[];
+  question?: string;
+}): Promise<CompareResult> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 400,
+    system: COMPARE_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: `Restaurantes a comparar (JSON):\n${JSON.stringify(catalogForPrompt(input.restaurants))}\n\nPregunta del usuario: "${input.question ?? '(sin pregunta explícita — inferí el criterio más relevante del contexto)'}"`,
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            recommendedId: { type: ['string', 'null'] },
+            reasoning: { type: 'string' },
+            whenToChooseOther: { type: ['string', 'null'] },
+          },
+          required: ['recommendedId', 'reasoning', 'whenToChooseOther'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const parsed = textBlock
+    ? (JSON.parse(textBlock.text) as CompareResult)
+    : { recommendedId: null, reasoning: '', whenToChooseOther: null };
+
+  // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
+  const knownIds = new Set(input.restaurants.map((r) => r.id));
+  return { ...parsed, recommendedId: parsed.recommendedId && knownIds.has(parsed.recommendedId) ? parsed.recommendedId : null };
+}
+
+export interface PhotoExtraction {
+  restaurantId: string | null;
+  learned: string;
+}
+
+const PHOTO_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te mandó una foto (menú, plato, ticket, carta de
+vinos, fachada) sobre un lugar. Tu trabajo: identificar, ÚNICAMENTE de la lista de restaurantes reales que te paso,
+a cuál se refiere la foto (o null si no aplica ninguno o no podés identificarlo), y resumir en UNA oración corta qué
+aprendiste — basado únicamente en lo que la imagen realmente muestra, nunca inventando un plato o precio que no sea
+legible. Si la imagen es ilegible o ambigua, decilo explícitamente en vez de adivinar. Español, tono cercano.`;
+
+export async function extractPhotoKnowledge(input: {
+  imageBase64: string;
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
+  catalog: Restaurant[];
+}): Promise<PhotoExtraction> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 300,
+    system: PHOTO_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.imageBase64 } },
+          {
+            type: 'text',
+            text: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\n¿Qué aprendiste de esta foto?`,
+          },
+        ],
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            restaurantId: { type: ['string', 'null'] },
+            learned: { type: 'string' },
+          },
+          required: ['restaurantId', 'learned'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const parsed = textBlock ? (JSON.parse(textBlock.text) as PhotoExtraction) : { restaurantId: null, learned: '' };
+
+  // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
+  const knownIds = new Set(input.catalog.map((r) => r.id));
+  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+}

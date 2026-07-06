@@ -34,6 +34,18 @@ export function Conversation() {
     setTurns((t) => [...t, reply]);
   };
 
+  // SPEC-014 Compare: "Comparar con otro" invoca el flujo real cuando ya hay 2+
+  // restaurantes en pantalla — nunca abre una pantalla vacía a elegir de cero.
+  const handleCompare = async (restaurants: ConversationTurn['restaurants']) => {
+    if (!restaurants || restaurants.length < 2) return;
+    setTurns((t) => [...t, { id: nextLocalId(), role: 'user', text: 'Comparar con otro', createdAt: Date.now() }]);
+    setThinking(true);
+    const result = await brain.compareRestaurants(restaurants.map((r) => r.id));
+    setThinking(false);
+    const text = [result.reasoning, result.whenToChooseOther].filter(Boolean).join(' ');
+    setTurns((t) => [...t, { id: nextLocalId(), role: 'brain', text, restaurants, createdAt: Date.now() }]);
+  };
+
   // Opens pre-filled with whatever the user typed on the Living Map's Prompt Bar
   // (SPEC-002). Guarded with a ref, not just the dependency array: StrictMode
   // double-invokes this effect in dev, which would otherwise send it twice.
@@ -116,11 +128,14 @@ export function Conversation() {
             </ChatBubble>
             {t.chips && !thinking && i === turns.length - 1 && (
               <div className="cj-turn__chips">
-                {t.chips.map((c) => (
-                  <Chip key={c} onClick={() => respond(c)}>
-                    {c}
-                  </Chip>
-                ))}
+                {t.chips.map((c) => {
+                  const isCompare = c === 'Comparar con otro' && (t.restaurants?.length ?? 0) >= 2;
+                  return (
+                    <Chip key={c} onClick={() => (isCompare ? handleCompare(t.restaurants) : respond(c))}>
+                      {c}
+                    </Chip>
+                  );
+                })}
               </div>
             )}
           </div>

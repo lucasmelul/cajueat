@@ -95,6 +95,70 @@
 .cj-cap-note textarea:focus {
   border-color: var(--ink-300);
 }
+.cj-cap-photo__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 180px;
+  margin: 18px 0 14px;
+  background: var(--surface-2);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--r-lg);
+  color: var(--ink-500);
+  font-size: 13px;
+  cursor: pointer;
+}
+.cj-cap-photo__drop input {
+  display: none;
+}
+.cj-cap-photo__preview {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  margin: 18px 0 14px;
+  border-radius: var(--r-lg);
+}
+.cj-cap-voice__mic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 8px auto 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--caju-500);
+  color: #fff;
+  cursor: pointer;
+}
+.cj-cap-voice__mic.on {
+  background: var(--amber-500);
+  animation: cjCapPulse 1.1s ease-in-out infinite;
+}
+@keyframes cjCapPulse {
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--amber-500) 20%, transparent);
+  }
+}
+.cj-cap-voice textarea {
+  width: 100%;
+  min-height: 100px;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  outline: 0;
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.cj-cap-voice textarea:focus {
+  border-color: var(--ink-300);
+}
 .cj-cap-analyze {
   display: flex;
   flex-direction: column;

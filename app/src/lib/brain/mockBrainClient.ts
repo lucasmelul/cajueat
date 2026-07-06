@@ -1,5 +1,5 @@
 import type { BrainClient } from './BrainClient';
-import type { Collection, ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
+import type { Collection, CompareResult, ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
@@ -184,7 +184,8 @@ export const mockBrainClient: BrainClient = {
   async submitCapture({ kind, text }) {
     memory.user.cajuPoints += 30;
     // No Claude access in the mock — simple keyword match standing in for extractNoteKnowledge.
-    if (kind === 'note' && text?.trim()) {
+    // Voz llega ya transcripta a texto (SPEC-015) — mismo camino que una Nota.
+    if ((kind === 'note' || kind === 'voice') && text?.trim()) {
       const q = text.toLowerCase();
       const restaurant = FIXTURE_RESTAURANTS.find((r) => q.includes(r.name.toLowerCase()));
       const learned = restaurant
@@ -192,12 +193,40 @@ export const mockBrainClient: BrainClient = {
         : 'Gracias por la nota. El Brain la sumó a su conocimiento sobre la zona.';
       return delay({ learned, pointsAwarded: 30 }, 300);
     }
-    const learned = `Gracias por compartir ${kind === 'photo' ? 'una foto' : kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
+    // El mock no tiene visión — respuesta honesta en vez de simular análisis de imagen.
+    if (kind === 'photo') {
+      return delay({ learned: 'Guardamos la foto. El Brain real la va a poder leer cuando estés online.', pointsAwarded: 30 }, 300);
+    }
+    const learned = `Gracias por compartir ${kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
     return delay({ learned, pointsAwarded: 30 }, 300);
   },
 
   async search(query, limit = 8) {
     return delay(searchCatalog(query, limit), 200);
+  },
+
+  async compareRestaurants(restaurantIds, question) {
+    const restaurants = restaurantIds.slice(0, 3).map((id) => FIXTURE_RESTAURANTS.find((r) => r.id === id)).filter((r): r is (typeof FIXTURE_RESTAURANTS)[number] => !!r);
+    if (restaurants.length < 2) {
+      return delay({ recommendedId: null, reasoning: 'Necesito al menos dos lugares reales para comparar.', whenToChooseOther: null }, 300);
+    }
+    // Sin Claude en el mock — criterio determinístico simple: mayor confianza gana.
+    const sorted = [...restaurants].sort((a, b) => TRUST_POINTS[b.trust] - TRUST_POINTS[a.trust]);
+    const winner = sorted[0];
+    const runnerUp = sorted[1];
+    const tie = TRUST_POINTS[winner.trust] === TRUST_POINTS[runnerUp.trust];
+    const result: CompareResult = tie
+      ? {
+          recommendedId: null,
+          reasoning: `${winner.name} y ${runnerUp.name} están parejos${question ? ` para "${question}"` : ''} — no hay evidencia suficiente para elegir uno sobre el otro.`,
+          whenToChooseOther: 'Contame más sobre el contexto (con quién vas, qué buscás) y puedo ser más específico.',
+        }
+      : {
+          recommendedId: winner.id,
+          reasoning: `${winner.name}${question ? ` para "${question}"` : ''}: ${winner.why}`,
+          whenToChooseOther: `${runnerUp.name} vale la pena si buscás algo distinto a lo que ofrece ${winner.name}.`,
+        };
+    return delay(result, 400);
   },
 
   async getCollections() {

@@ -59,6 +59,9 @@ export const httpBrainClient: BrainClient = {
 
   search: (query, limit = 8) => request(`/search?q=${encodeURIComponent(query)}&limit=${limit}`),
 
+  compareRestaurants: (restaurantIds, question) =>
+    request('/compare', { method: 'POST', body: JSON.stringify({ restaurantIds, question }) }),
+
   getCollections: () => request('/collections'),
 
   createCollection: (name) => request('/collections', { method: 'POST', body: JSON.stringify({ name }) }),

@@ -1,4 +1,4 @@
-import type { Collection, ConversationTurn, DnaTag, MapEvent, RecommendationContext, Recommendations, Restaurant, User } from '../../types';
+import type { Collection, CompareResult, ConversationTurn, DnaTag, MapEvent, RecommendationContext, Recommendations, Restaurant, User } from '../../types';
 
 /**
  * The only way any screen talks to the Brain (CP-002 Product Architecture:
@@ -28,10 +28,13 @@ export interface BrainClient {
   addDnaTag(label: string): Promise<DnaTag>;
   removeDnaTag(id: string): Promise<void>;
   submitFeedback(input: { restaurantId: string; answers: string[] }): Promise<{ learned: string; pointsAwarded: number }>;
-  submitCapture(input: { kind: string; text?: string }): Promise<{ learned: string; pointsAwarded: number }>;
+  submitCapture(input: { kind: string; text?: string; image?: string; mediaType?: string }): Promise<{ learned: string; pointsAwarded: number }>;
 
   /** SPEC-008 Search Experience — intent-lite matching, never returns an empty list. */
   search(query: string, limit?: number): Promise<Restaurant[]>;
+
+  /** SPEC-014 Compare Experience — 2-3 restaurants the user already narrowed down to, never more. */
+  compareRestaurants(restaurantIds: string[], question?: string): Promise<CompareResult>;
 
   /** SPEC-009 Collections — named groupings, separate from the flat "saved" bookmark. */
   getCollections(): Promise<Collection[]>;

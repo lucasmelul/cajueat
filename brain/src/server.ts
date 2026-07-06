@@ -12,10 +12,12 @@ import { captureRouter } from './routes/capture.js';
 import { searchRouter } from './routes/search.js';
 import { collectionsRouter } from './routes/collections.js';
 import { onboardingRouter } from './routes/onboarding.js';
+import { compareRouter } from './routes/compare.js';
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Default 100kb limit is too small for base64-encoded photos (SPEC-015 Knowledge Capture).
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api', userRouter);
 app.use('/api', restaurantsRouter);
@@ -28,6 +30,7 @@ app.use('/api', captureRouter);
 app.use('/api', searchRouter);
 app.use('/api', collectionsRouter);
 app.use('/api', onboardingRouter);
+app.use('/api', compareRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
