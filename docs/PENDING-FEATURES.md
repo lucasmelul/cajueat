@@ -32,7 +32,10 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 
 ### PRD-010 — Onboarding
 - [x] Flujo de primer uso (Bienvenida → 2-3 preguntas opcionales → Living Map) — resuelto, ver abajo.
-- [ ] El método de autenticación real (OTP/SMS u otro) sigue sin definir — es una decisión de producto/infra separada, no tocada por este onboarding. Ver "Decisión abierta #1" en [product-decisions.md](product-decisions.md).
+- [ ] El mecanismo exacto de OTP (SMS/WhatsApp/otro) sigue sin definir — sigue siendo la "Decisión abierta #1" en [product-decisions.md](product-decisions.md). El *momento* en que se dispara ya se especificó, ver siguiente punto.
+
+### SPEC-013 — Deferred Identity (nueva)
+- [ ] Especificado, no implementado todavía: identidad anónima server-side desde la primera apertura, sin login obligatorio; "Guardar mi Brain" adjunta un teléfono verificado a la fila ya existente en vez de crear una cuenta nueva. Requiere: Memory Engine multi-tenant (hoy asume un único usuario `u1` hardcodeado), IDs de ADN/colecciones pasando de contadores secuenciales a UUIDs, rate limiting anónimo en Conversation/Knowledge Capture (riesgo de costo real de Claude sin ningún gate de identidad). Ver [SPEC-013](specs/SPEC-013-deferred-identity.md).
 
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).

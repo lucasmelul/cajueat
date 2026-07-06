@@ -15,18 +15,19 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 | Alcance geográfico del MVP | Una sola ciudad. Ver [mvp.md](mvp.md). |
 | Rol de la gamificación | Recompensar aporte de conocimiento, no consumo pasivo. Ver [gamification.md](gamification.md). |
 | Rol de ingeniería | Define arquitectura y stack; producto no se los impone salvo razón de negocio fuerte. Ver [codex-brief.md](codex-brief.md). |
+| Momento del login | Diferido. El usuario usa la app sin cuenta desde la primera apertura; el Brain aprende igual, atado a una identidad anónima server-side. Recién se pide teléfono cuando el usuario ya construyó valor, enmarcado como "guardar tu Brain", no como registrarse. Arquitectura: identidad anónima server-side, nunca Brain corriendo local — ver [SPEC-013 — Deferred Identity](specs/SPEC-013-deferred-identity.md). |
 
 ## Decisiones abiertas
 
 ### 1. Método de autenticación
 
-**Contexto:** se sugirió simplificar al máximo, posiblemente usando solo teléfono con OTP, evitando usuario/contraseña.
+**Contexto:** se sugirió simplificar al máximo, posiblemente usando solo teléfono con OTP, evitando usuario/contraseña. El *momento* en que se dispara ya se decidió (diferido, ver tabla arriba) — lo que sigue abierto es el mecanismo en sí.
 
-**Restricción de producto:** login en menos de 30 segundos, que no se sienta como "registrarse".
+**Restricción de producto:** verificación en menos de 30 segundos, que no se sienta como "registrarse".
 
 **Pendiente:** mecanismo definitivo (OTP por SMS, WhatsApp, email, u otro), y si hay algún método alternativo de respaldo.
 
-**Dueño de la decisión final:** ingeniería, dentro de la restricción de UX. Ver [PRD-009 — Onboarding](prds/PRD-009-onboarding.md).
+**Dueño de la decisión final:** ingeniería, dentro de la restricción de UX. Ver [PRD-010 — Onboarding](prds/PRD-010-onboarding.md) y [SPEC-013 — Deferred Identity](specs/SPEC-013-deferred-identity.md).
 
 ### 2. Fuentes y curadores iniciales
 
