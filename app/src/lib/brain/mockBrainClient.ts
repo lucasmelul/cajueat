@@ -3,6 +3,17 @@ import type { Collection, CompareResult, ConversationTurn, DnaTag, Recommendatio
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
+const NEAR_RADIUS_KM = 2;
+
+/** Same haversine the real Brain uses for "Cerca" (SPEC-001) — the mock has real fixture coordinates, so it's worth filtering for real too instead of a pass-through. */
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
 
 /** Same deterministic keyword+trust scoring as brain/src/search/searchEngine.ts — never empty (SPEC-008). */
 function searchCatalog(query: string, limit = 8) {
@@ -95,8 +106,12 @@ export const mockBrainClient: BrainClient = {
       candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
     } else if (context?.filter === 'saved') {
       candidates = candidates.filter((r) => memory.saved[r.id]);
+    } else if (context?.filter === 'near' && context.near) {
+      const point = context.near;
+      const withinRadius = candidates.filter((r) => haversineKm(point, r.position) <= NEAR_RADIUS_KM);
+      candidates = withinRadius.length > 0 ? withinRadius : [...candidates].sort((a, b) => haversineKm(point, a.position) - haversineKm(point, b.position));
     }
-    // 'near'/'open' have no real geolocation/hours signal in the mock either — pass through unfiltered.
+    // 'open' has no real hours data in the mock's fixtures — pass through unfiltered (the real Brain filters for real).
     if (candidates.length === 0) candidates = FIXTURE_RESTAURANTS; // never empty (CP-018)
 
     const restaurants = candidates.slice(0, 5);

@@ -12,7 +12,10 @@ recommendationsRouter.get('/recommendations', requireUserId, async (req, res, ne
     const neighborhood = typeof req.query.neighborhood === 'string' ? req.query.neighborhood : undefined;
     const rawFilter = typeof req.query.filter === 'string' ? req.query.filter : undefined;
     const filter = VALID_FILTERS.includes(rawFilter as ContextFilter) ? (rawFilter as ContextFilter) : undefined;
-    const recs = await getRecommendations(req.userId!, { neighborhood, filter });
+    const lat = typeof req.query.lat === 'string' ? Number(req.query.lat) : undefined;
+    const lng = typeof req.query.lng === 'string' ? Number(req.query.lng) : undefined;
+    const near = lat !== undefined && lng !== undefined && !Number.isNaN(lat) && !Number.isNaN(lng) ? { lat, lng } : undefined;
+    const recs = await getRecommendations(req.userId!, { neighborhood, filter, near });
     res.json(recs);
   } catch (err) {
     next(err);

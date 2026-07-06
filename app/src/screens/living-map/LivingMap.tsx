@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronDown, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search } from 'lucide-react';
-import { LivingMapCanvas } from '../../map/LivingMapCanvas';
+import { LivingMapCanvas, type LivingMapCanvasHandle } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
 import { CajuPoints, RestaurantCard, BottomSheet, type SheetState } from '../../components/discovery';
 import { BrainCard, PromptBar, highlightText } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { DEFAULT_MAP_CENTER } from '../../lib/brain/fixtures';
+import { getCurrentPosition } from '../../lib/geo/geolocation';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { BrainCardData, MapEvent, Restaurant } from '../../types';
 import './LivingMap.css';
@@ -16,7 +17,19 @@ type ContextChip = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 export function LivingMap() {
   const navigate = useNavigate();
-  const { saved, toggleSaved, selectedRestaurantId, setSelectedRestaurantId, setPendingQuery, user, setUser, hydrateMemory, openOverlay } = useAppStore();
+  const {
+    saved,
+    toggleSaved,
+    selectedRestaurantId,
+    setSelectedRestaurantId,
+    setPendingQuery,
+    user,
+    setUser,
+    hydrateMemory,
+    openOverlay,
+    userLocation,
+    setUserLocation,
+  } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -25,6 +38,7 @@ export function LivingMap() {
   const [activeChip, setActiveChip] = useState<ContextChip>('open');
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
+  const mapRef = useRef<LivingMapCanvasHandle>(null);
 
   // Never an empty map: fetch recommendations as soon as the screen mounts (SPEC-001).
   // The user is hydrated once into the shared store — re-fetching it here on a later
@@ -44,13 +58,16 @@ export function LivingMap() {
   }, []);
 
   // Context Chips (Cerca, Abierto ahora, Para una cita, Trabajar, Guardados) re-ask the
-  // Recommendation Engine with the active filter — 'date'/'work'/'saved' genuinely narrow
-  // the catalog (idealFor/tags, saved ids); 'near'/'open' have no geolocation/hours data
-  // yet so the Brain returns them unfiltered.
+  // Recommendation Engine with the active filter — all five genuinely narrow the catalog
+  // now (idealFor/tags, saved ids, real opening hours, real distance to `near`).
+  // The `near` coords only matter while that chip is active — using them as a dependency
+  // unconditionally would refetch every time the location updates from an unrelated FAB tap.
+  const nearDep = activeChip === 'near' ? userLocation : null;
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    brain.getRecommendations({ filter: activeChip }).then((recs) => {
+    const context = nearDep ? { filter: activeChip, near: nearDep } : { filter: activeChip };
+    brain.getRecommendations(context).then((recs) => {
       if (!alive) return;
       setRestaurants(recs.restaurants);
       setBrainCard(recs.brainCard);
@@ -59,7 +76,23 @@ export function LivingMap() {
     return () => {
       alive = false;
     };
-  }, [activeChip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChip, nearDep]);
+
+  // SPEC-001: geolocation is only ever requested in context (a CTA, the "Cerca" chip, the
+  // "Mi ubicación" FAB) — never automatically on load. Resolves to null on denial/timeout
+  // without blocking the map ("el usuario igualmente puede explorar").
+  const requestLocation = async () => {
+    const point = await getCurrentPosition();
+    if (!point) return;
+    setUserLocation(point);
+    mapRef.current?.recenter(point);
+  };
+
+  const selectNear = () => {
+    setActiveChip('near');
+    if (!userLocation) requestLocation();
+  };
 
   const selected = restaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 
@@ -92,6 +125,7 @@ export function LivingMap() {
   return (
     <div className="cj-screen">
       <LivingMapCanvas
+        ref={mapRef}
         center={DEFAULT_MAP_CENTER}
         restaurants={restaurants}
         events={events}
@@ -115,7 +149,12 @@ export function LivingMap() {
           <MapPinIcon size={14} /> Palermo <ChevronDown size={13} />
         </button>
         <span className="cj-chips__div" />
-        <Chip selected={activeChip === 'near'} icon={<MapPinIcon size={15} />} onClick={() => setActiveChip('near')}>
+        {!userLocation && (
+          <Chip icon={<LocateFixed size={15} />} onClick={requestLocation}>
+            Usar mi ubicación
+          </Chip>
+        )}
+        <Chip selected={activeChip === 'near'} icon={<MapPinIcon size={15} />} onClick={selectNear}>
           Cerca
         </Chip>
         <Chip selected={activeChip === 'open'} icon={<Clock size={15} />} onClick={() => setActiveChip('open')}>
@@ -135,7 +174,7 @@ export function LivingMap() {
       <div className="cj-map-fabs">
         <IconButton icon={<Search size={20} />} label="Buscar" variant="float" size="md" onClick={() => openOverlay('search')} />
         <IconButton icon={<Layers size={20} />} label="Capas" variant="float" size="md" />
-        <IconButton icon={<LocateFixed size={20} />} label="Mi ubicación" variant="float" size="md" />
+        <IconButton icon={<LocateFixed size={20} />} label="Mi ubicación" variant="float" size="md" onClick={requestLocation} />
       </div>
 
       {selected && sheetState && (

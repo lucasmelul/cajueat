@@ -35,7 +35,6 @@ export const CATALOG_SEED: RawRestaurant[] = [
       { icon: 'armchair', label: 'Excelente barra' },
       { icon: 'calendar-check', label: 'Reserva recomendada' },
       { icon: 'clock', label: '40 min promedio' },
-      { icon: 'circle-check', label: 'Abierto ahora' },
     ],
     order: [
       { when: 'Si vas por primera vez', dish: 'Pedí el omakase corto de la barra.' },
@@ -50,6 +49,8 @@ export const CATALOG_SEED: RawRestaurant[] = [
       src('Tu visita', 'visit', 'strong', 10, 'Ideal para ir en pareja'),
       src('42 personas', 'community', 'medium', 20, 'Buen lugar para ir de a dos'),
     ],
+    // Barra nikkei de cena — cierra los lunes, como la mayoría de sus pares en Palermo.
+    openHours: [{ days: [2, 3, 4, 5, 6, 0], from: '20:00', to: '00:00' }],
   },
   {
     id: 'anafe',
@@ -81,6 +82,8 @@ export const CATALOG_SEED: RawRestaurant[] = [
       src('@salt_argentina', 'curator', 'medium', 200, 'Ambiente tranquilo, bueno para charlar'),
       src('18 personas', 'community', 'medium', 15, 'Bastante ruidoso los fines de semana'),
     ],
+    // Bodegón de cena, martes a domingo — cierra los lunes.
+    openHours: [{ days: [2, 3, 4, 5, 6, 0], from: '20:00', to: '00:30' }],
   },
   {
     id: 'cuervo',
@@ -108,6 +111,8 @@ export const CATALOG_SEED: RawRestaurant[] = [
       src('9 personas', 'community', 'weak', 30),
       src('@buenospaladaires', 'curator', 'medium', 60),
     ],
+    // Café de mañana, todos los días — "el mejor momento es antes del mediodía".
+    openHours: [{ days: [0, 1, 2, 3, 4, 5, 6], from: '08:00', to: '18:00' }],
   },
   {
     id: 'nonna',
@@ -140,6 +145,8 @@ export const CATALOG_SEED: RawRestaurant[] = [
       src('Tu visita', 'visit', 'strong', 3),
       src('21 personas', 'community', 'medium', 10),
     ],
+    // Trattoria de cena romántica, miércoles a domingo.
+    openHours: [{ days: [3, 4, 5, 6, 0], from: '20:00', to: '00:00' }],
   },
   {
     id: 'terraza',
@@ -158,7 +165,6 @@ export const CATALOG_SEED: RawRestaurant[] = [
       { icon: 'wallet', label: '$$$' },
       { icon: 'users', label: 'Bueno en grupo' },
       { icon: 'volume-2', label: 'Ambiente animado' },
-      { icon: 'circle-check', label: 'Abierto ahora' },
     ],
     order: [
       { when: 'Para compartir', dish: 'El asado de tira para el medio de la mesa.' },
@@ -168,6 +174,11 @@ export const CATALOG_SEED: RawRestaurant[] = [
     idealFor: ['Grupos grandes', 'Cumpleaños', 'Después del trabajo'],
     notFor: ['Charla tranquila', 'Primera cita'],
     sources: [src('@salt_argentina', 'curator', 'weak', 90), src('27 personas', 'community', 'medium', 10)],
+    // Parrilla con terraza — almuerzo y cena, jueves a domingo (el resto de la semana, cerrada).
+    openHours: [
+      { days: [4, 5, 6, 0], from: '12:00', to: '16:00' },
+      { days: [4, 5, 6, 0], from: '20:00', to: '00:30' },
+    ],
   },
   {
     id: 'brote',
@@ -186,7 +197,6 @@ export const CATALOG_SEED: RawRestaurant[] = [
       { icon: 'wallet', label: '$$' },
       { icon: 'laptop', label: 'Bueno para trabajar' },
       { icon: 'sun', label: 'Mejor de mañana' },
-      { icon: 'circle-check', label: 'Abierto ahora' },
     ],
     order: [
       { when: 'Para almorzar liviano', dish: 'El bowl de garbanzos y vegetales asados.' },
@@ -196,5 +206,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     idealFor: ['Trabajar solo', 'Reuniones cortas', 'Almuerzo liviano'],
     notFor: ['Cena', 'Grupos grandes'],
     sources: [src('12 personas', 'community', 'weak', 8)],
+    // Café/almuerzo de días de semana — pensado para trabajar, no abre fines de semana.
+    openHours: [{ days: [1, 2, 3, 4, 5], from: '08:00', to: '17:00' }],
   },
 ];

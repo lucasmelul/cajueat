@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { brain } from '../brain';
-import type { Collection, DnaTag, User } from '../../types';
+import type { Collection, DnaTag, GeoPoint, User } from '../../types';
 
 export type OverlayKind = 'capture' | 'feedback' | 'search' | null;
 
@@ -12,6 +12,10 @@ interface AppState {
   /** Selected pin on the Living Map — only one at a time (SPEC-001). */
   selectedRestaurantId: string | null;
   setSelectedRestaurantId: (id: string | null) => void;
+
+  /** Real geolocation (SPEC-001 "Cerca" + "Usar mi ubicación") — null until the user grants it via an in-context CTA, never requested automatically. */
+  userLocation: GeoPoint | null;
+  setUserLocation: (loc: GeoPoint | null) => void;
 
   /** A query typed elsewhere (e.g. a Context Chip) that the Conversation screen should open with. */
   pendingQuery: string | null;
@@ -61,6 +65,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   selectedRestaurantId: null,
   setSelectedRestaurantId: (id) => set({ selectedRestaurantId: id }),
+
+  userLocation: null,
+  setUserLocation: (loc) => set({ userLocation: loc }),
 
   pendingQuery: null,
   setPendingQuery: (query) => set({ pendingQuery: query }),

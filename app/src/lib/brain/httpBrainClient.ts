@@ -31,6 +31,10 @@ export const httpBrainClient: BrainClient = {
     const params = new URLSearchParams();
     if (context?.neighborhood) params.set('neighborhood', context.neighborhood);
     if (context?.filter) params.set('filter', context.filter);
+    if (context?.near) {
+      params.set('lat', String(context.near.lat));
+      params.set('lng', String(context.near.lng));
+    }
     const qs = params.toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
   },

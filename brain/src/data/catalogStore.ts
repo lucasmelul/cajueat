@@ -3,8 +3,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { curatorsFileExists, getEffectiveWeight, recordCuratorOutcome } from '../curators/curatorStore.js';
+import { isOpenNow } from '../geo/geo.js';
 import { computeTrust, detectContradiction } from '../trust/trustEngine.js';
-import type { Restaurant, Source } from '../types.js';
+import type { QuickFact, Restaurant, Source } from '../types.js';
 import { CATALOG_SEED, type RawRestaurant } from './catalogSeed.js';
 
 /**
@@ -65,14 +66,31 @@ if (!curatorsFileExists()) {
   }
 }
 
-/** Every restaurant, with trust computed fresh from its sources on every read — never cached across writes now that the CMS can mutate sources at runtime. Curator-kind sources get their weight overridden by tracked reputation (SPEC-017) — the Trust Engine is fed a better input, never duplicated. */
+/**
+ * Every restaurant, with trust computed fresh from its sources on every
+ * read — never cached across writes now that the CMS can mutate sources
+ * at runtime. Curator-kind sources get their weight overridden by tracked
+ * reputation (SPEC-017) — the Trust Engine is fed a better input, never
+ * duplicated. The "Abierto/Cerrado ahora" quickFact (SPEC-001) is computed
+ * the same way — never a hardcoded label that could go stale the moment
+ * the clock moves.
+ */
 export function getCatalog(): Restaurant[] {
   return catalog.map((raw) => {
     const sourcesWithReputation = raw.sources.map((s) =>
       s.kind === 'curator' ? { ...s, weight: getEffectiveWeight(s.name, raw.cuisine, s.weight) } : s,
     );
     const { level, rationale } = computeTrust(sourcesWithReputation);
-    return { ...raw, sources: sourcesWithReputation, trust: level, trustRationale: rationale };
+    const openNow = isOpenNow(raw.openHours);
+    const openFact: QuickFact | null =
+      openNow === null ? null : openNow ? { icon: 'circle-check', label: 'Abierto ahora' } : { icon: 'circle-x', label: 'Cerrado ahora' };
+    return {
+      ...raw,
+      sources: sourcesWithReputation,
+      quickFacts: openFact ? [openFact, ...raw.quickFacts] : raw.quickFacts,
+      trust: level,
+      trustRationale: rationale,
+    };
   });
 }
 

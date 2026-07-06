@@ -1,4 +1,5 @@
 import { getCatalog } from '../data/restaurants.js';
+import { haversineKm, isOpenNow } from '../geo/geo.js';
 import { explainRecommendation } from '../llm/claudeClient.js';
 import { getProfile, getSavedIds } from '../memory/memoryStore.js';
 import type { Recommendations, RecommendationContext, Restaurant, TrustLevel } from '../types.js';
@@ -11,6 +12,8 @@ import type { Recommendations, RecommendationContext, Restaurant, TrustLevel } f
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
 const MAX_RESULTS = 5;
+/** "Cerca" radius (SPEC-001) — an open product question on the exact distance; 2km is a reasonable walking radius for a city map. */
+const NEAR_RADIUS_KM = 2;
 
 interface ScoredRestaurant {
   restaurant: Restaurant;
@@ -71,8 +74,15 @@ export async function getRecommendations(userId: string, context: Recommendation
     candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
   } else if (context.filter === 'saved') {
     candidates = candidates.filter((r) => savedIds.has(r.id));
+  } else if (context.filter === 'open') {
+    candidates = candidates.filter((r) => isOpenNow(r.openHours) === true);
+  } else if (context.filter === 'near' && context.near) {
+    const point = context.near;
+    const withinRadius = candidates.filter((r) => haversineKm(point, r.position) <= NEAR_RADIUS_KM);
+    // Nobody within the radius doesn't mean "show anything" — closest-first still respects what "Cerca" means.
+    candidates = withinRadius.length > 0 ? withinRadius : [...candidates].sort((a, b) => haversineKm(point, a.position) - haversineKm(point, b.position));
   }
-  // 'near'/'open' have no real geolocation/hours signal yet — pass through unfiltered rather than fake it.
+  // Without real geolocation, 'near' has no coordinates to filter by — pass through rather than fake a location.
   if (candidates.length === 0) candidates = getCatalog(); // never an empty result (CP-018 Discovery Engine)
 
   const ranked = candidates.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score);

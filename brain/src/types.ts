@@ -25,6 +25,13 @@ export interface OrderSuggestion {
   dish: string;
 }
 
+/** One real opening shift. `days`: 0=domingo .. 6=sábado. `from`/`to` en "HH:mm", hora de Buenos Aires — `to` puede cruzar medianoche (ej. "23:00" a "00:30"). */
+export interface OpenPeriod {
+  days: number[];
+  from: string;
+  to: string;
+}
+
 export interface Source {
   name: string;
   kind: SourceKind;
@@ -57,6 +64,8 @@ export interface Restaurant {
   notFor: string[];
   sources: Source[];
   image?: string;
+  /** Real weekly hours (SPEC-001 "Abierto ahora") — absence means we genuinely don't know, never guessed. */
+  openHours?: OpenPeriod[];
 }
 
 export interface MapEvent {
@@ -89,14 +98,14 @@ export interface BrainCardData {
   restaurantId?: string;
 }
 
-/** Context Chips on the Living Map (SPEC-001). Only 'date'/'work'/'saved' have real
- * signals to filter on today (idealFor/tags, saved ids) — 'near' needs geolocation and
- * 'open' needs opening-hours data that don't exist yet, so they're accepted but not filtered. */
+/** Context Chips on the Living Map (SPEC-001). All five filter for real now — 'near' needs the caller to pass `near` (real geolocation), 'open' uses real per-restaurant hours. */
 export type ContextFilter = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 export interface RecommendationContext {
   neighborhood?: string;
   filter?: ContextFilter;
+  /** Real user coordinates for the 'near' filter — absent means no geolocation was granted. */
+  near?: GeoPoint;
 }
 
 export interface Recommendations {

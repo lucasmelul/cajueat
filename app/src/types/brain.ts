@@ -1,4 +1,4 @@
-import type { Restaurant } from './restaurant';
+import type { GeoPoint, Restaurant } from './restaurant';
 
 /** The single floating Brain Card on the Living Map (SPEC-001, BrainCard.d.ts). */
 export interface BrainCardData {
@@ -9,15 +9,15 @@ export interface BrainCardData {
   restaurantId?: string;
 }
 
-/** Context Chips on the Living Map (SPEC-001). Only 'date'/'work'/'saved' have real
- * signals to filter on today (idealFor/tags, saved ids) — 'near' needs geolocation and
- * 'open' needs opening-hours data that don't exist yet, so they're accepted but not filtered. */
+/** Context Chips on the Living Map (SPEC-001). All five filter for real — 'near' needs `near` (real geolocation) to actually narrow by distance. */
 export type ContextFilter = 'near' | 'open' | 'date' | 'work' | 'saved';
 
 /** Signals the Recommendation Engine considers (SPEC-005, CP-023 Context Engine). Saved ids are Brain-owned memory now, not passed in. */
 export interface RecommendationContext {
   neighborhood?: string;
   filter?: ContextFilter;
+  /** Real user coordinates for the 'near' filter — omit when geolocation wasn't granted. */
+  near?: GeoPoint;
 }
 
 export interface Recommendations {

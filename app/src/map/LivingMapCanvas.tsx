@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import maplibregl, { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -29,13 +29,27 @@ interface MarkerEntry {
   root: Root;
 }
 
-export function LivingMapCanvas({ center, restaurants, events, selectedId, onSelectRestaurant, onMapClick }: LivingMapCanvasProps) {
+export interface LivingMapCanvasHandle {
+  /** Recenters the map on a real point — used once geolocation resolves (SPEC-001 "Mi ubicación"). */
+  recenter: (point: GeoPoint) => void;
+}
+
+export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvasProps>(function LivingMapCanvas(
+  { center, restaurants, events, selectedId, onSelectRestaurant, onMapClick },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Map<string, MarkerEntry>>(new Map());
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
   const hasFitBoundsRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    recenter: (point) => {
+      mapRef.current?.flyTo({ center: [point.lng, point.lat], zoom: 15 });
+    },
+  }));
 
   // Map instance: created once.
   useEffect(() => {
@@ -127,4 +141,4 @@ export function LivingMapCanvas({ center, restaurants, events, selectedId, onSel
   }, [restaurants, events, selectedId, onSelectRestaurant]);
 
   return <div ref={containerRef} className="cj-maplibre" aria-label="Mapa de restaurantes recomendados" />;
-}
+});
