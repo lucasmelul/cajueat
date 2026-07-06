@@ -33,7 +33,7 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 **Contexto:** la idea de nutrir al Brain con listas de foodies/curadores (ej. @buenospaladaires_, @salt_argentina) es conceptual; no hay una lista cerrada ni acuerdos confirmados. El modelo de datos y la integración con el Trust Engine ya están especificados en [SPEC-017 — Curators & Sources](specs/SPEC-017-curators-and-sources.md) (curador como Source Entity con reputación por dominio, no un string fijo).
 
-**Pendiente:** qué fuentes se incorporan primero, si existe curación editorial humana antes del lanzamiento, si hay algún tipo de relación formal con esas fuentes, y — sin resolver todavía, a diferencia del modelo de datos — *cómo* entra el contenido real de un curador al sistema. SPEC-017 asume que esto pasa por PRD-009 (Admin CMS), que no tiene spec técnica propia. Ver [sources-and-curators.md](sources-and-curators.md), [PRD-016 — Curators & Sources](prds/PRD-016-curators-and-sources.md) y [PRD-009 — Admin CMS](prds/PRD-009-admin-cms.md).
+**Pendiente:** qué fuentes se incorporan primero, si existe curación editorial humana antes del lanzamiento, y si hay algún tipo de relación formal con esas fuentes. *Cómo* entra el contenido real de un curador al sistema ya está especificado en [SPEC-018 — Admin CMS](specs/SPEC-018-admin-cms.md) — un operador pega el contenido que ya leyó (nunca scraping automático), y una función grounded en `claudeClient.ts` lo interpreta contra el catálogo real. Ver [sources-and-curators.md](sources-and-curators.md), [PRD-016 — Curators & Sources](prds/PRD-016-curators-and-sources.md) y [PRD-009 — Admin CMS](prds/PRD-009-admin-cms.md).
 
 ### 3. Ponderación exacta del Trust Engine
 

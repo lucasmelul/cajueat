@@ -46,13 +46,15 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - Planning (CP-071) quedó deliberadamente sin especificar — no se ve útil para el uso actual de la app.
 
 ### SPEC-017 — Curators & Sources (nueva)
-- [ ] Especificado, no implementado: el curador pasa de ser un string repetido en `sources[]` a una Source Entity con reputación propia, específica por dominio (cocina/zona), recalculada con cada nueva evidencia — nunca un score fijo cargado una vez. Alimenta al Trust Engine existente, no lo duplica. Deja explícitamente afuera *cómo* entra el contenido de un curador (depende de PRD-009 Admin CMS, sin spec propia todavía). Ver [SPEC-017](specs/SPEC-017-curators-and-sources.md).
+- [ ] Especificado, no implementado: el curador pasa de ser un string repetido en `sources[]` a una Source Entity con reputación propia, específica por dominio (cocina/zona), recalculada con cada nueva evidencia — nunca un score fijo cargado una vez. Alimenta al Trust Engine existente, no lo duplica. Dejó explícitamente afuera *cómo* entra el contenido de un curador — ahora especificado en SPEC-018 (Admin CMS). Ver [SPEC-017](specs/SPEC-017-curators-and-sources.md).
+
+### SPEC-018 — Admin CMS (nueva)
+- [ ] Especificado, no implementado: CMS conversacional como "otro cliente del Brain" (mismas rutas Express, mismo `claudeClient.ts`, mismo Trust/Recommendation/Memory Engine), con un tercer nivel de identidad (allowlist de operadores, separado de SPEC-013). Cierra el punto ciego de SPEC-017 (cómo entra el contenido de un curador) — "Importar Reel" se resuelve con un humano pegando texto que ya leyó, evitando el problema de scraping de SPEC-015. Prerequisito real: el catálogo (`RAW_RESTAURANTS`) tiene que dejar de ser TypeScript hardcodeado y pasar a un JSON persistido, mismo patrón que `memoryStore.ts`. Ver [SPEC-018](specs/SPEC-018-admin-cms.md).
 
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
 - [ ] Persistencia en un JSON file, no en una base de datos real (decisión de scope explícita, ver el plan original).
 - [ ] PRD-015 (Planning Engine): sin spec ni implementación, deliberadamente pospuesto por decisión de producto — no se lo considera útil para el uso actual de la app.
-- [ ] PRD-009 (Admin CMS): sin spec ni implementación — es la vía prevista para que un operador cargue contenido real de curadores (ver SPEC-017), hoy no existe ningún cliente admin del Brain más allá de editar `brain/src/data/restaurants.ts` a mano.
 
 ## Resueltos
 
