@@ -14,11 +14,11 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Sin streaming: la respuesta del Brain llega completa de una sola vez (spinner → bloque de texto), no token a token como pide el spec.
 
 ### SPEC-004 — Knowledge Acquisition
-- [ ] Foto y Voz especificadas en [SPEC-015](specs/SPEC-015-real-knowledge-ingestion.md) — vía multimodal de Claude (foto) y Web Speech API del navegador (voz), sin proveedor nuevo. Especificado, no implementado.
 - [ ] Reel/TikTok sigue como simulación honesta y explícitamente fuera de alcance de SPEC-015 — requiere scraping/API oficial de una plataforma de terceros, una decisión legal y de costo real, no técnica.
 - [ ] El input de link (Reel/TikTok) ni siquiera envía el texto pegado al Brain hoy — el botón "Enviar" llama a `start('link')` sin pasar el valor de `link`. No se corrige hasta resolver el punto anterior — hoy no hay nada real que hacer con ese link.
 - [ ] Entry points del spec sin cubrir: compartir desde el Share Sheet nativo del OS, y captura "desde la conversación" (que mencionar un lugar al chatear quede grabado como aporte).
 - [x] Texto libre ("Nota") — resuelto, ver abajo.
+- [x] Foto y Voz ([SPEC-015](specs/SPEC-015-real-knowledge-ingestion.md)) — resuelto, ver abajo.
 
 ### SPEC-005 — Recommendation Engine
 - [ ] Sin señales externas (curadores/foodies) — el catálogo son 6 restaurantes hand-authored (subieron de 3), no hay ingesta real de fuentes (eso es SPEC-004 a nivel de fuente, no de captura de usuario).
@@ -39,7 +39,7 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Especificado, no implementado todavía: identidad anónima server-side desde la primera apertura, sin login obligatorio; "Guardar mi Brain" adjunta un teléfono verificado a la fila ya existente en vez de crear una cuenta nueva. Requiere: Memory Engine multi-tenant (hoy asume un único usuario `u1` hardcodeado), IDs de ADN/colecciones pasando de contadores secuenciales a UUIDs, rate limiting anónimo en Conversation/Knowledge Capture (riesgo de costo real de Claude sin ningún gate de identidad). Ver [SPEC-013](specs/SPEC-013-deferred-identity.md).
 
 ### SPEC-014 — Compare Experience (nueva)
-- [ ] Especificado, no implementado: comparar 2-3 restaurantes que el usuario ya identificó, siempre con una conclusión (nunca una tabla), apoyado en Trust Engine + una nueva función grounded en `claudeClient.ts`. Desarrolla PRD-017 (Restaurant Comparison, vigente) + CP-052. Ver [SPEC-014](specs/SPEC-014-compare-experience.md).
+- [x] Comparar 2-3 restaurantes con una conclusión real (nunca una tabla) — resuelto, ver abajo.
 
 ### SPEC-016 — Notifications (nueva)
 - [ ] Especificado, no implementado: seis tipos de notificación (recomendaciones, recordatorios, cambios importantes, nuevos lugares, feedback pendiente, eventos), todos reusando lógica que el Recommendation/Trust Engine ya calculan — lo que falta es 100% infraestructura de entrega (push real), no lógica de negocio. Depende explícitamente de SPEC-013 (necesita una identidad server-side estable para atar una subscription). El service worker de `vite-plugin-pwa` hoy solo cachea/instala, no maneja push. Ver [SPEC-016](specs/SPEC-016-notifications.md).
@@ -64,3 +64,5 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - **2026-07-05** — Catálogo ampliado de 3 a 6 restaurantes (Nonna Emma, Terraza Norte, Brote), mismo formato hand-authored. Da variedad real a diversify/search/trust (ahora sí aparece un ejemplo de confianza "low") y más de una opción por filtro de contexto. Sigue sin ser ingesta real de fuentes externas. Commit `3af1405`.
 - **2026-07-05** — Trust Engine ahora detecta contradicciones reales entre fuentes (`claim` + ejes de contradicción determinísticos) y las nombra en el rationale en vez de promediarlas en silencio; Consensus ya existía de forma implícita (diversidad de `kind`), quedó documentado como tal. De paso se descubrió que `trustRationale` se calculaba pero nunca llegaba a la UI — ahora se muestra en la ficha del restaurante. Anafe quedó con una contradicción real de ejemplo (ahora "Señales en conflicto"). Commit `55947e1`.
 - **2026-07-05** — Onboarding (PRD-010) implementado: Bienvenida → 3 preguntas opcionales (chip-based) → Living Map. Las respuestas se guardan como DNA tags reales y ya afectan recomendaciones reales (verificado: elegir "Palermo" hizo que la próxima Brain Card mencionara "está en tu barrio"). No toca el método de autenticación (sigue como decisión abierta separada). Commit `15015af`.
+- **2026-07-05** — SPEC-014 (Compare) implementado: nueva función `compareRestaurants` en `claudeClient.ts` + ruta `/api/compare`, wireada al chip "Comparar con otro" en Conversation. Siempre termina en una conclusión (`recommendedId` real o `null` honesto si no hay evidencia suficiente), nunca una tabla. Verificado con `curl` contra el Brain real en dos casos (empate y ganador claro). Commit `5d22df7`.
+- **2026-07-05** — SPEC-015 (Foto y Voz) implementado: Foto usa el input multimodal nativo de Claude (`extractPhotoKnowledge`, sin proveedor de OCR) para identificar el restaurante y resumir solo lo legible en la imagen; Voz usa la Web Speech API del navegador para transcribir y reusa el mismo `extractNoteKnowledge` que Nota. Ambos flujos verificados en vivo contra el Brain real (Voz con una nota hablada sobre Anafe, Foto con una imagen de menú sintetizada para Osaka), con resúmenes correctos y puntos otorgados. Commit `5d22df7`.
