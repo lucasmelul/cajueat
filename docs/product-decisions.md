@@ -61,6 +61,8 @@ Este documento consolida las decisiones **ya tomadas** y las **abiertas** que su
 
 **Pendiente:** decidir si estos PRDs adicionales se archivan, se fusionan con los PRDs canónicos correspondientes, o se renumeran como PRD-016 en adelante en una futura pasada de consolidación. No se tomó esta decisión en este trabajo porque el alcance solicitado fue explícitamente PRD-001 a PRD-010.
 
+**Actualización:** Collections, Onboarding y Compare ya no están sin lugar — se resolvieron como SPEC-009, PRD-010 y SPEC-014 respectivamente, con contenido nuevo (no una simple renumeración de los PRDs viejos, que en el caso de Compare estaba vacío). Planning y Notifications siguen sin spec.
+
 ### 7. Timing del roadmap
 
 **Contexto:** las fases del roadmap (ver [roadmap.md](roadmap.md)) están definidas por criterio de graduación, no por fechas.

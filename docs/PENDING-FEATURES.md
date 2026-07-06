@@ -14,8 +14,9 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 - [ ] Sin streaming: la respuesta del Brain llega completa de una sola vez (spinner → bloque de texto), no token a token como pide el spec.
 
 ### SPEC-004 — Knowledge Acquisition
-- [ ] Voz, Foto y Reel/TikTok siguen siendo simulaciones honestas (animación falsa + respuesta plantilla). Requieren integrar transcripción de audio, OCR y scraping/parsing de Instagram-TikTok respectivamente — son decisiones de costo e infraestructura externa, no las tomé unilateralmente.
-- [ ] El input de link (Reel/TikTok) ni siquiera envía el texto pegado al Brain hoy — el botón "Enviar" llama a `start('link')` sin pasar el valor de `link`. Ligado al punto anterior: no hay nada real que hacer con ese link todavía.
+- [ ] Foto y Voz especificadas en [SPEC-015](specs/SPEC-015-real-knowledge-ingestion.md) — vía multimodal de Claude (foto) y Web Speech API del navegador (voz), sin proveedor nuevo. Especificado, no implementado.
+- [ ] Reel/TikTok sigue como simulación honesta y explícitamente fuera de alcance de SPEC-015 — requiere scraping/API oficial de una plataforma de terceros, una decisión legal y de costo real, no técnica.
+- [ ] El input de link (Reel/TikTok) ni siquiera envía el texto pegado al Brain hoy — el botón "Enviar" llama a `start('link')` sin pasar el valor de `link`. No se corrige hasta resolver el punto anterior — hoy no hay nada real que hacer con ese link.
 - [ ] Entry points del spec sin cubrir: compartir desde el Share Sheet nativo del OS, y captura "desde la conversación" (que mencionar un lugar al chatear quede grabado como aporte).
 - [x] Texto libre ("Nota") — resuelto, ver abajo.
 
@@ -37,10 +38,13 @@ Convención: cuando un gap se cierra, se mueve a "Resueltos" con fecha y commit,
 ### SPEC-013 — Deferred Identity (nueva)
 - [ ] Especificado, no implementado todavía: identidad anónima server-side desde la primera apertura, sin login obligatorio; "Guardar mi Brain" adjunta un teléfono verificado a la fila ya existente en vez de crear una cuenta nueva. Requiere: Memory Engine multi-tenant (hoy asume un único usuario `u1` hardcodeado), IDs de ADN/colecciones pasando de contadores secuenciales a UUIDs, rate limiting anónimo en Conversation/Knowledge Capture (riesgo de costo real de Claude sin ningún gate de identidad). Ver [SPEC-013](specs/SPEC-013-deferred-identity.md).
 
+### SPEC-014 — Compare Experience (nueva)
+- [ ] Especificado, no implementado: comparar 2-3 restaurantes que el usuario ya identificó, siempre con una conclusión (nunca una tabla), apoyado en Trust Engine + una nueva función grounded en `claudeClient.ts`. Recupera contenido real de CP-052, ya que PRD-012 (Compare) había quedado sin contenido. Ver [SPEC-014](specs/SPEC-014-compare-experience.md).
+
 ### Estructural / fuera de un spec puntual
 - [ ] Sin autenticación ni multi-usuario — un solo usuario demo hardcodeado (decisión de scope explícita para este pase de implementación).
 - [ ] Persistencia en un JSON file, no en una base de datos real (decisión de scope explícita, ver el plan original).
-- [ ] PRD-011 a PRD-015 (Compare, Planning, Notifications — Collections ya resuelto en SPEC-009, Onboarding ya resuelto en PRD-010): Compare/Planning/Notifications siguen sin spec ni implementación. Ver "Decisión abierta #6" en [product-decisions.md](product-decisions.md).
+- [ ] PRD-013/014 (Planning, Notifications — Collections ya resuelto en SPEC-009, Onboarding ya resuelto en PRD-010, Compare ya especificado en SPEC-014): Planning/Notifications siguen sin spec ni implementación. Ver "Decisión abierta #6" en [product-decisions.md](product-decisions.md).
 
 ## Resueltos
 
