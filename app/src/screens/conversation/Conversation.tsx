@@ -29,10 +29,25 @@ export function Conversation() {
   const respond = async (text: string) => {
     setTurns((t) => [...t, { id: nextLocalId(), role: 'user', text, createdAt: Date.now() }]);
     setThinking(true);
+    // SPEC-002: "las respuestas nunca aparecen completas" — a placeholder turn is
+    // inserted on the first streamed chunk and grown in place as more arrive, instead
+    // of waiting for the full reply behind a spinner. `streamId` tracks that placeholder
+    // until the final, grounding-checked turn (with restaurants/chips) replaces it.
+    const streamId = nextLocalId();
+    let streaming = false;
     try {
-      const reply = await brain.sendMessage({ text, history: turns });
+      const reply = await brain.sendMessage({ text, history: turns }, (chunk) => {
+        setThinking(false);
+        setTurns((t) => {
+          if (!streaming) {
+            streaming = true;
+            return [...t, { id: streamId, role: 'brain', text: chunk, createdAt: Date.now() }];
+          }
+          return t.map((turn) => (turn.id === streamId ? { ...turn, text: (turn.text ?? '') + chunk } : turn));
+        });
+      });
       setThinking(false);
-      setTurns((t) => [...t, reply]);
+      setTurns((t) => (streaming ? t.map((turn) => (turn.id === streamId ? reply : turn)) : [...t, reply]));
     } catch (err) {
       setThinking(false);
       // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
@@ -40,7 +55,11 @@ export function Conversation() {
         err instanceof BrainSyncRequiredError
           ? 'Llegaste al límite de conversaciones de hoy sin un Brain guardado. Sincronizalo desde tu perfil para seguir sin límite.'
           : 'Algo falló de este lado. Probá de nuevo en un momento.';
-      setTurns((t) => [...t, { id: nextLocalId(), role: 'brain', text: message, createdAt: Date.now() }]);
+      setTurns((t) =>
+        streaming
+          ? t.map((turn) => (turn.id === streamId ? { ...turn, text: message } : turn))
+          : [...t, { id: nextLocalId(), role: 'brain', text: message, createdAt: Date.now() }],
+      );
     }
   };
 

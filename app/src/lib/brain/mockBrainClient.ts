@@ -149,17 +149,28 @@ export const mockBrainClient: BrainClient = {
     );
   },
 
-  async sendMessage({ text }) {
+  async sendMessage({ text }, onDelta) {
     const matches = pickRestaurantsForQuery(text);
+    const replyText = replyTextForQuery(text, matches);
+    // Simulated word-by-word delivery — there's no real LLM behind the mock, but this
+    // exercises the same progressive-rendering path Conversation.tsx uses for real
+    // streaming (SPEC-002), so the mock stays a behaviorally valid BrainClient.
+    if (onDelta) {
+      const words = replyText.split(' ');
+      for (let i = 0; i < words.length; i += 1) {
+        await delay(undefined, 40);
+        onDelta(i === 0 ? words[i] : ` ${words[i]}`);
+      }
+    }
     const turn: ConversationTurn = {
       id: nextTurnId(),
       role: 'brain',
-      text: replyTextForQuery(text, matches),
+      text: replyText,
       restaurants: matches,
       chips: ['¿Qué pedir?', 'Comparar con otro', '¿Vale la pena?'],
       createdAt: Date.now(),
     };
-    return delay(turn, 650);
+    return delay(turn, 200);
   },
 
   async getSavedIds() {

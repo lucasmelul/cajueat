@@ -19,7 +19,8 @@ export interface BrainClient {
   getAllRestaurants(): Promise<Restaurant[]>;
   getRestaurant(id: string): Promise<Restaurant | undefined>;
   getSimilarRestaurants(id: string, limit?: number): Promise<Restaurant[]>;
-  sendMessage(input: { text: string; history: ConversationTurn[] }): Promise<ConversationTurn>;
+  /** `onDelta` fires with plain-text chunks of the reply as they're generated (SPEC-002: never a single completed block). */
+  sendMessage(input: { text: string; history: ConversationTurn[] }, onDelta?: (chunk: string) => void): Promise<ConversationTurn>;
 
   /** Memory now lives in the Brain (SPEC-006) — these mutate server-side state, not local UI state. */
   getSavedIds(): Promise<string[]>;

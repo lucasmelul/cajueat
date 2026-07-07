@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ConversationTurn, Restaurant } from '../types.js';
+import { createStringFieldExtractor } from './streamingJsonField.js';
 
 /**
  * The only place the Brain talks to Claude (SPEC-002 Conversation, SPEC-005
@@ -47,17 +48,28 @@ esté en la lista. Si nada calza bien, elegí la opción más cercana y decilo c
 en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips de
 seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;
 
-export async function interpretQuery(input: {
-  text: string;
-  history: ConversationTurn[];
-  catalog: Restaurant[];
-}): Promise<InterpretedQuery> {
+/**
+ * Streams the model's raw JSON as it's generated (SPEC-002: "el usuario debe
+ * sentir que el Brain está razonando", never a spinner followed by a full
+ * block). `onDelta` fires with just the growing `reply` field's plain text,
+ * extracted incrementally from the still-generating JSON — restaurantIds and
+ * chips are only read once the full response is in and schema-validated, same
+ * grounding check as before.
+ */
+export async function interpretQuery(
+  input: {
+    text: string;
+    history: ConversationTurn[];
+    catalog: Restaurant[];
+  },
+  onDelta?: (chunk: string) => void,
+): Promise<InterpretedQuery> {
   const historyText = input.history
     .slice(-6)
     .map((t) => `${t.role === 'user' ? 'Usuario' : 'Brain'}: ${t.text ?? ''}`)
     .join('\n');
 
-  const response = await getClient().messages.create({
+  const stream = getClient().messages.stream({
     model: MODEL,
     max_tokens: 500,
     system: QUERY_SYSTEM_PROMPT,
@@ -84,7 +96,16 @@ export async function interpretQuery(input: {
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const replyExtractor = createStringFieldExtractor('reply');
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      const delta = replyExtractor.push(event.delta.text);
+      if (delta) onDelta?.(delta);
+    }
+  }
+
+  const finalMessage = await stream.finalMessage();
+  const textBlock = finalMessage.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
   const parsed = textBlock ? (JSON.parse(textBlock.text) as InterpretedQuery) : { restaurantIds: [], reply: '', chips: [] };
 
   // Never trust the model's IDs blindly — only real, known restaurants leave this function.

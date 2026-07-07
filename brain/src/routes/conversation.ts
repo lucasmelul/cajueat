@@ -24,7 +24,15 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     if (!usage.allowed) return res.status(429).json({ error: 'anon_limit_reached', requiresSync: true });
 
     const catalog = getCatalog();
-    const interpreted = await interpretQuery({ text, history, catalog });
+
+    // SPEC-002: "las respuestas nunca aparecen completas" — a chunked ND-JSON body (not
+    // a single res.json()) so the client can render the reply as it's generated, not
+    // after it's done. `delta` lines carry plain text; the final `done` line carries the
+    // full, grounding-checked turn, identical in shape to the old non-streaming response.
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    const interpreted = await interpretQuery({ text, history, catalog }, (chunk) => {
+      res.write(`${JSON.stringify({ type: 'delta', text: chunk })}\n`);
+    });
     const restaurants = interpreted.restaurantIds.map((id) => catalog.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => !!r);
 
     const turn: ConversationTurn = {
@@ -35,7 +43,8 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
       chips: interpreted.chips,
       createdAt: Date.now(),
     };
-    res.json(turn);
+    res.write(`${JSON.stringify({ type: 'done', turn })}\n`);
+    res.end();
   } catch (err) {
     next(err);
   }

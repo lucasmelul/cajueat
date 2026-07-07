@@ -1,5 +1,6 @@
 import type { BrainClient } from './BrainClient';
 import { getAnonId } from './identity';
+import type { ConversationTurn } from '../../types';
 
 const BASE_URL = import.meta.env.VITE_BRAIN_URL as string;
 
@@ -53,8 +54,43 @@ export const httpBrainClient: BrainClient = {
 
   getSimilarRestaurants: (id, limit = 3) => request(`/restaurants/${id}/similar?limit=${limit}`),
 
-  sendMessage: ({ text, history }) =>
-    request('/messages', { method: 'POST', body: JSON.stringify({ text, history }) }),
+  // SPEC-002: the Brain sends the reply as a chunked ND-JSON body, not a single JSON
+  // object — read it as a stream so `onDelta` can fire as text is actually generated,
+  // rather than buffering the whole response before showing anything.
+  sendMessage: async ({ text, history }, onDelta) => {
+    const res = await fetch(`${BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Caju-User-Id': getAnonId() },
+      body: JSON.stringify({ text, history }),
+    });
+    if (res.status === 429) throw new BrainSyncRequiredError();
+    if (!res.ok || !res.body) throw new Error(`Brain request failed: POST /messages (${res.status})`);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let turn: ConversationTurn | null = null;
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIdx = buffer.indexOf('\n');
+      while (newlineIdx !== -1) {
+        const line = buffer.slice(0, newlineIdx);
+        buffer = buffer.slice(newlineIdx + 1);
+        if (line.trim()) {
+          const msg = JSON.parse(line) as { type: 'delta'; text: string } | { type: 'done'; turn: ConversationTurn };
+          if (msg.type === 'delta') onDelta?.(msg.text);
+          else turn = msg.turn;
+        }
+        newlineIdx = buffer.indexOf('\n');
+      }
+    }
+
+    if (!turn) throw new Error('Brain stream ended without a final turn');
+    return turn;
+  },
 
   getSavedIds: () => request('/saved'),
 
