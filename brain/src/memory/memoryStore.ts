@@ -12,7 +12,7 @@ import type { Collection, DnaTag, User } from '../types.js';
  * user counts; a real database is a later step (explicit scope note).
  */
 
-interface Contribution {
+export interface Contribution {
   label: string;
   points: number;
   when: number;

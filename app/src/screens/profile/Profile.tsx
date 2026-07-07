@@ -7,14 +7,18 @@ import { BrainMark } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { getCurrentSubscription, getPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../../lib/push/pushClient';
 import { useAppStore } from '../../lib/store/useAppStore';
-import type { Restaurant } from '../../types';
+import type { Contribution, PendingFeedback, Restaurant } from '../../types';
 import './Profile.css';
 
-const CONTRIBUTIONS = [
-  { label: 'Confirmaste horarios de Anafe', when: 'hace 2 días', points: 15 },
-  { label: 'Subiste una foto del omakase', when: 'hace 1 semana', points: 20 },
-  { label: 'Respondiste un quiz de ambiente', when: 'hace 2 semanas', points: 10 },
-];
+/** "hace 2 días" / "hace 1 semana" style, same tone as the rest of the product — no raw dates in the UI. */
+function timeAgo(when: number): string {
+  const days = Math.floor((Date.now() - when) / 86400_000);
+  if (days <= 0) return 'hoy';
+  if (days === 1) return 'hace 1 día';
+  if (days < 14) return `hace ${days} días`;
+  const weeks = Math.floor(days / 7);
+  return weeks === 1 ? 'hace 1 semana' : `hace ${weeks} semanas`;
+}
 
 /** How the Brain understands the user — not a social profile (SPEC-010, CP-011). */
 export function Profile() {
@@ -42,12 +46,18 @@ export function Profile() {
   const [devCode, setDevCode] = useState('');
   const [syncError, setSyncError] = useState('');
   const [pushState, setPushState] = useState<'idle' | 'checking' | 'granted' | 'denied' | 'unsupported'>('idle');
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [pendingFeedback, setPendingFeedback] = useState<PendingFeedback[]>([]);
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
     hydrateMemory();
     loadCollections();
     brain.getAllRestaurants().then(setAllRestaurants);
+    brain.getActivity().then(({ contributions, pendingFeedback }) => {
+      setContributions(contributions);
+      setPendingFeedback(pendingFeedback);
+    });
     if (!isPushSupported()) {
       setPushState('unsupported');
     } else {
@@ -118,14 +128,16 @@ export function Profile() {
           {user && <CajuPoints value={user.cajuPoints} size="lg" unit="Caju Points" />}
         </div>
 
-        <div className="cj-prof-nudge" onClick={() => openOverlay('feedback')}>
-          <BrainMark size={34} radius={11} />
-          <div className="cj-prof-nudge__t">
-            <b>¿Cómo estuvo Osaka?</b>
-            <span>Contame en 20s y mejorás tus próximas recomendaciones.</span>
+        {pendingFeedback.length > 0 && (
+          <div className="cj-prof-nudge" onClick={() => openOverlay('feedback', pendingFeedback[0].restaurantId)}>
+            <BrainMark size={34} radius={11} />
+            <div className="cj-prof-nudge__t">
+              <b>¿Cómo estuvo {pendingFeedback[0].restaurantName}?</b>
+              <span>Contame en 20s y mejorás tus próximas recomendaciones.</span>
+            </div>
+            <ChevronRight size={20} />
           </div>
-          <ChevronRight size={20} />
-        </div>
+        )}
 
         <section className="cj-prof-sec">
           <div className="cj-prof-sech">
@@ -303,17 +315,21 @@ export function Profile() {
         <section className="cj-prof-sec">
           <Badge tone="over">Tus aportes</Badge>
           <div className="cj-timeline">
-            {CONTRIBUTIONS.map((c) => (
-              <div className="cj-tl" key={c.label}>
-                <span className="cj-tl__dot" />
-                <div>
-                  <b>{c.label}</b>
-                  <span>
-                    {c.when} · +{c.points}
-                  </span>
+            {contributions.length === 0 ? (
+              <p className="cj-empty">Todavía no hiciste ningún aporte.</p>
+            ) : (
+              contributions.map((c, i) => (
+                <div className="cj-tl" key={`${c.when}-${i}`}>
+                  <span className="cj-tl__dot" />
+                  <div>
+                    <b>{c.label}</b>
+                    <span>
+                      {timeAgo(c.when)} · +{c.points}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <Button variant="brandGhost" size="md" block iconLeft={<Plus size={18} />} onClick={() => openOverlay('capture')}>
             Aportar conocimiento

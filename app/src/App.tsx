@@ -15,7 +15,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const showTabBar = TOP_LEVEL_ROUTES.includes(location.pathname);
-  const { overlay, closeOverlay, user, setUser } = useAppStore();
+  const { overlay, overlayRestaurantId, closeOverlay, user, setUser } = useAppStore();
 
   // First-run gate (PRD-010 Onboarding): route to /onboarding until the Brain says it's done,
   // and don't let an already-onboarded user land back on it (e.g. via a stale/direct URL).
@@ -49,6 +49,7 @@ function App() {
         {/* Feedback's CTA reads "Volver al mapa" — it always returns Home, not just wherever it was opened from. */}
         {overlay === 'feedback' && (
           <Feedback
+            restaurantId={overlayRestaurantId}
             onClose={() => {
               closeOverlay();
               navigate('/');

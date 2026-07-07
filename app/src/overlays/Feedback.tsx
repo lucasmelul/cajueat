@@ -13,7 +13,7 @@ interface Question {
 }
 
 export interface FeedbackProps {
-  /** Which visit this feedback is about. Defaults to the restaurant the Profile nudge points at. */
+  /** Which visit this feedback is about — Profile's nudge always passes the real oldest saved-without-feedback restaurant (SPEC-016). */
   restaurantId?: string;
   onClose: () => void;
 }

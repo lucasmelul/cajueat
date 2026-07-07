@@ -1,5 +1,5 @@
 import type { BrainClient } from './BrainClient';
-import type { Collection, CompareResult, ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
+import type { Collection, CompareResult, Contribution, ConversationTurn, DnaTag, RecommendationContext, TrustLevel } from '../../types';
 import { FIXTURE_EVENTS, FIXTURE_RESTAURANTS, FIXTURE_USER } from './fixtures';
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
@@ -75,6 +75,15 @@ function replyTextForQuery(text: string, matches: typeof FIXTURE_RESTAURANTS): s
 const memory = {
   user: { ...FIXTURE_USER },
   saved: { osaka: true, cuervo: true } as Record<string, boolean>,
+  // Real timestamps, same as memoryStore.ts — osaka already has feedback, cuervo doesn't (mirrors the
+  // real Brain's seeded demo state), so the mock's pending-feedback nudge has something real to show.
+  savedAt: { osaka: Date.now() - 10 * 86400_000, cuervo: Date.now() - 3 * 86400_000 } as Record<string, number>,
+  feedbackGiven: { osaka: Date.now() - 9 * 86400_000 } as Record<string, number>,
+  contributions: [
+    { label: 'Confirmaste horarios de Anafe', points: 15, when: Date.now() - 2 * 86400_000 },
+    { label: 'Subiste una foto del omakase', points: 20, when: Date.now() - 7 * 86400_000 },
+    { label: 'Respondiste un quiz de ambiente', points: 10, when: Date.now() - 14 * 86400_000 },
+  ] as Contribution[],
   dna: [
     { id: 'd1', label: 'Sushi tradicional' },
     { id: 'd2', label: 'Barras de chef' },
@@ -179,6 +188,7 @@ export const mockBrainClient: BrainClient = {
 
   async toggleSaved(id, saved) {
     memory.saved[id] = saved;
+    if (saved) memory.savedAt[id] = Date.now();
     return delay(undefined, 100);
   },
 
@@ -201,6 +211,8 @@ export const mockBrainClient: BrainClient = {
   async submitFeedback({ restaurantId, answers }) {
     const restaurant = FIXTURE_RESTAURANTS.find((r) => r.id === restaurantId);
     memory.user.cajuPoints += 45;
+    memory.feedbackGiven[restaurantId] = Date.now();
+    memory.contributions.unshift({ label: `Feedback sobre ${restaurant?.name ?? 'ese lugar'}`, points: 45, when: Date.now() });
     const learned = answers.length
       ? `Aprendimos que tu experiencia en ${restaurant?.name ?? 'ese lugar'} fue: ${answers.join(', ')}.`
       : `Gracias por contarnos sobre tu visita a ${restaurant?.name ?? 'ese lugar'}.`;
@@ -298,5 +310,18 @@ export const mockBrainClient: BrainClient = {
     if (code !== '123456') return delay({ linked: false }, 200);
     memory.user.phone = phone;
     return delay({ linked: true }, 200);
+  },
+
+  async getActivity() {
+    const pendingFeedback = Object.entries(memory.saved)
+      .filter(([, saved]) => saved)
+      .filter(([id]) => !memory.feedbackGiven[id])
+      .map(([id]) => {
+        const restaurant = FIXTURE_RESTAURANTS.find((r) => r.id === id);
+        return restaurant ? { restaurantId: id, restaurantName: restaurant.name, savedAt: memory.savedAt[id] ?? Date.now() } : null;
+      })
+      .filter((x): x is { restaurantId: string; restaurantName: string; savedAt: number } => x !== null)
+      .sort((a, b) => a.savedAt - b.savedAt);
+    return delay({ contributions: memory.contributions, pendingFeedback }, 150);
   },
 };

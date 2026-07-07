@@ -34,7 +34,9 @@ interface AppState {
 
   /** Knowledge Capture / Feedback / Search overlays — global because their triggers live outside any single screen (SPEC-004, SPEC-011, SPEC-008). */
   overlay: OverlayKind;
-  openOverlay: (kind: Exclude<OverlayKind, null>) => void;
+  /** Which restaurant Feedback opened for — set by Profile's real pending-feedback nudge, not guessed by the overlay itself. */
+  overlayRestaurantId: string | undefined;
+  openOverlay: (kind: Exclude<OverlayKind, null>, restaurantId?: string) => void;
   closeOverlay: () => void;
 
   /** ADN gastronómico (CP-011, SPEC-010) — server-authoritative cache, same pattern as `saved`. */
@@ -78,8 +80,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => (state.user ? { user: { ...state.user, cajuPoints: state.user.cajuPoints + n } } : state)),
 
   overlay: null,
-  openOverlay: (kind) => set({ overlay: kind }),
-  closeOverlay: () => set({ overlay: null }),
+  overlayRestaurantId: undefined,
+  openOverlay: (kind, restaurantId) => set({ overlay: kind, overlayRestaurantId: restaurantId }),
+  closeOverlay: () => set({ overlay: null, overlayRestaurantId: undefined }),
 
   dna: [],
   removeDnaTag: async (id) => {

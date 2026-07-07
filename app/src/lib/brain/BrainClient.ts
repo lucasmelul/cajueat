@@ -1,4 +1,16 @@
-import type { Collection, CompareResult, ConversationTurn, DnaTag, MapEvent, RecommendationContext, Recommendations, Restaurant, User } from '../../types';
+import type {
+  Collection,
+  CompareResult,
+  ConversationTurn,
+  Contribution,
+  DnaTag,
+  MapEvent,
+  PendingFeedback,
+  RecommendationContext,
+  Recommendations,
+  Restaurant,
+  User,
+} from '../../types';
 
 /**
  * The only way any screen talks to the Brain (CP-002 Product Architecture:
@@ -49,4 +61,7 @@ export interface BrainClient {
   requestSyncCode(phone: string): Promise<{ sent: boolean; devCode?: string }>;
   /** Step 2: attaches the phone to this anonymous Brain. `conflict: true` means that phone is already linked elsewhere — never silently merged. */
   verifySyncCode(phone: string, code: string): Promise<{ linked: boolean; conflict?: boolean }>;
+
+  /** SPEC-011/SPEC-016: real contributions timeline + real saved-without-feedback restaurants — never fixture text. */
+  getActivity(): Promise<{ contributions: Contribution[]; pendingFeedback: PendingFeedback[] }>;
 }

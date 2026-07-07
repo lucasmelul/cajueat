@@ -17,6 +17,7 @@ import { compareRouter } from './routes/compare.js';
 import { identityRouter } from './routes/identity.js';
 import { adminRouter } from './routes/admin.js';
 import { pushRouter } from './routes/push.js';
+import { activityRouter } from './routes/activity.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api', onboardingRouter);
 app.use('/api', compareRouter);
 app.use('/api', adminRouter);
 app.use('/api', pushRouter);
+app.use('/api', activityRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

@@ -125,4 +125,6 @@ export const httpBrainClient: BrainClient = {
   requestSyncCode: (phone) => request('/identity/otp/request', { method: 'POST', body: JSON.stringify({ phone }) }),
 
   verifySyncCode: (phone, code) => request('/identity/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
+
+  getActivity: () => request('/activity'),
 };
