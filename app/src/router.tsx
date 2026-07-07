@@ -6,6 +6,7 @@ import { Restaurant } from './screens/restaurant/Restaurant';
 import { Profile } from './screens/profile/Profile';
 import { Onboarding } from './screens/onboarding/Onboarding';
 import { Admin } from './screens/admin/Admin';
+import { Share } from './screens/share/Share';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: '/profile', element: <Profile /> },
       { path: '/onboarding', element: <Onboarding /> },
       { path: '/admin', element: <Admin /> },
+      { path: '/share', element: <Share /> },
     ],
   },
 ]);

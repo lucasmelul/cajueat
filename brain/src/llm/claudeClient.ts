@@ -179,6 +179,50 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
   return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
 }
 
+const CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en medio de una conversación normal — la
+mayoría de los mensajes son preguntas o pedidos de recomendación, NO aportes de conocimiento nuevo. Tu única tarea
+acá es detectar el caso excepcional: que el usuario, de paso, te haya contado algo real que vivió o sabe sobre un
+lugar (una opinión, una experiencia, una corrección, un dato concreto) — nunca una pregunta ni un pedido, aunque
+mencione un restaurante real. Si el mensaje es una pregunta o un pedido (ej. "recomendame algo cerca", "¿Osaka es
+bueno para ir en pareja?"), devolvé restaurantId null y learned vacío — ahí no hay nada que aprender. Si realmente
+compartió algo nuevo sobre un restaurante real de la lista, identificá cuál (o null si no está en la lista) y
+resumí en UNA oración corta qué aprendiste, basándote solo en lo que escribió — nunca inventes. Español.`;
+
+/** SPEC-004 "Desde conversación": a normal chat message can also teach the Brain something, without a separate capture flow — same grounded discipline as extractNoteKnowledge, but conservative about not treating questions as knowledge. */
+export async function extractConversationKnowledge(input: { text: string; catalog: Restaurant[] }): Promise<NoteExtraction> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 200,
+    system: CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nMensaje del usuario: "${input.text}"`,
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            restaurantId: { type: ['string', 'null'] },
+            learned: { type: 'string' },
+          },
+          required: ['restaurantId', 'learned'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  const parsed = textBlock ? (JSON.parse(textBlock.text) as NoteExtraction) : { restaurantId: null, learned: '' };
+
+  const knownIds = new Set(input.catalog.map((r) => r.id));
+  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+}
+
 export interface CompareResult {
   recommendedId: string | null;
   reasoning: string;

@@ -21,6 +21,10 @@ interface AppState {
   pendingQuery: string | null;
   setPendingQuery: (query: string | null) => void;
 
+  /** Content the OS Share Sheet handed off to CajuEat (SPEC-004) — consumed once by KnowledgeCapture's link input. */
+  pendingShare: { url: string; text: string } | null;
+  setPendingShare: (share: { url: string; text: string } | null) => void;
+
   /**
    * Shared across screens so Caju Points earned in one place (Feedback,
    * Knowledge Capture) show up everywhere (Living Map header, Profile)
@@ -73,6 +77,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   pendingQuery: null,
   setPendingQuery: (query) => set({ pendingQuery: query }),
+
+  pendingShare: null,
+  setPendingShare: (share) => set({ pendingShare: share }),
 
   user: null,
   setUser: (u) => set({ user: u }),

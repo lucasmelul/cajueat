@@ -43,8 +43,15 @@ export interface KnowledgeCaptureProps {
 /** Overlay sheet to teach the Brain something new in under 30s — no forms (SPEC-004, PRD-004). */
 export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const addCajuPoints = useAppStore((s) => s.addCajuPoints);
+  const pendingShare = useAppStore((s) => s.pendingShare);
+  const setPendingShare = useAppStore((s) => s.setPendingShare);
   const [stage, setStage] = useState<Stage>('pick');
-  const [link, setLink] = useState('');
+  const [link, setLink] = useState(() => {
+    // SPEC-004 Share Sheet: pre-fill from whatever the OS handed off, never auto-submit —
+    // the user still has to tap "Enviar" once they see it, same confirmation step as pasting manually.
+    if (!pendingShare) return '';
+    return pendingShare.url || pendingShare.text;
+  });
   const [note, setNote] = useState('');
   const [voiceText, setVoiceText] = useState('');
   const [listening, setListening] = useState(false);
@@ -60,7 +67,9 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
 
   useEffect(() => {
     setSpeechSupported(!!getSpeechRecognition());
+    if (pendingShare) setPendingShare(null); // consumed once into `link`'s initial value above
     return () => recognitionRef.current?.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const start = (kind: string, text?: string, image?: string, mediaType?: string) => {
@@ -170,7 +179,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             <div className="cj-cap-link">
               <Link2 size={18} />
               <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="o pegá un link de Instagram, YouTube…" />
-              <Button size="sm" variant="primary" onClick={() => start('link')} disabled={!link.trim()}>
+              <Button size="sm" variant="primary" onClick={() => start('link', link.trim())} disabled={!link.trim()}>
                 Enviar
               </Button>
             </div>

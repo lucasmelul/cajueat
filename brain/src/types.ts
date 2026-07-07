@@ -126,6 +126,10 @@ export interface ConversationTurn {
   chips?: string[];
   thinking?: boolean;
   createdAt: number;
+  /** Set when this user message also taught the Brain something new about a real place (SPEC-004 "Desde conversación") — the restaurant name, for a subtle UI acknowledgment. */
+  learnedAbout?: string;
+  /** Real Caju Points awarded for `learnedAbout`, so the client can update the local balance instead of guessing the amount. */
+  learnedPoints?: number;
 }
 
 /** A learned, evidence-backed fact about the user (SPEC-006 Memory Engine). */

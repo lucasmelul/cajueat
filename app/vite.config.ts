@@ -34,6 +34,18 @@ export default defineConfig({
         // TODO: replace with real maskable/any icon set (192/512 png)
         // generated from the Wordmark/BrainMark once the brand assets exist.
         icons: [],
+        // SPEC-004 "Share Sheet (Principal)": registers CajuEat as a native OS share target
+        // (Instagram → Compartir → CajuEat). GET-based so it's a plain navigation the SPA
+        // router can handle — no service worker POST handling needed for text/url shares.
+        share_target: {
+          action: '/share',
+          method: 'GET',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+          },
+        },
       },
     }),
   ],

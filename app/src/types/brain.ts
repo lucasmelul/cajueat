@@ -43,4 +43,8 @@ export interface ConversationTurn {
   chips?: string[];
   thinking?: boolean;
   createdAt: number;
+  /** Set when this user message also taught the Brain something new about a real place (SPEC-004 "Desde conversación"). */
+  learnedAbout?: string;
+  /** Real Caju Points awarded for `learnedAbout`. */
+  learnedPoints?: number;
 }

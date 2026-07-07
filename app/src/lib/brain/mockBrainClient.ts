@@ -63,6 +63,22 @@ function pickRestaurantsForQuery(text: string) {
   return [FIXTURE_RESTAURANTS[0]];
 }
 
+const CONVERSATION_LEARN_POINTS = 30;
+
+/**
+ * SPEC-004 "Desde conversación", mock version — no LLM here, so a simple heuristic stands in for
+ * extractConversationKnowledge: a question is never knowledge, and only a first-hand-sounding
+ * statement that names a real restaurant counts. Explicitly simulated, same honesty as the rest
+ * of this mock (never claims to actually understand the message).
+ */
+function detectConversationKnowledge(text: string): { restaurantId: string; restaurantName: string } | null {
+  if (text.includes('?')) return null;
+  const q = text.toLowerCase();
+  if (!/\bfui\b|\bestuve\b|com[ií]|prob[ée]|estuvo|recomiendo|qued[oó]|cambiaron|cambi[oó]/.test(q)) return null;
+  const mentioned = FIXTURE_RESTAURANTS.find((r) => q.includes(r.name.toLowerCase()));
+  return mentioned ? { restaurantId: mentioned.id, restaurantName: mentioned.name } : null;
+}
+
 function replyTextForQuery(text: string, matches: typeof FIXTURE_RESTAURANTS): string {
   if (matches.length === 1) {
     const r = matches[0];
@@ -171,6 +187,11 @@ export const mockBrainClient: BrainClient = {
         onDelta(i === 0 ? words[i] : ` ${words[i]}`);
       }
     }
+    const knowledge = detectConversationKnowledge(text);
+    if (knowledge) {
+      memory.contributions.unshift({ label: `Le enseñaste algo a Caju sobre ${knowledge.restaurantName}`, points: CONVERSATION_LEARN_POINTS, when: Date.now() });
+      memory.user.cajuPoints += CONVERSATION_LEARN_POINTS;
+    }
     const turn: ConversationTurn = {
       id: nextTurnId(),
       role: 'brain',
@@ -178,6 +199,8 @@ export const mockBrainClient: BrainClient = {
       restaurants: matches,
       chips: ['¿Qué pedir?', 'Comparar con otro', '¿Vale la pena?'],
       createdAt: Date.now(),
+      learnedAbout: knowledge?.restaurantName,
+      learnedPoints: knowledge ? CONVERSATION_LEARN_POINTS : undefined,
     };
     return delay(turn, 200);
   },

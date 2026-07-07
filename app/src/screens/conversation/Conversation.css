@@ -115,6 +115,10 @@
   gap: 8px;
   padding-left: 38px;
 }
+.cj-turn__learned {
+  padding-left: 38px;
+  margin-top: 6px;
+}
 .cj-convo__prompt {
   flex-shrink: 0;
   padding: 10px 14px calc(10px + var(--safe-bottom));

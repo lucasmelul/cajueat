@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { getCatalog } from '../data/restaurants.js';
-import { interpretQuery } from '../llm/claudeClient.js';
+import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
-import { checkAndConsumeUsage } from '../memory/memoryStore.js';
+import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
 import type { ConversationTurn } from '../types.js';
+
+const CONVERSATION_LEARN_POINTS = 30;
 
 export const conversationRouter = Router();
 
@@ -35,6 +37,24 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     });
     const restaurants = interpreted.restaurantIds.map((id) => catalog.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => !!r);
 
+    // SPEC-004 "Desde conversación": most messages are questions, not knowledge — only worth a
+    // second, conservative check when the raw text actually names a real place. Gating on
+    // `interpreted.restaurantIds` would miss the main case (sharing an experience produces no
+    // recommendation at all, so interpretQuery legitimately grounds nothing) — a cheap local
+    // name match is the right gate here, not the recommendation result.
+    const mentionsRealPlace = catalog.some((r) => text.toLowerCase().includes(r.name.toLowerCase()));
+    let learnedAbout: string | undefined;
+    let learnedPoints: number | undefined;
+    if (mentionsRealPlace) {
+      const knowledge = await extractConversationKnowledge({ text, catalog });
+      const restaurant = knowledge.restaurantId ? catalog.find((r) => r.id === knowledge.restaurantId) : undefined;
+      if (restaurant && knowledge.learned) {
+        recordContribution(req.userId!, `Le enseñaste algo a Caju sobre ${restaurant.name}`, CONVERSATION_LEARN_POINTS);
+        learnedAbout = restaurant.name;
+        learnedPoints = CONVERSATION_LEARN_POINTS;
+      }
+    }
+
     const turn: ConversationTurn = {
       id: nextTurnId(),
       role: 'brain',
@@ -42,6 +62,8 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
       restaurants,
       chips: interpreted.chips,
       createdAt: Date.now(),
+      learnedAbout,
+      learnedPoints,
     };
     res.write(`${JSON.stringify({ type: 'done', turn })}\n`);
     res.end();

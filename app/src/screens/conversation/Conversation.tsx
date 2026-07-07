@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Map as MapIcon } from 'lucide-react';
 import { BrainMark, ChatBubble, PromptBar, highlightText } from '../../components/brain';
-import { Chip } from '../../components/core';
+import { Badge, Chip } from '../../components/core';
 import { RestaurantCard } from '../../components/discovery';
 import { brain, BrainSyncRequiredError } from '../../lib/brain';
 import { useAppStore } from '../../lib/store/useAppStore';
@@ -19,7 +19,7 @@ function nextLocalId() {
 
 export function Conversation() {
   const navigate = useNavigate();
-  const { saved, toggleSaved, pendingQuery, setPendingQuery } = useAppStore();
+  const { saved, toggleSaved, pendingQuery, setPendingQuery, addCajuPoints } = useAppStore();
   const [value, setValue] = useState('');
   const [turns, setTurns] = useState<ConversationTurn[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -48,6 +48,8 @@ export function Conversation() {
       });
       setThinking(false);
       setTurns((t) => (streaming ? t.map((turn) => (turn.id === streamId ? reply : turn)) : [...t, reply]));
+      // SPEC-004 "Desde conversación": the Brain silently recorded a real contribution — reflect the real points here too.
+      if (reply.learnedPoints) addCajuPoints(reply.learnedPoints);
     } catch (err) {
       setThinking(false);
       // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
@@ -155,6 +157,13 @@ export function Conversation() {
                 </div>
               )}
             </ChatBubble>
+            {t.learnedAbout && (
+              <div className="cj-turn__learned">
+                <Badge tone="brand" dot>
+                  Le enseñaste algo a Caju sobre {t.learnedAbout}
+                </Badge>
+              </div>
+            )}
             {t.chips && !thinking && i === turns.length - 1 && (
               <div className="cj-turn__chips">
                 {t.chips.map((c) => {

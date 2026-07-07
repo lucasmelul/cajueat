@@ -57,7 +57,9 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
   }
 
   // Reel/TikTok/link: sigue como simulación honesta — requiere una decisión legal/de costo (SPEC-015), no técnica.
+  // El link en sí ahora sí llega y queda registrado (antes se descartaba en el cliente) — lo que sigue sin
+  // pasar es el scraping real del contenido, no la recepción del link.
   const learned = `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento sobre la zona.`;
-  recordContribution(req.userId!, `Aportaste ${label}`, POINTS);
+  recordContribution(req.userId!, text ? `Aportaste ${label}: ${text.slice(0, 80)}` : `Aportaste ${label}`, POINTS);
   res.json({ learned, pointsAwarded: POINTS });
 });
