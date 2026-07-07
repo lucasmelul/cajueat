@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { Badge, Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorAnalysis, CuratorRecord } from '../../lib/admin/adminClient';
+import type { CuratorAnalysis, CuratorRecord, PendingContribution } from '../../lib/admin/adminClient';
 import type { Restaurant } from '../../types';
 import './Admin.css';
 
 const TRUST_TONE: Record<Restaurant['trust'], 'success' | 'brand' | 'danger'> = { high: 'success', mid: 'brand', low: 'danger' };
+const SOURCE_LABEL: Record<PendingContribution['source'], string> = { note: 'Nota', photo: 'Foto', voice: 'Voz', conversation: 'Conversación' };
 
 /** SPEC-018 Admin CMS: another client of the Brain — never a login for regular users, gated by an operator shared secret (SPEC-018 §Acceso). */
 export function Admin() {
@@ -18,6 +19,8 @@ export function Admin() {
   const [gateLoading, setGateLoading] = useState(false);
   const [catalog, setCatalog] = useState<Restaurant[]>([]);
   const [curators, setCurators] = useState<CuratorRecord[]>([]);
+  const [pendingContributions, setPendingContributions] = useState<PendingContribution[]>([]);
+  const [pendingBusyId, setPendingBusyId] = useState<string | null>(null);
 
   const [curatorHandle, setCuratorHandle] = useState('');
   const [curatorText, setCuratorText] = useState('');
@@ -35,9 +38,10 @@ export function Admin() {
   const loadCatalog = async () => {
     setGateLoading(true);
     try {
-      const [data, curatorData] = await Promise.all([adminClient.getCatalog(), adminClient.getCurators()]);
+      const [data, curatorData, pending] = await Promise.all([adminClient.getCatalog(), adminClient.getCurators(), adminClient.getPendingContributions()]);
       setCatalog(data);
       setCurators(curatorData);
+      setPendingContributions(pending);
       setAuthed(true);
       setGateError('');
     } catch (err) {
@@ -93,6 +97,28 @@ export function Admin() {
     });
     setConfirmedIdx((prev) => new Set(prev).add(index));
     loadCatalog();
+  };
+
+  // SPEC-019: same "nunca se aplica sola" discipline — un tap por aporte, siempre el operador de por medio.
+  const confirmPending = async (id: string) => {
+    setPendingBusyId(id);
+    try {
+      await adminClient.confirmPendingContribution(id);
+      setPendingContributions((prev) => prev.filter((c) => c.id !== id));
+      loadCatalog();
+    } finally {
+      setPendingBusyId(null);
+    }
+  };
+
+  const rejectPending = async (id: string) => {
+    setPendingBusyId(id);
+    try {
+      await adminClient.rejectPendingContribution(id);
+      setPendingContributions((prev) => prev.filter((c) => c.id !== id));
+    } finally {
+      setPendingBusyId(null);
+    }
   };
 
   const createRestaurant = async () => {
@@ -188,6 +214,34 @@ export function Admin() {
                       {domain}: +{rec.sustained} / -{rec.contradicted}
                     </span>
                   ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="cj-admin-sec">
+          <Badge tone="over">Aportes de usuarios · pendientes</Badge>
+          <p className="cj-admin-lead">
+            Lo que un usuario le enseñó al Brain sobre un lugar real (Nota, Foto, Voz, o de paso en una conversación) —
+            nunca llega al catálogo compartido sin que lo confirmes acá (SPEC-019).
+          </p>
+          {pendingContributions.length === 0 && <p className="cj-admin-lead">No hay aportes pendientes de revisión.</p>}
+          <div className="cj-admin-analysis">
+            {pendingContributions.map((c) => (
+              <div className="cj-admin-match" key={c.id}>
+                <div className="cj-admin-match__head">
+                  <b>{c.restaurantName}</b>
+                  <Badge tone="brand">{SOURCE_LABEL[c.source]}</Badge>
+                </div>
+                <p>{c.claim}</p>
+                <div className="cj-admin-pending__actions">
+                  <Button size="sm" variant="primary" disabled={pendingBusyId === c.id} onClick={() => confirmPending(c.id)}>
+                    Confirmar y agregar como fuente
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={pendingBusyId === c.id} onClick={() => rejectPending(c.id)}>
+                    Rechazar
+                  </Button>
                 </div>
               </div>
             ))}

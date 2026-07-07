@@ -3,6 +3,7 @@ import { getCatalog } from '../data/restaurants.js';
 import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
+import { enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
 import type { ConversationTurn } from '../types.js';
 
 const CONVERSATION_LEARN_POINTS = 30;
@@ -50,6 +51,8 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
       const restaurant = knowledge.restaurantId ? catalog.find((r) => r.id === knowledge.restaurantId) : undefined;
       if (restaurant && knowledge.learned) {
         recordContribution(req.userId!, `Le enseñaste algo a Caju sobre ${restaurant.name}`, CONVERSATION_LEARN_POINTS);
+        // SPEC-019: same moderation queue as Nota/Foto/Voz — never straight to the shared catalog.
+        enqueuePendingContribution({ restaurantId: restaurant.id, claim: knowledge.learned, source: 'conversation' });
         learnedAbout = restaurant.name;
         learnedPoints = CONVERSATION_LEARN_POINTS;
       }

@@ -57,10 +57,27 @@ export interface CuratorRecord {
   domains: Record<string, { sustained: number; contradicted: number }>;
 }
 
+/** SPEC-019: what a regular user's Nota/Foto/Voz/conversation message taught the Brain, awaiting operator review. */
+export interface PendingContribution {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  claim: string;
+  source: 'note' | 'photo' | 'voice' | 'conversation';
+  createdAt: number;
+  status: 'pending' | 'confirmed' | 'rejected';
+}
+
 export const adminClient = {
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
 
   getCurators: () => request<CuratorRecord[]>('/admin/curators'),
+
+  getPendingContributions: () => request<PendingContribution[]>('/admin/pending-contributions'),
+
+  confirmPendingContribution: (id: string) => request<Restaurant>(`/admin/pending-contributions/${id}/confirm`, { method: 'POST' }),
+
+  rejectPendingContribution: (id: string) => request<PendingContribution>(`/admin/pending-contributions/${id}/reject`, { method: 'POST' }),
 
   updateRestaurant: (id: string, patch: Partial<Restaurant>) =>
     request<Restaurant>(`/admin/restaurants/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),

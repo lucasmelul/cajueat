@@ -3,6 +3,7 @@ import { getAllCurators } from '../curators/curatorStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
+import { getPendingContributionById, getPendingContributions, markContributionStatus } from '../moderation/pendingContributionsStore.js';
 import { notifyNewPlaceIfMatches, notifyTrustChangeIfSaved } from '../notifications/triggers.js';
 import type { Source, SourceKind, SignalWeight } from '../types.js';
 
@@ -110,4 +111,49 @@ adminRouter.post('/admin/analyze', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+/**
+ * SPEC-019 User Contribution Moderation: what a regular user's Nota/Foto/Voz/conversation
+ * message taught the Brain, joined with the real restaurant name for display — same
+ * "confirm one by one, never applied on its own" pattern as /admin/analyze's suggestions.
+ */
+adminRouter.get('/admin/pending-contributions', (_req, res) => {
+  const catalog = getCatalog();
+  const pending = getPendingContributions()
+    .map((c) => {
+      const restaurant = catalog.find((r) => r.id === c.restaurantId);
+      return restaurant ? { ...c, restaurantName: restaurant.name } : null;
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+  res.json(pending);
+});
+
+/** Confirm: becomes a real Source, kind `community`, weight `weak` — never a higher weight just because an operator approved it fast. */
+adminRouter.post('/admin/pending-contributions/:id/confirm', (req, res) => {
+  const pending = getPendingContributionById(req.params.id);
+  if (!pending || pending.status !== 'pending') {
+    res.status(404).json({ error: 'pending_contribution_not_found' });
+    return;
+  }
+  const before = getRestaurantById(pending.restaurantId);
+  const source: Source = { name: 'Un usuario', kind: 'community', weight: 'weak', capturedAt: new Date().toISOString(), claim: pending.claim };
+  const updated = addSourceToRestaurant(pending.restaurantId, source);
+  if (!updated) {
+    res.status(404).json({ error: 'restaurant_not_found' });
+    return;
+  }
+  markContributionStatus(pending.id, 'confirmed');
+  res.json(updated);
+  if (before) notifyTrustChangeIfSaved(updated, before.trust).catch((err) => console.error('notify_trust_change_failed', err));
+});
+
+/** Reject: marked, never deleted — same "keeps history" convention as the rest of the project. */
+adminRouter.post('/admin/pending-contributions/:id/reject', (req, res) => {
+  const updated = markContributionStatus(req.params.id, 'rejected');
+  if (!updated) {
+    res.status(404).json({ error: 'pending_contribution_not_found' });
+    return;
+  }
+  res.json(updated);
 });

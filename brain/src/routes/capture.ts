@@ -3,6 +3,7 @@ import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
+import { enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
 
 export const captureRouter = Router();
 
@@ -38,6 +39,11 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
     const learned = extraction.learned || `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento.`;
     recordContribution(req.userId!, restaurant ? `Aportaste ${label} sobre ${restaurant.name}` : `Aportaste ${label}`, POINTS);
+    // SPEC-019: real, grounded knowledge about a real place goes to the moderation queue —
+    // never straight to the shared catalog, no matter how confident the extraction is.
+    if (restaurant && extraction.learned) {
+      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: kind === 'voice' ? 'voice' : 'note' });
+    }
     res.json({ learned, pointsAwarded: POINTS });
     return;
   }
@@ -52,6 +58,9 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
     const learned = extraction.learned || 'Gracias por compartir la foto. El Brain la sumó a su conocimiento.';
     recordContribution(req.userId!, restaurant ? `Aportaste una foto de ${restaurant.name}` : 'Aportaste una foto', POINTS);
+    if (restaurant && extraction.learned) {
+      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'photo' });
+    }
     res.json({ learned, pointsAwarded: POINTS });
     return;
   }

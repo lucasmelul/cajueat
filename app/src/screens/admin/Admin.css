@@ -206,6 +206,10 @@
   color: var(--ink-400);
   font-style: italic;
 }
+.cj-admin-pending__actions {
+  display: flex;
+  gap: 8px;
+}
 
 .cj-admin-form {
   display: flex;
