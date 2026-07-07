@@ -208,7 +208,7 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
 ];
 
 export const FIXTURE_EVENTS: MapEvent[] = [
-  { id: 'feria', name: 'Feria gastronómica', when: 'sáb', position: { lat: -34.585, lng: -58.43 } },
+  { id: 'feria', name: 'Feria gastronómica', when: 'sáb', whenAt: '2026-07-11T18:00:00-03:00', position: { lat: -34.585, lng: -58.43 } },
 ];
 
 /** Roughly centers the three fixture neighborhoods (Palermo/Chacarita/Villa Crespo). */

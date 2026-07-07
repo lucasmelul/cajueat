@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { touchLastActive } from '../memory/memoryStore.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -19,6 +20,7 @@ declare global {
 export function identityMiddleware(req: Request, _res: Response, next: NextFunction) {
   const header = req.header('x-caju-user-id');
   req.userId = typeof header === 'string' && header.trim() ? header.trim() : undefined;
+  if (req.userId) touchLastActive(req.userId);
   next();
 }
 

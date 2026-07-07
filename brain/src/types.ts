@@ -71,7 +71,10 @@ export interface Restaurant {
 export interface MapEvent {
   id: string;
   name: string;
+  /** Short display label shown on the map/UI (e.g. "sáb") — not parseable, kept for the existing pin copy. */
   when: string;
+  /** Real ISO datetime the event happens — the actual signal the SPEC-016 "Eventos" push trigger schedules against. */
+  whenAt: string;
   position: GeoPoint;
 }
 

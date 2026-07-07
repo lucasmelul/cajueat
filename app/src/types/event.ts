@@ -4,6 +4,9 @@ import type { GeoPoint } from './restaurant';
 export interface MapEvent {
   id: string;
   name: string;
+  /** Short display label (e.g. "sáb") — not parseable. */
   when: string;
+  /** Real ISO datetime the event happens (SPEC-016 "Eventos" scheduling). */
+  whenAt: string;
   position: GeoPoint;
 }

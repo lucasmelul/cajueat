@@ -27,6 +27,14 @@ interface UsageCounter {
 interface MemoryState {
   user: User;
   saved: Record<string, boolean>;
+  /** When each restaurant was saved (ms epoch) — real signal for the "Recordatorios"/"Feedback pendiente" notification triggers (SPEC-016), not a guess. */
+  savedAt: Record<string, number>;
+  /** restaurantId -> when feedback was actually submitted for it — lets the pending-feedback trigger stop nudging once real feedback exists. */
+  feedbackGiven: Record<string, number>;
+  /** Last time this row was touched by an authenticated request — real inactivity signal for the "Recomendaciones" push trigger. */
+  lastActiveAt: number;
+  /** Per-notification-key cooldown (e.g. "recommendation", "feedback:osaka") so the scheduler never re-sends the same push every tick. */
+  notifiedAt: Record<string, number>;
   dna: DnaTag[];
   contributions: Contribution[];
   collections: Collection[];
@@ -67,6 +75,10 @@ function freshState(userId: string): MemoryState {
   return {
     user: { id: userId, name: 'Vos', initials: '?', cajuPoints: 0, onboarded: false },
     saved: {},
+    savedAt: {},
+    feedbackGiven: {},
+    lastActiveAt: Date.now(),
+    notifiedAt: {},
     dna: [],
     contributions: [],
     collections: [],
@@ -79,6 +91,10 @@ function seededDemoState(userId: string): MemoryState {
   return {
     user: { id: userId, name: 'Lucas', initials: 'L', cajuPoints: 1240, onboarded: false },
     saved: { osaka: true, cuervo: true },
+    savedAt: { osaka: Date.now() - 10 * 86400_000, cuervo: Date.now() - 3 * 86400_000 },
+    feedbackGiven: {},
+    lastActiveAt: Date.now(),
+    notifiedAt: {},
     dna: [
       { id: randomUUID(), label: 'Sushi tradicional' },
       { id: randomUUID(), label: 'Barras de chef' },
@@ -128,6 +144,11 @@ function getOrCreateUser(userId: string): MemoryState {
     state.usage = freshUsage();
     persist();
   }
+  // Backward-compatible with rows persisted before the SPEC-016 scheduler fields existed.
+  if (!state.savedAt) state.savedAt = {};
+  if (!state.feedbackGiven) state.feedbackGiven = {};
+  if (!state.lastActiveAt) state.lastActiveAt = Date.now();
+  if (!state.notifiedAt) state.notifiedAt = {};
   return state;
 }
 
@@ -154,7 +175,49 @@ export function getUsersWhoSaved(restaurantId: string): string[] {
 }
 
 export function setSaved(userId: string, restaurantId: string, saved: boolean) {
-  getOrCreateUser(userId).saved[restaurantId] = saved;
+  const state = getOrCreateUser(userId);
+  state.saved[restaurantId] = saved;
+  // Real timestamp for the "Recordatorios"/"Feedback pendiente" scheduler (SPEC-016) — re-saving
+  // later counts as a fresh save, since there's no feedback yet either way.
+  if (saved) state.savedAt[restaurantId] = Date.now();
+  persist();
+}
+
+/** SPEC-016: marks that real feedback was actually given for a saved place, so the pending-feedback trigger stops nudging about it. */
+export function markFeedbackGiven(userId: string, restaurantId: string) {
+  getOrCreateUser(userId).feedbackGiven[restaurantId] = Date.now();
+  persist();
+}
+
+/** Saved restaurants with no feedback yet, and when each was saved — the real signal behind "Recordatorios"/"Feedback pendiente" (SPEC-016), not a guessed visit. */
+export function getPendingFeedback(userId: string): { restaurantId: string; savedAt: number }[] {
+  const state = getOrCreateUser(userId);
+  return Object.entries(state.saved)
+    .filter(([, saved]) => saved)
+    .filter(([id]) => !state.feedbackGiven[id])
+    .map(([id]) => ({ restaurantId: id, savedAt: state.savedAt[id] ?? Date.now() }));
+}
+
+/** Touches "last seen" without creating a row for anonymous visitors who never did anything personal — only updates an existing one. Real inactivity signal for the "Recomendaciones" push trigger (SPEC-016). */
+export function touchLastActive(userId: string) {
+  const state = store.users[userId];
+  if (!state) return;
+  state.lastActiveAt = Date.now();
+  persist();
+}
+
+export function getLastActiveAt(userId: string): number {
+  return getOrCreateUser(userId).lastActiveAt;
+}
+
+/** Per-(user, notification key) cooldown so the scheduler tick never re-sends the same push before `cooldownMs` elapses (SPEC-016). */
+export function wasNotifiedRecently(userId: string, key: string, cooldownMs: number): boolean {
+  const last = getOrCreateUser(userId).notifiedAt[key];
+  return typeof last === 'number' && Date.now() - last < cooldownMs;
+}
+
+export function markNotified(userId: string, key: string) {
+  getOrCreateUser(userId).notifiedAt[key] = Date.now();
   persist();
 }
 

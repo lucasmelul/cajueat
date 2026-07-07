@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getRestaurantById } from '../data/restaurants.js';
 import { requireUserId } from '../middleware/identity.js';
-import { recordContribution } from '../memory/memoryStore.js';
+import { markFeedbackGiven, recordContribution } from '../memory/memoryStore.js';
 
 export const feedbackRouter = Router();
 
@@ -18,5 +18,6 @@ feedbackRouter.post('/feedback', requireUserId, (req, res) => {
     : `Gracias por contarnos sobre tu visita a ${place}.`;
 
   recordContribution(req.userId!, `Feedback sobre ${place}`, POINTS);
+  if (restaurant) markFeedbackGiven(req.userId!, restaurant.id);
   res.json({ learned, pointsAwarded: POINTS });
 });

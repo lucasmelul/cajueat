@@ -17,6 +17,7 @@ import { compareRouter } from './routes/compare.js';
 import { identityRouter } from './routes/identity.js';
 import { adminRouter } from './routes/admin.js';
 import { pushRouter } from './routes/push.js';
+import { startNotificationScheduler } from './notifications/scheduler.js';
 
 const app = express();
 app.use(cors());
@@ -48,4 +49,5 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 const port = Number(process.env.PORT) || 8787;
 app.listen(port, () => {
   console.log(`CajuEat Brain listening on http://localhost:${port}`);
+  startNotificationScheduler();
 });

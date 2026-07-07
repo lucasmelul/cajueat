@@ -5,13 +5,14 @@ import { sendPushToUser } from './pushSender.js';
 import { getAllSubscriptions } from './pushStore.js';
 
 /**
- * SPEC-016 Notifications: only two of the six named types have a real,
- * synchronous trigger today — both reuse Recommendation/Trust Engine
- * signals that already exist, never new business logic. The other four
- * (Recomendaciones, Recordatorios, Feedback pendiente, Eventos) genuinely
- * need a time-based scheduler that doesn't exist in this project yet —
- * left as an explicit gap rather than faked with an in-process setInterval
- * that would die with the dev process and mislead about being "real".
+ * SPEC-016 Notifications: these two types ("Nuevos lugares", "Cambios
+ * importantes") fire synchronously, right when the triggering action
+ * happens (an operator creates/edits a restaurant) — both reuse
+ * Recommendation/Trust Engine signals that already exist, never new
+ * business logic. The other four (Recomendaciones, Recordatorios,
+ * Feedback pendiente, Eventos) are time-based instead — see
+ * `scheduler.ts`, which checks real persisted timestamps on a real
+ * interval rather than firing from a request.
  */
 
 /** "Matchea fuerte" threshold (Open Question in SPEC-016, left unresolved there) — 2+ real DNA matches, same bar `scoreRestaurant` treats as meaningfully above a coincidence. */
