@@ -9,6 +9,18 @@ export interface GeoPoint {
 /** Matches MapPin's PinType minus the non-restaurant kinds ('event' | 'collection'). */
 export type RestaurantSignal = 'recommended' | 'new' | 'saved' | 'visited';
 
+/** SPEC-022: a real, time-bound offer — informative only, never a discount code CajuEat calculates or redeems. */
+export type PromotionType = 'liquidacion' | 'lanzamiento';
+export interface Promotion {
+  id: string;
+  restaurantId: string;
+  text: string;
+  type: PromotionType;
+  from: number;
+  until: number;
+  createdAt: number;
+}
+
 export interface QuickFact {
   icon: string;
   label: string;
@@ -43,6 +55,9 @@ export interface Restaurant {
   address?: string;
   /** Google Places ID, set once the operator links this restaurant — only meaningful in the Admin CMS. */
   googlePlaceId?: string;
+  /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never part of it. */
+  googleRating?: number;
+  googleRatingCount?: number;
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';
@@ -65,4 +80,6 @@ export interface Restaurant {
   image?: string;
   /** Hand-authored demo/fixture data, never a real place — only ever present (and true) in the Admin CMS's catalog view. */
   isDemo?: boolean;
+  /** SPEC-022: present only when a promo is currently within its from/until window. */
+  activePromotion?: Promotion;
 }

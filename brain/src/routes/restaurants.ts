@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { requireUserId } from '../middleware/identity.js';
 import { isSaved, setSaved } from '../memory/memoryStore.js';
+import { getActivePromotion } from '../promotions/promotionsStore.js';
 
 export const restaurantsRouter = Router();
 
@@ -12,7 +13,9 @@ restaurantsRouter.get('/restaurants', (_req, res) => {
 restaurantsRouter.get('/restaurants/:id', (req, res) => {
   const restaurant = getRestaurantById(req.params.id);
   if (!restaurant) return res.status(404).json({ error: 'not_found' });
-  res.json(restaurant);
+  // SPEC-022: a promo shows on the ficha the moment it's active, no need to have received the push.
+  const activePromotion = getActivePromotion(restaurant.id);
+  res.json(activePromotion ? { ...restaurant, activePromotion } : restaurant);
 });
 
 restaurantsRouter.get('/restaurants/:id/similar', (req, res) => {

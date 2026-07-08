@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, Inbox, LayoutDashboard, LogOut, MapPin, PlusCircle, QrCode, Radar, ShieldCheck } from 'lucide-react';
+import { CalendarDays, ChevronLeft, Inbox, LayoutDashboard, LogOut, MapPin, Megaphone, PlusCircle, QrCode, Radar, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
 import type { CuratorRecord, NewPlaceSuggestion, PendingContribution } from '../../lib/admin/adminClient';
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { to: '/admin/eventos', label: 'Eventos', icon: CalendarDays, end: false },
   { to: '/admin/agregar', label: 'Agregar contenido', icon: PlusCircle, end: false },
   { to: '/admin/checkins', label: 'Check-in', icon: QrCode, end: false },
+  { to: '/admin/promociones', label: 'Promociones', icon: Megaphone, end: false },
 ];
 
 /**

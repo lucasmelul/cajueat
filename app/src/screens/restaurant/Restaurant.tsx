@@ -17,6 +17,7 @@ import {
   Navigation,
   QrCode,
   Share2,
+  Star,
   Sun,
   ThumbsUp,
   UtensilsCrossed,
@@ -156,11 +157,34 @@ export function Restaurant() {
               <TrustMeter level={restaurant.trust} pill />
               <span className="cj-hero__price">{restaurant.price}</span>
             </div>
+            {/* SPEC-026: señal externa de Google, siempre separada de la confianza propia — nunca mezclada ni fusionada. */}
+            {restaurant.googleRating != null && (
+              <div className="cj-hero__google">
+                <Star size={13} fill="currentColor" />
+                <span>
+                  {restaurant.googleRating.toFixed(1)}
+                  {restaurant.googleRatingCount != null && ` (${restaurant.googleRatingCount.toLocaleString('es-AR')})`} según Google
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* BODY */}
         <div className="cj-rest-body">
+          {/* SPEC-022: promo real y vigente — informativa, nunca un cupón que la app calcule o canjee. */}
+          {restaurant.activePromotion && (
+            <div className={`cj-promo cj-promo--${restaurant.activePromotion.type}`}>
+              <Badge tone={restaurant.activePromotion.type === 'liquidacion' ? 'brand' : 'over'}>
+                {restaurant.activePromotion.type === 'liquidacion' ? 'Por cerrar' : 'Recién llegado'}
+              </Badge>
+              <p>{restaurant.activePromotion.text}</p>
+              <span className="cj-promo__until">
+                Vigente hasta {new Date(restaurant.activePromotion.until).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
+
           {/* Brain summary — the decisive info, before any scroll */}
           <section className="cj-sec">
             <div className="cj-brainlead">

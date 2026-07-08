@@ -108,6 +108,17 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
 }
+.cj-hero__google {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.cj-hero__google svg {
+  color: var(--amber-400, #e9a23b);
+}
 
 .cj-rest-body {
   position: relative;
@@ -115,6 +126,29 @@
   background: var(--paper);
   border-radius: 22px 22px 0 0;
   padding: 8px 20px 24px;
+}
+.cj-promo {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  background: var(--caju-050);
+  border: 1px solid var(--caju-100);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cj-promo--lanzamiento {
+  background: var(--leaf-050);
+  border-color: var(--leaf-100);
+}
+.cj-promo p {
+  font-size: 14px;
+  color: var(--ink-800);
+  line-height: 1.4;
+}
+.cj-promo__until {
+  font-size: 12px;
+  color: var(--ink-500);
 }
 .cj-sec {
   padding: 16px 0;

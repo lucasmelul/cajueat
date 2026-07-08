@@ -14,6 +14,7 @@ import { Curators } from './screens/admin/pages/Curators';
 import { Events } from './screens/admin/pages/Events';
 import { AddContent } from './screens/admin/pages/AddContent';
 import { Checkins } from './screens/admin/pages/Checkins';
+import { Promotions } from './screens/admin/pages/Promotions';
 import { Share } from './screens/share/Share';
 import { CheckIn } from './screens/checkin/CheckIn';
 import { Passport } from './screens/passport/Passport';
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
           { path: 'eventos', element: <Events /> },
           { path: 'agregar', element: <AddContent /> },
           { path: 'checkins', element: <Checkins /> },
+          { path: 'promociones', element: <Promotions /> },
         ],
       },
       { path: '/share', element: <Share /> },

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA_DIR } from '../paths.js';
-import type { Collection, DnaTag, User } from '../types.js';
+import type { Collection, DnaTag, GeoPoint, User } from '../types.js';
 
 /**
  * SPEC-006 Memory Engine + SPEC-013 Deferred Identity: what the Brain
@@ -39,6 +39,9 @@ interface MemoryState {
   contributions: Contribution[];
   collections: Collection[];
   usage: UsageCounter;
+  /** SPEC-022: the last real geolocation the Brain legitimately received from this user (via "Cerca" or a check-in) — never polled out-of-band, just remembered from a request that already carried it. Powers promo targeting by real proximity. */
+  lastKnownLocation?: GeoPoint;
+  lastKnownLocationAt?: number;
 }
 
 interface Store {
@@ -148,6 +151,26 @@ function getOrCreateUser(userId: string): MemoryState {
   if (!state.lastActiveAt) state.lastActiveAt = Date.now();
   if (!state.notifiedAt) state.notifiedAt = {};
   return state;
+}
+
+/** SPEC-022: remembers the last real geolocation this user's request legitimately carried (never polled out-of-band). */
+export function setLastKnownLocation(userId: string, position: GeoPoint) {
+  const state = getOrCreateUser(userId);
+  state.lastKnownLocation = position;
+  state.lastKnownLocationAt = Date.now();
+  persist();
+}
+
+/** SPEC-022 promo targeting: real signals to score one user's interest against — a push subscription is the hard requirement checked separately (no subscription, no promo, regardless of the rest). */
+export interface TargetingSignal {
+  dna: string[];
+  location?: GeoPoint;
+  locationAt?: number;
+}
+
+export function getTargetingSignal(userId: string): TargetingSignal {
+  const state = getOrCreateUser(userId);
+  return { dna: state.dna.map((d) => d.label), location: state.lastKnownLocation, locationAt: state.lastKnownLocationAt };
 }
 
 export function getProfile(userId: string) {

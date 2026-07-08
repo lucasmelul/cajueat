@@ -12,8 +12,8 @@ import type { Recommendations, RecommendationContext, Restaurant, TrustLevel } f
 
 const TRUST_POINTS: Record<TrustLevel, number> = { high: 3, mid: 2, low: 1 };
 const MAX_RESULTS = 5;
-/** "Cerca" radius (SPEC-001) — an open product question on the exact distance; 2km is a reasonable walking radius for a city map. */
-const NEAR_RADIUS_KM = 2;
+/** "Cerca" radius (SPEC-001) — an open product question on the exact distance; 2km is a reasonable walking radius for a city map. Exported so SPEC-022 promo targeting reuses the exact same radius, not a second guess. */
+export const NEAR_RADIUS_KM = 2;
 
 interface ScoredRestaurant {
   restaurant: Restaurant;

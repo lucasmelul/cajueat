@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { generateCheckinToken } from '../checkin/checkinTokens.js';
 import { getConsumptionSummary } from '../checkin/consumptionStore.js';
 import { getAllCurators } from '../curators/curatorStore.js';
+import { createPromotion, getPromotionsForRestaurant, type PromotionType } from '../promotions/promotionsStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
@@ -309,6 +310,8 @@ adminRouter.post('/admin/restaurants/:id/link-google', async (req, res, next) =>
       address: details.address || undefined,
       position: details.position,
       ...(details.openHours ? { openHours: details.openHours } : {}),
+      googleRating: details.rating,
+      googleRatingCount: details.userRatingCount,
     });
     if (!updated) {
       res.status(404).json({ error: 'restaurant_not_found' });
@@ -341,6 +344,8 @@ adminRouter.post('/admin/restaurants/:id/refresh-google', async (req, res, next)
       address: details.address || undefined,
       position: details.position,
       ...(details.openHours ? { openHours: details.openHours } : {}),
+      googleRating: details.rating,
+      googleRatingCount: details.userRatingCount,
     });
     res.json({ restaurant: updated, businessStatus: details.businessStatus });
   } catch (err) {
@@ -408,4 +413,33 @@ adminRouter.get('/admin/consumption', (_req, res) => {
     .filter((row): row is NonNullable<typeof row> => row !== null)
     .sort((a, b) => b.totalPoints - a.totalPoints);
   res.json(summary);
+});
+
+const VALID_PROMOTION_TYPES = new Set<PromotionType>(['liquidacion', 'lanzamiento']);
+
+/**
+ * SPEC-022: the operator loads a real, time-bound promo. It's never sent immediately here —
+ * the scheduler tick (scheduler.ts) is the single path that actually pushes, exactly once its
+ * real `from` is reached and never after `until`, reusing the same cooldown/dedup pattern as
+ * every other notification type instead of a parallel "send now" branch.
+ */
+adminRouter.post('/admin/restaurants/:id/promotions', (req, res) => {
+  const restaurant = getRestaurantById(req.params.id);
+  if (!restaurant) {
+    res.status(404).json({ error: 'restaurant_not_found' });
+    return;
+  }
+  const { text, type, from, until } = req.body ?? {};
+  const fromMs = Date.parse(from);
+  const untilMs = Date.parse(until);
+  if (typeof text !== 'string' || !text.trim() || !VALID_PROMOTION_TYPES.has(type) || Number.isNaN(fromMs) || Number.isNaN(untilMs) || fromMs >= untilMs) {
+    res.status(400).json({ error: 'text_type_from_until_required' });
+    return;
+  }
+  const promo = createPromotion({ restaurantId: restaurant.id, text: text.trim(), type, from: fromMs, until: untilMs });
+  res.status(201).json(promo);
+});
+
+adminRouter.get('/admin/restaurants/:id/promotions', (req, res) => {
+  res.json(getPromotionsForRestaurant(req.params.id));
 });

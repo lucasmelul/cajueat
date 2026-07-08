@@ -5,7 +5,7 @@ import { lastConsumptionAt, recordConsumption } from '../checkin/consumptionStor
 import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { haversineKm } from '../geo/geo.js';
 import { requireUserId } from '../middleware/identity.js';
-import { getProfile, recordContribution, spendCajuPoints } from '../memory/memoryStore.js';
+import { getProfile, recordContribution, setLastKnownLocation, spendCajuPoints } from '../memory/memoryStore.js';
 import type { GeoPoint } from '../types.js';
 
 export const checkinRouter = Router();
@@ -36,6 +36,10 @@ checkinRouter.post('/checkin', requireUserId, (req, res) => {
     res.status(404).json({ error: 'restaurant_not_found' });
     return;
   }
+
+  // SPEC-022: a check-in/redeem scan always carries real geolocation — remember it as the
+  // user's last known location for promo targeting, same reuse as the "Cerca" chip.
+  setLastKnownLocation(req.userId!, position);
 
   // Real signal, never trusted from the client beyond the raw coordinates it reports —
   // the distance check itself is what makes a faked position hard to pass silently.

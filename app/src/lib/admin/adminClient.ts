@@ -1,4 +1,4 @@
-import type { MapEvent, Restaurant } from '../../types';
+import type { MapEvent, Promotion, PromotionType, Restaurant } from '../../types';
 
 /**
  * SPEC-018 Admin CMS: a genuinely different client of the Brain, not a
@@ -102,6 +102,8 @@ export interface NewPlaceSuggestion {
 
 export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborhood?: string; address?: string; position?: { lat: number; lng: number } };
 
+export type CreatePromotionInput = { text: string; type: PromotionType; from: string; until: string };
+
 export interface GooglePlaceCandidate {
   placeId: string;
   name: string;
@@ -194,4 +196,10 @@ export const adminClient = {
   getCheckinToken: (restaurantId: string) => request<{ token: string }>(`/admin/restaurants/${restaurantId}/checkin-token`),
 
   getConsumption: () => request<ConsumptionSummaryRow[]>('/admin/consumption'),
+
+  /** SPEC-022: never sent immediately — the scheduler tick is the only path that actually pushes, exactly within [from, until]. */
+  createPromotion: (restaurantId: string, input: CreatePromotionInput) =>
+    request<Promotion>(`/admin/restaurants/${restaurantId}/promotions`, { method: 'POST', body: JSON.stringify(input) }),
+
+  getPromotions: (restaurantId: string) => request<Promotion[]>(`/admin/restaurants/${restaurantId}/promotions`),
 };

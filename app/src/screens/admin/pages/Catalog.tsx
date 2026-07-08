@@ -102,9 +102,16 @@ export function Catalog() {
             {!r.isDemo && (
               <div className="cj-admin-google">
                 {r.googlePlaceId ? (
-                  <Button size="sm" variant="secondary" disabled={googleBusyId === r.id} onClick={() => refreshFromGoogle(r.id)}>
-                    Refrescar desde Google
-                  </Button>
+                  <>
+                    {r.googleRating != null && (
+                      <span className="cj-admin-google__rating">
+                        ★ {r.googleRating.toFixed(1)} ({(r.googleRatingCount ?? 0).toLocaleString('es-AR')}) según Google
+                      </span>
+                    )}
+                    <Button size="sm" variant="secondary" disabled={googleBusyId === r.id} onClick={() => refreshFromGoogle(r.id)}>
+                      Refrescar desde Google
+                    </Button>
+                  </>
                 ) : linkingId === r.id ? (
                   <div className="cj-admin-form">
                     <input

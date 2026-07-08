@@ -13,6 +13,18 @@ export interface GeoPoint {
   lng: number;
 }
 
+/** SPEC-022: a real, time-bound offer — informative only, never a discount code CajuEat calculates or redeems. */
+export type PromotionType = 'liquidacion' | 'lanzamiento';
+export interface Promotion {
+  id: string;
+  restaurantId: string;
+  text: string;
+  type: PromotionType;
+  from: number;
+  until: number;
+  createdAt: number;
+}
+
 export type RestaurantSignal = 'recommended' | 'new' | 'saved' | 'visited';
 
 export interface QuickFact {
@@ -51,6 +63,9 @@ export interface Restaurant {
   address?: string;
   /** Google Places ID, set once when the operator links this restaurant to a real Google Place — never inferred, always an explicit operator action. Powers "Refrescar desde Google" (address/position/openHours/business status only, never trust or sources). */
   googlePlaceId?: string;
+  /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never fed into computeTrust or turned into a Source. */
+  googleRating?: number;
+  googleRatingCount?: number;
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */
@@ -72,6 +87,8 @@ export interface Restaurant {
   openHours?: OpenPeriod[];
   /** Hand-authored demo/fixture data, never a real place — hidden from every end-user-facing read (getCatalog defaults to excluding it), visible only in the Admin CMS. */
   isDemo?: boolean;
+  /** SPEC-022: attached only when a promo is currently within its from/until window — computed at read time, never stored on the restaurant itself. */
+  activePromotion?: Promotion;
 }
 
 export interface MapEvent {
