@@ -104,6 +104,15 @@ export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborho
 
 export type CreatePromotionInput = { text: string; type: PromotionType; from: string; until: string };
 
+/** SPEC-027: ephemeral — never persisted server-side, the operator confirms each one via the plain createEvent below. */
+export interface EventImageSuggestion {
+  name: string;
+  whenRaw: string;
+  whenAt: string | null;
+  instagramHandle: string | null;
+  claim: string;
+}
+
 export interface GooglePlaceCandidate {
   placeId: string;
   name: string;
@@ -202,4 +211,8 @@ export const adminClient = {
     request<Promotion>(`/admin/restaurants/${restaurantId}/promotions`, { method: 'POST', body: JSON.stringify(input) }),
 
   getPromotions: (restaurantId: string) => request<Promotion[]>(`/admin/restaurants/${restaurantId}/promotions`),
+
+  /** SPEC-027: extraction + deterministic date resolution together — re-call with a corrected `referenceDate` to re-resolve, never the LLM guessing the date. */
+  extractEventsFromImage: (image: string, mediaType: string, referenceDate?: string) =>
+    request<{ suggestions: EventImageSuggestion[] }>('/admin/events/from-image', { method: 'POST', body: JSON.stringify({ image, mediaType, referenceDate }) }),
 };

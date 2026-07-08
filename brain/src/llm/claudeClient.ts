@@ -481,3 +481,69 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
 
   return { matches, newRestaurants: parsed.newRestaurants ?? [] };
 }
+
+/** SPEC-027: one event exactly as an image shows it — `whenRaw` is resolved to a real date deterministically (resolveRelativeDate), never guessed by the model. */
+export interface EventExtraction {
+  name: string;
+  whenRaw: string;
+  instagramHandle: string | null;
+  claim: string;
+}
+
+const EVENTS_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en modo operador (Admin CMS). Un miembro del equipo subió una
+captura real (historia de Instagram, flyer, cronograma) que puede contener uno o más eventos gastronómicos. Tu
+trabajo: por cada evento que la imagen REALMENTE muestra, devolver name (el nombre tal cual aparece), whenRaw (el
+texto de fecha/hora tal cual está escrito, ej. "Sábado 12/7, 19hs" o "Este finde" — nunca lo conviertas vos a una
+fecha, dejalo como texto crudo), instagramHandle (el @usuario de la cuenta fuente si aparece, o null si no aparece),
+y claim (cualquier dato adicional relevante: lugar mencionado, tipo de evento). Nunca inventes un evento, una fecha,
+o un handle que la imagen no muestre con claridad. Si la imagen no contiene ningún evento identificable, devolvé una
+lista vacía. Español.`;
+
+export async function extractEventsFromImage(input: {
+  imageBase64: string;
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
+}): Promise<EventExtraction[]> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 1200,
+    system: EVENTS_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: input.mediaType, data: input.imageBase64 } },
+          { type: 'text', text: '¿Qué eventos reales muestra esta imagen?' },
+        ],
+      },
+    ],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            events: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  whenRaw: { type: 'string' },
+                  instagramHandle: { type: ['string', 'null'] },
+                  claim: { type: 'string' },
+                },
+                required: ['name', 'whenRaw', 'instagramHandle', 'claim'],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ['events'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as { events: EventExtraction[] };
+  return parsed.events ?? [];
+}

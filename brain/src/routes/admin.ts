@@ -5,8 +5,9 @@ import { getAllCurators } from '../curators/curatorStore.js';
 import { createPromotion, getPromotionsForRestaurant, type PromotionType } from '../promotions/promotionsStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
+import { resolveRelativeDate } from '../dates/resolveRelativeDate.js';
 import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
-import { analyzeCuratorContent } from '../llm/claudeClient.js';
+import { analyzeCuratorContent, extractEventsFromImage } from '../llm/claudeClient.js';
 import { getUserStats } from '../memory/memoryStore.js';
 import { requireOperator } from '../middleware/operator.js';
 import {
@@ -386,6 +387,31 @@ adminRouter.delete('/admin/events/:id', (req, res) => {
     return;
   }
   res.status(204).end();
+});
+
+const IMAGE_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+/**
+ * SPEC-027: same "operator confirms one by one, never applies itself" pattern as /admin/analyze
+ * — this returns ephemeral suggestions, never persisted server-side (unlike SPEC-019's queues,
+ * which exist because end users contribute asynchronously over days; here the operator uploads
+ * and reviews in the same sitting, so there's nothing to keep around between requests).
+ * Confirming a suggestion is a plain POST /admin/events with the same createEvent as always.
+ */
+adminRouter.post('/admin/events/from-image', async (req, res, next) => {
+  try {
+    const { image, mediaType, referenceDate } = req.body ?? {};
+    if (typeof image !== 'string' || !image || !IMAGE_MEDIA_TYPES.has(mediaType)) {
+      res.status(400).json({ error: 'image_and_mediaType_required' });
+      return;
+    }
+    const refDate = typeof referenceDate === 'string' && !Number.isNaN(Date.parse(referenceDate)) ? new Date(referenceDate) : new Date();
+    const events = await extractEventsFromImage({ imageBase64: image, mediaType });
+    const suggestions = events.map((e) => ({ ...e, whenAt: resolveRelativeDate(e.whenRaw, refDate) }));
+    res.json({ suggestions });
+  } catch (err) {
+    next(err);
+  }
 });
 
 /**
