@@ -275,6 +275,15 @@ export function addCajuPoints(userId: string, n: number): number {
   return state.user.cajuPoints;
 }
 
+/** SPEC-023: spends points against the user's real balance — never lets it go negative, never invents credit. */
+export function spendCajuPoints(userId: string, n: number): boolean {
+  const state = getOrCreateUser(userId);
+  if (state.user.cajuPoints < n) return false;
+  state.user.cajuPoints -= n;
+  persist();
+  return true;
+}
+
 export function recordContribution(userId: string, label: string, points: number) {
   const state = getOrCreateUser(userId);
   state.contributions.unshift({ label, points, when: Date.now() });

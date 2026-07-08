@@ -13,7 +13,10 @@ import { Moderation } from './screens/admin/pages/Moderation';
 import { Curators } from './screens/admin/pages/Curators';
 import { Events } from './screens/admin/pages/Events';
 import { AddContent } from './screens/admin/pages/AddContent';
+import { Checkins } from './screens/admin/pages/Checkins';
 import { Share } from './screens/share/Share';
+import { CheckIn } from './screens/checkin/CheckIn';
+import { Passport } from './screens/passport/Passport';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +26,8 @@ export const router = createBrowserRouter([
       { path: '/conversation', element: <Conversation /> },
       { path: '/restaurant/:id', element: <Restaurant /> },
       { path: '/profile', element: <Profile /> },
+      { path: '/passport', element: <Passport /> },
+      { path: '/checkin/:restaurantId?', element: <CheckIn /> },
       { path: '/onboarding', element: <Onboarding /> },
       {
         path: '/admin',
@@ -35,6 +40,7 @@ export const router = createBrowserRouter([
           { path: 'curadores', element: <Curators /> },
           { path: 'eventos', element: <Events /> },
           { path: 'agregar', element: <AddContent /> },
+          { path: 'checkins', element: <Checkins /> },
         ],
       },
       { path: '/share', element: <Share /> },

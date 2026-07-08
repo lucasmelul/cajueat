@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"CajuEatDesignSystem_dbeea0","components":[{"name":"BrainMark","sourcePath":"components/brain/BrainCard.jsx"},{"name":"BrainCard","sourcePath":"components/brain/BrainCard.jsx"},{"name":"ChatBubble","sourcePath":"components/brain/ChatBubble.jsx"},{"name":"PromptBar","sourcePath":"components/brain/PromptBar.jsx"},{"name":"SourceChip","sourcePath":"components/brain/SourceChip.jsx"},{"name":"TrustMeter","sourcePath":"components/brain/TrustMeter.jsx"},{"name":"Wordmark","sourcePath":"components/brand/Wordmark.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Chip","sourcePath":"components/core/Chip.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"BottomSheet","sourcePath":"components/discovery/BottomSheet.jsx"},{"name":"CajuPoints","sourcePath":"components/discovery/CajuPoints.jsx"},{"name":"MapPin","sourcePath":"components/discovery/MapPin.jsx"},{"name":"RestaurantCard","sourcePath":"components/discovery/RestaurantCard.jsx"}],"sourceHashes":{"components/brain/BrainCard.jsx":"e018272bc28e","components/brain/ChatBubble.jsx":"3dc00b86a901","components/brain/PromptBar.jsx":"0a58bcb70af7","components/brain/SourceChip.jsx":"a1828219fe71","components/brain/TrustMeter.jsx":"d0d107d65fb3","components/brand/Wordmark.jsx":"e207a93b51e2","components/core/Badge.jsx":"b5f3ed8a4010","components/core/Button.jsx":"e17a69ba716a","components/core/Chip.jsx":"860a0926f590","components/core/IconButton.jsx":"7c224e1c8738","components/discovery/BottomSheet.jsx":"8bd94f870162","components/discovery/CajuPoints.jsx":"2ca0a0d712bd","components/discovery/MapPin.jsx":"ff0426c58073","components/discovery/RestaurantCard.jsx":"cbd571946076","ui_kits/pwa/Conversation.jsx":"f5c4e1b1eed7","ui_kits/pwa/Feedback.jsx":"56c9f35b21f6","ui_kits/pwa/KnowledgeCapture.jsx":"61fc66c3395c","ui_kits/pwa/LivingMap.jsx":"b8f3137f3f79","ui_kits/pwa/MapCanvas.jsx":"674160d575a9","ui_kits/pwa/Profile.jsx":"3afaa3911807","ui_kits/pwa/Restaurant.jsx":"d05328c2c104","ui_kits/pwa/Shell.jsx":"5676afae6ef2","ui_kits/pwa/data.js":"3348ae28869f","ui_kits/pwa/kit.jsx":"88351dc8e26c"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"CajuEatDesignSystem_dbeea0","components":[{"name":"BrainMark","sourcePath":"components/brain/BrainCard.jsx"},{"name":"BrainCard","sourcePath":"components/brain/BrainCard.jsx"},{"name":"ChatBubble","sourcePath":"components/brain/ChatBubble.jsx"},{"name":"PromptBar","sourcePath":"components/brain/PromptBar.jsx"},{"name":"SourceChip","sourcePath":"components/brain/SourceChip.jsx"},{"name":"TrustMeter","sourcePath":"components/brain/TrustMeter.jsx"},{"name":"Wordmark","sourcePath":"components/brand/Wordmark.jsx"},{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Chip","sourcePath":"components/core/Chip.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"BottomSheet","sourcePath":"components/discovery/BottomSheet.jsx"},{"name":"CajuPoints","sourcePath":"components/discovery/CajuPoints.jsx"},{"name":"MapPin","sourcePath":"components/discovery/MapPin.jsx"},{"name":"RestaurantCard","sourcePath":"components/discovery/RestaurantCard.jsx"}],"sourceHashes":{"components/brain/BrainCard.jsx":"e018272bc28e","components/brain/ChatBubble.jsx":"3dc00b86a901","components/brain/PromptBar.jsx":"0a58bcb70af7","components/brain/SourceChip.jsx":"a1828219fe71","components/brain/TrustMeter.jsx":"d0d107d65fb3","components/brand/Wordmark.jsx":"e207a93b51e2","components/core/Badge.jsx":"b5f3ed8a4010","components/core/Button.jsx":"e17a69ba716a","components/core/Chip.jsx":"860a0926f590","components/core/IconButton.jsx":"7c224e1c8738","components/discovery/BottomSheet.jsx":"8bd94f870162","components/discovery/CajuPoints.jsx":"2ca0a0d712bd","components/discovery/MapPin.jsx":"d642cd46e125","components/discovery/RestaurantCard.jsx":"cbd571946076","ui_kits/pwa/CheckIn.jsx":"1b8389157244","ui_kits/pwa/Conversation.jsx":"f5c4e1b1eed7","ui_kits/pwa/Feedback.jsx":"d6bd345fbc39","ui_kits/pwa/KnowledgeCapture.jsx":"5b6a9c5ed6a6","ui_kits/pwa/LivingMap.jsx":"de2cf0f1db4d","ui_kits/pwa/MapCanvas.jsx":"674160d575a9","ui_kits/pwa/Passport.jsx":"11ba7ddaab20","ui_kits/pwa/Profile.jsx":"5a7869a4380a","ui_kits/pwa/Restaurant.jsx":"ac245b8f36f0","ui_kits/pwa/Shell.jsx":"3c6aa56e3e83","ui_kits/pwa/data.js":"279c8440675f","ui_kits/pwa/kit.jsx":"88351dc8e26c"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -1043,6 +1043,17 @@ function ensureStyles() {
   .caju-pin--selected { transform: scale(1.06); box-shadow: var(--shadow-lg), 0 0 0 3px var(--focus-ring); }
   .caju-pin--selected:active { transform: scale(1.02); }
 
+  /* novelty — amber content ring (SPEC-024: new Instagram activity) */
+  .caju-pin--novelty { box-shadow: var(--elev-pin), var(--ring-hairline), 0 0 0 2px var(--amber-500); }
+  .caju-pin__novelty { position: absolute; inset: -5px; border-radius: var(--r-full);
+    border: 2px solid var(--amber-500); opacity: .55; pointer-events: none;
+    animation: caju-pin-nov 2.4s var(--ease-out) infinite; }
+  @keyframes caju-pin-nov {
+    0% { transform: scale(1); opacity: .55; }
+    70% { opacity: 0; } 100% { transform: scale(1.5); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .caju-pin__novelty { animation: none; opacity: .55; } }
+
   /* type colors on the dot */
   .caju-pin--recommended .caju-pin__dot { background: var(--pin-recommended); }
   .caju-pin--new         .caju-pin__dot { background: var(--pin-new); }
@@ -1084,19 +1095,23 @@ function MapPin({
   label = null,
   selected = false,
   dotOnly = false,
+  novelty = false,
   onClick,
   className = '',
   ...rest
 }) {
   ensureStyles();
   const compact = dotOnly || !label;
-  const cls = ['caju-pin', `caju-pin--${type}`, compact ? 'caju-pin--dot' : '', selected ? 'caju-pin--selected' : '', className].filter(Boolean).join(' ');
+  const cls = ['caju-pin', `caju-pin--${type}`, compact ? 'caju-pin--dot' : '', selected ? 'caju-pin--selected' : '', novelty ? 'caju-pin--novelty' : '', className].filter(Boolean).join(' ');
   return /*#__PURE__*/React.createElement("button", _extends({
     type: "button",
     className: cls,
     onClick: onClick,
     "aria-label": label || type
-  }, rest), /*#__PURE__*/React.createElement("span", {
+  }, rest), novelty && /*#__PURE__*/React.createElement("span", {
+    className: "caju-pin__novelty",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("span", {
     className: "caju-pin__dot"
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24",
@@ -1275,6 +1290,359 @@ function RestaurantCard({
 }
 Object.assign(__ds_scope, { RestaurantCard });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/discovery/RestaurantCard.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/pwa/CheckIn.jsx
+try { (() => {
+/* Screen 7 — QR Check-in (SPEC-020) + Points redemption (SPEC-023).
+   Full-screen in-app camera. Verifies a REAL visit via signed QR
+   token + real geolocation + server timestamp. The check-in is the
+   evidence that unlocks reviews, the passport (SPEC-021) and
+   redeeming points as credit (SPEC-023).
+
+   mode: 'checkin'  → scan → validating → success (check-in + points)
+   mode: 'redeem'   → scan → validating → choose points → redeemed
+*/
+
+function CheckIn({
+  mode = 'checkin',
+  restaurantId,
+  onClose,
+  onDone
+}) {
+  const NS = window.CajuEatDesignSystem_dbeea0;
+  const {
+    Button,
+    CajuPoints,
+    Badge,
+    TrustMeter
+  } = NS;
+  const D = window.CAJU_DATA;
+  const r = D.restaurants.find(x => x.id === restaurantId) || D.restaurants[0];
+
+  // scan | validating | choose | success | error
+  const [stage, setStage] = React.useState('scan');
+  const [vStep, setVStep] = React.useState(0);
+  const [pts, setPts] = React.useState(2); // redeem: number of 100-pt credits
+
+  const runValidate = fail => {
+    setStage('validating');
+    setVStep(0);
+    setTimeout(() => setVStep(1), 620); // restaurante
+    setTimeout(() => setVStep(2), 1240); // geolocalización
+    setTimeout(() => {
+      if (fail) {
+        setStage('error');
+        return;
+      }
+      setStage(mode === 'redeem' ? 'choose' : 'success');
+    }, 1900);
+  };
+  const creditArs = pts * 100 * 5; // 100 pts = $500 (demo rate)
+
+  // Self-stateful screen: convert Lucide icons after every stage change
+  // (Shell's effect only fires on navigation, not our internal setState).
+  React.useEffect(() => {
+    if (window.lucide) window.lucide.createIcons();
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan"
+  }, (stage === 'scan' || stage === 'validating') && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__cam"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__feed"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__vignette"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__top"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "cj-scan__close",
+    onClick: onClose,
+    "aria-label": "Cerrar"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "x",
+    size: 22
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__title"
+  }, mode === 'redeem' ? 'Usar puntos' : 'Check-in'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 40
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: `cj-scan__frame ${stage === 'validating' ? 'is-locked' : ''}`
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cj-corner tl"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cj-corner tr"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cj-corner bl"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cj-corner br"
+  }), stage === 'scan' && /*#__PURE__*/React.createElement("span", {
+    className: "cj-scan__line"
+  }), stage === 'validating' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__lock"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "qr-code",
+    size: 40
+  })), stage === 'scan' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__qr",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement(QrGlyph, null))), stage === 'scan' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__hint"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "cj-scan__place"
+  }, r.name, " \xB7 ", r.neighborhood), /*#__PURE__*/React.createElement("p", null, "Apunt\xE1 al c\xF3digo QR que est\xE1 en el mostrador"), /*#__PURE__*/React.createElement("button", {
+    className: "cj-scan__sim",
+    onClick: () => runValidate(false)
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "scan-line",
+    size: 16
+  }), " Simular escaneo"), /*#__PURE__*/React.createElement("button", {
+    className: "cj-scan__simfail",
+    onClick: () => runValidate(true)
+  }, "Simular fuera de rango")), stage === 'validating' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__valid"
+  }, [['Restaurante verificado', 'shield-check'], ['Estás en el lugar', 'map-pin'], ['Registrando visita', 'clock']].map(([label, icon], i) => {
+    const done = vStep > i,
+      active = vStep === i;
+    return /*#__PURE__*/React.createElement("div", {
+      className: `cj-vrow ${done ? 'done' : ''} ${active ? 'active' : ''}`,
+      key: i
+    }, done ? /*#__PURE__*/React.createElement(window.Icon, {
+      name: "check",
+      size: 15
+    }) : /*#__PURE__*/React.createElement("span", {
+      className: `cj-vdot ${active ? 'spin' : ''}`
+    }), /*#__PURE__*/React.createElement("span", null, label));
+  }))), stage !== 'scan' && stage !== 'validating' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-scan__result"
+  }, stage === 'success' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-res"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__mark cj-res__mark--ok"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "check",
+    size: 30
+  })), /*#__PURE__*/React.createElement("h2", null, "\xA1Estuviste en ", r.name, "!"), /*#__PURE__*/React.createElement("p", {
+    className: "cj-res__sub"
+  }, "Check-in verificado \xB7 ", new Date().toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'long'
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__row"
+  }, /*#__PURE__*/React.createElement("span", null, "Ganaste por descubrir este lugar"), /*#__PURE__*/React.createElement(CajuPoints, {
+    value: 50,
+    delta: 50,
+    chip: true,
+    size: "sm"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__unlock"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "unlock",
+    size: 16
+  }), "Ya pod\xE9s dejar tu rese\xF1a de este lugar"), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    size: "lg",
+    block: true,
+    onClick: () => onDone && onDone('success', r.id)
+  }, "Listo")), stage === 'choose' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-res cj-res--choose"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__mark cj-res__mark--brand"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "wallet",
+    size: 26
+  })), /*#__PURE__*/React.createElement("h2", null, "Usar tus puntos ac\xE1"), /*#__PURE__*/React.createElement("p", {
+    className: "cj-res__sub"
+  }, "Ten\xE9s ", /*#__PURE__*/React.createElement("b", null, D.user.points.toLocaleString('es-AR')), " Caju Points \xB7 100 pts = $500"), /*#__PURE__*/React.createElement("div", {
+    className: "cj-stepper"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPts(p => Math.max(1, p - 1)),
+    "aria-label": "Menos",
+    disabled: pts <= 1
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "minus",
+    size: 20
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-stepper__val"
+  }, /*#__PURE__*/React.createElement("b", null, pts * 100), /*#__PURE__*/React.createElement("span", null, "puntos")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPts(p => Math.min(12, p + 1)),
+    "aria-label": "M\xE1s",
+    disabled: pts >= 12
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "plus",
+    size: 20
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "cj-credit"
+  }, "Descuento ", /*#__PURE__*/React.createElement("b", null, "$", creditArs.toLocaleString('es-AR'))), /*#__PURE__*/React.createElement("p", {
+    className: "cj-res__fine"
+  }, "Mostrale la confirmaci\xF3n al local. Pod\xE9s volver a usar puntos ac\xE1 dentro de 15 d\xEDas."), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    size: "lg",
+    block: true,
+    onClick: () => setStage('redeemed')
+  }, "Canjear $", creditArs.toLocaleString('es-AR'))), stage === 'redeemed' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-res"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__mark cj-res__mark--ok"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "check",
+    size: 30
+  })), /*#__PURE__*/React.createElement("h2", null, "Canje confirmado"), /*#__PURE__*/React.createElement("p", {
+    className: "cj-res__sub"
+  }, "Mostrale esta pantalla en ", r.name), /*#__PURE__*/React.createElement("div", {
+    className: "cj-voucher"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-voucher__amt"
+  }, "$", creditArs.toLocaleString('es-AR')), /*#__PURE__*/React.createElement("div", {
+    className: "cj-voucher__meta"
+  }, /*#__PURE__*/React.createElement("span", null, r.name), /*#__PURE__*/React.createElement("span", null, new Date().toLocaleString('es-AR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "cj-voucher__code"
+  }, "CJ-", r.id.toUpperCase().slice(0, 3), "-4827")), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    size: "lg",
+    block: true,
+    onClick: () => onDone && onDone('redeemed', r.id)
+  }, "Listo")), stage === 'error' && /*#__PURE__*/React.createElement("div", {
+    className: "cj-res"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-res__mark cj-res__mark--err"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "map-pin-off",
+    size: 28
+  })), /*#__PURE__*/React.createElement("h2", null, "Todav\xEDa no est\xE1s en el lugar"), /*#__PURE__*/React.createElement("p", {
+    className: "cj-res__sub"
+  }, "El check-in necesita que est\xE9s f\xEDsicamente en ", r.name, ". Acercate al mostrador y volv\xE9 a escanear."), /*#__PURE__*/React.createElement(Button, {
+    variant: "secondary",
+    size: "lg",
+    block: true,
+    onClick: () => setStage('scan')
+  }, "Reintentar"), /*#__PURE__*/React.createElement("button", {
+    className: "cj-res__ghost",
+    onClick: onClose
+  }, "Ahora no"))));
+}
+
+// A decorative QR glyph (CSS grid of cells) — never a real code.
+function QrGlyph() {
+  const P = ['1111111 0110 1111111', '1000001 1001 1000001', '1011101 0100 1011101', '1011101 1011 1011101', '1011101 0010 1011101', '1000001 1100 1000001', '1111111 0101 1111111', '0000000 1001 0000000', '1101011 0110 1010110', '0110010 1101 0101101', '1011101 0011 1100011', '0000000 1010 1011101', '1111111 0101 1001011', '1000001 1100 1110010', '1011101 0110 1011101', '1011101 1001 0100110', '1011101 0101 1101011', '1000001 1010 0110100', '1111111 0110 1011101'].map(s => s.replace(/ /g, ''));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "cj-qr"
+  }, P.map((row, y) => row.split('').map((c, x) => c === '1' ? /*#__PURE__*/React.createElement("span", {
+    key: y + '-' + x,
+    style: {
+      gridRow: y + 1,
+      gridColumn: x + 1
+    }
+  }) : null)));
+}
+const CJ_SCAN_CSS = `
+.cj-scan { position: absolute; inset: 0; z-index: 70; display: flex; flex-direction: column;
+  background: #141210; animation: cjFade var(--dur-base) var(--ease-out); }
+.cj-scan__cam { position: absolute; inset: 0; overflow: hidden; background: #0E0C0A; }
+.cj-scan__feed { position: absolute; inset: 0; background:
+  radial-gradient(80% 60% at 50% 38%, #3A322B 0%, #211C18 55%, #141210 100%); }
+.cj-scan__vignette { position: absolute; inset: 0; box-shadow: inset 0 0 160px 40px rgba(0,0,0,.6); }
+.cj-scan__top { position: absolute; top: 50px; left: 0; right: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+.cj-scan__close { width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; backdrop-filter: blur(6px); }
+.cj-scan__title { color: #fff; font-family: var(--font-sans); font-weight: 600; font-size: 16px; }
+
+.cj-scan__frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -54%);
+  width: 236px; height: 236px; border-radius: 28px; z-index: 2;
+  transition: box-shadow var(--motion-card), border-color var(--motion-card); }
+.cj-scan__frame.is-locked { box-shadow: 0 0 0 2px var(--caju-400), 0 0 44px 4px rgba(239,90,34,.35); }
+.cj-corner { position: absolute; width: 30px; height: 30px; border: 3px solid #fff; }
+.cj-corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 0; }
+.cj-corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 14px 0 0; }
+.cj-corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 14px; }
+.cj-corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 14px 0; }
+.cj-scan__frame.is-locked .cj-corner { border-color: var(--caju-400); }
+.cj-scan__line { position: absolute; left: 12px; right: 12px; height: 2px; top: 12px;
+  background: linear-gradient(90deg, transparent, var(--caju-400), transparent);
+  box-shadow: 0 0 12px 2px rgba(248,122,69,.7); animation: cjScanLine 2.2s var(--ease-in-out) infinite; }
+@keyframes cjScanLine { 0%,100% { top: 14px; } 50% { top: 218px; } }
+.cj-scan__qr { position: absolute; inset: 40px; display: grid; place-items: center; opacity: .5; }
+.cj-scan__lock { position: absolute; inset: 0; display: grid; place-items: center; color: var(--caju-300); }
+
+.cj-qr { display: grid; grid-template-columns: repeat(19, 1fr); grid-template-rows: repeat(19, 1fr);
+  width: 118px; height: 118px; }
+.cj-qr span { background: #fff; border-radius: 1px; }
+
+.cj-scan__hint { position: absolute; left: 0; right: 0; bottom: 60px; z-index: 3; text-align: center;
+  color: rgba(255,255,255,.78); font-family: var(--font-sans); font-size: 14px; padding: 0 32px;
+  display: flex; flex-direction: column; align-items: center; }
+.cj-scan__hint p { margin: 3px 0 0; }
+.cj-scan__place { color: #fff; font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+.cj-scan__sim { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: var(--r-full); border: 0; cursor: pointer;
+  background: var(--caju-500); color: #fff; font-family: var(--font-sans); font-weight: 600; font-size: 15px;
+  box-shadow: 0 10px 24px -8px rgba(239,90,34,.8); }
+.cj-scan__simfail { margin-top: 4px; background: none; border: 0; color: rgba(255,255,255,.5);
+  font-family: var(--font-sans); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 6px; }
+
+.cj-scan__valid { position: absolute; left: 0; right: 0; bottom: 76px; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cj-vrow { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,.4);
+  font-family: var(--font-sans); font-size: 15px; transition: color var(--motion-control); }
+.cj-vrow.active { color: #fff; } .cj-vrow.done { color: var(--leaf-500); }
+.cj-vrow i { color: var(--leaf-500); }
+.cj-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); }
+.cj-vdot.spin { border-top-color: var(--caju-400); animation: cjSpin .7s linear infinite; }
+
+.cj-scan__result { position: absolute; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; }
+.cj-res { position: relative; width: 100%; background: var(--surface); border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+  box-shadow: var(--elev-sheet); padding: 26px 22px calc(24px + var(--safe-bottom));
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+  animation: cjSheetUp var(--dur-slow) var(--ease-spring); }
+.cj-res__mark { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  margin-bottom: 4px; animation: cjPop var(--dur-slow) var(--ease-spring); }
+.cj-res__mark--ok { background: var(--leaf-500); box-shadow: 0 10px 24px -8px rgba(38,160,107,.7); }
+.cj-res__mark--brand { background: var(--caju-500); box-shadow: 0 10px 24px -8px rgba(239,90,34,.7); }
+.cj-res__mark--err { background: var(--clay-500); }
+.cj-res h2 { font-size: 22px; font-weight: 600; color: var(--ink-900); }
+.cj-res__sub { font-size: 14px; color: var(--ink-500); line-height: 1.45; max-width: 300px; }
+.cj-res__row { display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; font-size: 14px; color: var(--ink-600); }
+.cj-res__unlock { display: flex; align-items: center; gap: 8px; margin: 8px 0 18px; padding: 10px 14px;
+  background: var(--leaf-050); color: var(--leaf-700); border-radius: var(--r-md); font-size: 13px; font-weight: 500; }
+.cj-res__unlock i { color: var(--leaf-600); }
+.cj-res__ghost { margin-top: 10px; background: none; border: 0; color: var(--ink-400);
+  font-family: var(--font-sans); font-size: 14px; cursor: pointer; padding: 6px; }
+.cj-res__fine { font-size: 12px; color: var(--ink-400); line-height: 1.5; margin: 6px 0 16px; max-width: 300px; }
+
+.cj-res--choose h2 { margin-top: 2px; }
+.cj-stepper { display: flex; align-items: center; gap: 18px; margin: 18px 0 6px; }
+.cj-stepper button { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--ink-800); cursor: pointer; display: grid; place-items: center;
+  transition: transform var(--motion-press), background var(--motion-control); }
+.cj-stepper button:active { transform: scale(.92); }
+.cj-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.cj-stepper__val { min-width: 96px; display: flex; flex-direction: column; }
+.cj-stepper__val b { font-family: var(--font-mono); font-size: 30px; color: var(--ink-900); line-height: 1; }
+.cj-stepper__val span { font-size: 12px; color: var(--ink-400); margin-top: 3px; }
+.cj-credit { font-size: 15px; color: var(--ink-600); margin-bottom: 4px; }
+.cj-credit b { font-family: var(--font-mono); color: var(--caju-600); font-size: 17px; }
+
+.cj-voucher { align-self: stretch; margin: 14px 0 18px; padding: 20px; border-radius: var(--r-lg);
+  background: var(--ink-900); color: #fff; position: relative; overflow: hidden; }
+.cj-voucher::before { content: ''; position: absolute; right: -30px; top: -30px; width: 120px; height: 120px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(248,122,69,.35), transparent 70%); }
+.cj-voucher__amt { font-family: var(--font-mono); font-size: 40px; font-weight: 500; letter-spacing: -0.02em; }
+.cj-voucher__meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 13px; color: rgba(255,255,255,.7); }
+.cj-voucher__code { margin-top: 14px; font-family: var(--font-mono); font-size: 15px; letter-spacing: .12em;
+  color: var(--caju-300); border-top: 1px dashed rgba(255,255,255,.2); padding-top: 12px; }
+`;
+Object.assign(window, {
+  CheckIn,
+  CJ_SCAN_CSS
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/pwa/CheckIn.jsx", error: String((e && e.message) || e) }); }
 
 // ui_kits/pwa/Conversation.jsx
 try { (() => {
@@ -1477,6 +1845,9 @@ function Feedback({
   const [answers, setAnswers] = React.useState([]);
   const [picked, setPicked] = React.useState(null);
   const done = step >= questions.length;
+  React.useEffect(() => {
+    if (window.lucide) window.lucide.createIcons();
+  });
   const pick = a => {
     setPicked(a);
     setAnswers(prev => [...prev, a]);
@@ -1584,6 +1955,9 @@ function KnowledgeCapture({
   const [stage, setStage] = React.useState('pick'); // pick | analyzing | done
   const [link, setLink] = React.useState('');
   const [aStep, setAStep] = React.useState(0);
+  React.useEffect(() => {
+    if (window.lucide) window.lucide.createIcons();
+  });
   const start = () => {
     setStage('analyzing');
     setAStep(0);
@@ -1803,6 +2177,7 @@ function LivingMap({
     type: r.type,
     label: r.id === sel ? r.name : r.type === 'recommended' ? r.name : null,
     selected: r.id === sel,
+    novelty: r.type === 'new',
     onClick: () => setSel(r.id)
   }))), D.events.map(e => /*#__PURE__*/React.createElement("span", {
     key: e.id,
@@ -2062,6 +2437,205 @@ Object.assign(window, {
 });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/pwa/MapCanvas.jsx", error: String((e && e.message) || e) }); }
 
+// ui_kits/pwa/Passport.jsx
+try { (() => {
+/* Screen 8 — Mi Pasaporte de Cafés (SPEC-021). An album of real
+   progress: cafés visited (via real check-ins, SPEC-020) with the
+   first-visit date, and cafés por visitar grouped by barrio.
+   Progress is measured against the REAL catalog size — never an
+   invented goal. NO streaks, NO leaderboards, NO FOMO
+   (respects gamification.md). Private to the user.  */
+
+function Passport({
+  onBack,
+  onOpenRestaurant,
+  onCheckIn
+}) {
+  const NS = window.CajuEatDesignSystem_dbeea0;
+  const {
+    Badge,
+    CajuPoints,
+    Button
+  } = NS;
+  const D = window.CAJU_DATA;
+  const cafes = D.cafes;
+  const visited = cafes.filter(c => c.visited);
+  const pending = cafes.filter(c => !c.visited);
+
+  // group "por visitar" by barrio
+  const byBarrio = {};
+  pending.forEach(c => {
+    (byBarrio[c.neighborhood] = byBarrio[c.neighborhood] || []).push(c);
+  });
+  const barrios = Object.keys(byBarrio).sort((a, b) => byBarrio[b].length - byBarrio[a].length);
+  const fmt = d => new Date(d + 'T12:00').toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'short'
+  });
+  const pct = Math.round(visited.length / cafes.length * 100);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "cj-screen cj-pass"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__head"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "cj-iconback",
+    onClick: onBack,
+    "aria-label": "Volver"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "chevron-left",
+    size: 22
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__htitle"
+  }, "Mi Pasaporte"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 40
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__scroll"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__hero"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__ring",
+    style: {
+      '--p': pct
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__ringin"
+  }, /*#__PURE__*/React.createElement("b", null, visited.length), /*#__PURE__*/React.createElement("span", null, "de ", cafes.length))), /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__herotxt"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "cj-pass__lead"
+  }, "Vas conociendo la ciudad, caf\xE9 por caf\xE9."), /*#__PURE__*/React.createElement("p", {
+    className: "cj-pass__sub"
+  }, cafes.length - visited.length, " lugares del cat\xE1logo te esperan. Sum\xE1s uno cada vez que hac\xE9s check-in real en un lugar nuevo."))), /*#__PURE__*/React.createElement("section", {
+    className: "cj-pass__sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__sech"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: "over"
+  }, "Visitados"), /*#__PURE__*/React.createElement("span", {
+    className: "cj-pass__count"
+  }, visited.length)), /*#__PURE__*/React.createElement("div", {
+    className: "cj-stamps"
+  }, visited.map(c => /*#__PURE__*/React.createElement("button", {
+    className: "cj-stamp",
+    key: c.id,
+    onClick: () => onOpenRestaurant && onOpenRestaurant(c.id)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cj-stamp__seal"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "check",
+    size: 18
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "cj-stamp__name"
+  }, c.name), /*#__PURE__*/React.createElement("span", {
+    className: "cj-stamp__meta"
+  }, c.neighborhood, " \xB7 ", fmt(c.visited)))))), /*#__PURE__*/React.createElement("section", {
+    className: "cj-pass__sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__sech"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: "over"
+  }, "Por visitar"), /*#__PURE__*/React.createElement("span", {
+    className: "cj-pass__count"
+  }, pending.length)), barrios.map(b => /*#__PURE__*/React.createElement("div", {
+    className: "cj-barrio",
+    key: b
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-barrio__h"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "map-pin",
+    size: 14
+  }), " ", b, /*#__PURE__*/React.createElement("span", {
+    className: "cj-barrio__n"
+  }, byBarrio[b].length)), /*#__PURE__*/React.createElement("div", {
+    className: "cj-barrio__list"
+  }, byBarrio[b].map(c => /*#__PURE__*/React.createElement("button", {
+    className: "cj-todo",
+    key: c.id,
+    onClick: () => onOpenRestaurant && onOpenRestaurant(c.id)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cj-todo__dot"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cj-todo__name"
+  }, c.name), c.isNew && /*#__PURE__*/React.createElement("span", {
+    className: "cj-todo__new"
+  }, "Nuevo"), /*#__PURE__*/React.createElement(window.Icon, {
+    name: "chevron-right",
+    size: 16
+  }))))))), /*#__PURE__*/React.createElement("div", {
+    className: "cj-pass__cta"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "brandGhost",
+    size: "lg",
+    block: true,
+    iconLeft: /*#__PURE__*/React.createElement(window.Icon, {
+      name: "qr-code",
+      size: 18
+    }),
+    onClick: onCheckIn
+  }, "Hacer check-in en un lugar"), /*#__PURE__*/React.createElement("p", {
+    className: "cj-pass__note"
+  }, "Sin rachas ni competencia. Tu pasaporte es tuyo y va a tu ritmo."))));
+}
+const CJ_PASS_CSS = `
+.cj-pass { display: flex; flex-direction: column; background: var(--paper); }
+.cj-pass__head { position: relative; z-index: 10; flex-shrink: 0; padding: 44px 8px 0;
+  height: 92px; display: flex; align-items: center; justify-content: space-between;
+  background: rgba(252,251,248,.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line-soft); }
+.cj-pass__htitle { font-family: var(--font-sans); font-weight: 600; font-size: 17px; color: var(--ink-900); }
+.cj-pass__scroll { flex: 1; overflow-y: auto; padding: 18px 18px calc(var(--tabbar-h) + 20px); scrollbar-width: none; }
+.cj-pass__scroll::-webkit-scrollbar { display: none; }
+
+.cj-pass__hero { display: flex; gap: 16px; align-items: center; padding: 6px 2px 20px; }
+.cj-pass__ring { --p: 25; width: 92px; height: 92px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(var(--caju-500) calc(var(--p) * 1%), var(--paper-sunk) 0);
+  display: grid; place-items: center; }
+.cj-pass__ringin { width: 74px; height: 74px; border-radius: 50%; background: var(--surface);
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.cj-pass__ringin b { font-family: var(--font-mono); font-size: 26px; color: var(--ink-900); line-height: 1; }
+.cj-pass__ringin span { font-size: 11px; color: var(--ink-400); margin-top: 2px; }
+.cj-pass__lead { font-family: var(--font-serif); font-size: 21px; line-height: 1.22; color: var(--ink-900); letter-spacing: -0.01em; }
+.cj-pass__sub { font-size: 13px; color: var(--ink-500); line-height: 1.5; margin-top: 6px; }
+
+.cj-pass__sec { padding: 18px 0; border-top: 1px solid var(--line-soft); }
+.cj-pass__sech { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.cj-pass__count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-400); }
+
+.cj-stamps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cj-stamp { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 14px;
+  border-radius: var(--r-lg); border: 1px solid var(--leaf-100); background: var(--leaf-050); cursor: pointer;
+  text-align: left; transition: transform var(--motion-press); }
+.cj-stamp:active { transform: scale(.98); }
+.cj-stamp__seal { width: 30px; height: 30px; border-radius: 50%; background: var(--leaf-500); color: #fff;
+  display: grid; place-items: center; margin-bottom: 6px; }
+.cj-stamp__name { font-size: 15px; font-weight: 600; color: var(--ink-900); }
+.cj-stamp__meta { font-size: 12px; color: var(--ink-500); }
+
+.cj-barrio { margin-bottom: 14px; }
+.cj-barrio__h { display: flex; align-items: center; gap: 6px; font-family: var(--font-sans);
+  font-size: 13px; font-weight: 600; color: var(--ink-700); margin-bottom: 6px; }
+.cj-barrio__h i { color: var(--ink-400); }
+.cj-barrio__n { font-family: var(--font-mono); font-size: 11px; color: var(--ink-400); margin-left: 2px; }
+.cj-barrio__list { display: flex; flex-direction: column; }
+.cj-todo { display: flex; align-items: center; gap: 11px; padding: 11px 4px; cursor: pointer;
+  border: 0; background: none; border-bottom: 1px solid var(--line-soft); text-align: left; width: 100%; }
+.cj-todo:last-child { border-bottom: 0; }
+.cj-todo__dot { width: 9px; height: 9px; border-radius: 50%; border: 2px dashed var(--line-strong); flex-shrink: 0; }
+.cj-todo__name { flex: 1; font-size: 15px; color: var(--ink-800); font-family: var(--font-sans); }
+.cj-todo__new { font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--amber-600);
+  background: var(--amber-100); padding: 2px 8px; border-radius: var(--r-full); }
+.cj-todo i { color: var(--ink-300); }
+
+.cj-pass__cta { padding: 20px 0 8px; border-top: 1px solid var(--line-soft); }
+.cj-pass__note { text-align: center; font-size: 12px; color: var(--ink-400); margin-top: 12px; line-height: 1.5; }
+`;
+Object.assign(window, {
+  Passport,
+  CJ_PASS_CSS
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/pwa/Passport.jsx", error: String((e && e.message) || e) }); }
+
 // ui_kits/pwa/Profile.jsx
 try { (() => {
 /* Screen 6 — Profile / Memory. How the Brain understands you.
@@ -2071,7 +2645,8 @@ function Profile({
   saved,
   onOpenRestaurant,
   onFeedback,
-  onCapture
+  onCapture,
+  onPassport
 }) {
   const NS = window.CajuEatDesignSystem_dbeea0;
   const {
@@ -2097,7 +2672,22 @@ function Profile({
     value: D.user.points,
     size: "lg",
     unit: "Caju Points"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "cj-prof-passport",
+    onClick: onPassport
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-prof-passport__ring"
+  }, /*#__PURE__*/React.createElement("b", null, D.cafes.filter(c => c.visited).length), /*#__PURE__*/React.createElement("span", null, "/", D.cafes.length)), /*#__PURE__*/React.createElement("div", {
+    className: "cj-prof-passport__t"
+  }, /*#__PURE__*/React.createElement("b", null, "Mi Pasaporte de Caf\xE9s"), /*#__PURE__*/React.createElement("span", null, "Vas conociendo la ciudad, caf\xE9 por caf\xE9.")), /*#__PURE__*/React.createElement("div", {
+    className: "cj-prof-passport__stamps"
+  }, D.cafes.filter(c => c.visited).slice(0, 3).map(c => /*#__PURE__*/React.createElement("span", {
+    className: "cj-prof-passport__seal",
+    key: c.id
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "check",
+    size: 12
+  }))))), /*#__PURE__*/React.createElement("div", {
     className: "cj-prof-nudge",
     onClick: onFeedback
   }, /*#__PURE__*/React.createElement(NS.BrainMark, {
@@ -2202,6 +2792,22 @@ const CJ_PROF_CSS = `
 .cj-prof-nudge__t b { font-size: 15px; color: var(--ink-900); }
 .cj-prof-nudge__t span { font-size: 13px; color: var(--ink-500); }
 .cj-prof-nudge i { color: var(--caju-400); }
+.cj-prof-passport { width: 100%; display: flex; align-items: center; gap: 13px; padding: 15px; margin-bottom: 8px;
+  cursor: pointer; border: 0; text-align: left; border-radius: var(--r-lg);
+  background: var(--ink-900); color: #fff; position: relative; overflow: hidden; }
+.cj-prof-passport::before { content: ''; position: absolute; right: -24px; bottom: -30px; width: 110px; height: 110px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(248,122,69,.34), transparent 70%); }
+.cj-prof-passport__ring { width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(var(--caju-500) 33%, rgba(255,255,255,.14) 0);
+  display: grid; place-items: center; }
+.cj-prof-passport__ring b { font-family: var(--font-mono); font-size: 15px; line-height: 1; }
+.cj-prof-passport__ring span { display: none; }
+.cj-prof-passport__t { flex: 1; display: flex; flex-direction: column; gap: 2px; z-index: 1; }
+.cj-prof-passport__t b { font-size: 15px; font-weight: 600; }
+.cj-prof-passport__t span { font-size: 12.5px; color: rgba(255,255,255,.65); }
+.cj-prof-passport__stamps { display: flex; gap: -4px; z-index: 1; }
+.cj-prof-passport__seal { width: 24px; height: 24px; border-radius: 50%; background: var(--leaf-500); color: #fff;
+  display: grid; place-items: center; margin-left: -6px; border: 2px solid var(--ink-900); }
 .cj-prof-sec { padding: 20px 0; border-top: 1px solid var(--line-soft); }
 .cj-prof-lead { font-size: 13px; color: var(--ink-500); margin: 8px 0 12px; }
 .cj-dna { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -2235,6 +2841,8 @@ function Restaurant({
   onBack,
   onOpenChat,
   onOpenRestaurant,
+  onCheckIn,
+  onRedeem,
   saved,
   toggleSave
 }) {
@@ -2415,6 +3023,49 @@ function Restaurant({
     onClick: () => onOpenRestaurant && onOpenRestaurant(n.id)
   })))), /*#__PURE__*/React.createElement("section", {
     className: "cj-sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cj-ig__h"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: "over"
+  }, "En Instagram"), /*#__PURE__*/React.createElement("a", {
+    className: "cj-ig__handle",
+    href: "#",
+    onClick: e => e.preventDefault()
+  }, "@", r.id, ".bsas ", /*#__PURE__*/React.createElement(window.Icon, {
+    name: "external-link",
+    size: 13
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "cj-ig__strip"
+  }, [0, 1, 2, 3].map(i => /*#__PURE__*/React.createElement("div", {
+    className: `cj-ig__cell cj-ig__cell--${i % 4}`,
+    key: i
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: ['image', 'utensils', 'coffee', 'image'][i],
+    size: 20
+  }), i === 0 && /*#__PURE__*/React.createElement("span", {
+    className: "cj-ig__reel"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "play",
+    size: 11
+  }))))), /*#__PURE__*/React.createElement("p", {
+    className: "cj-ig__note"
+  }, "El Brain ley\xF3 sus \xFAltimos posteos para mantener el men\xFA y las novedades al d\xEDa.")), /*#__PURE__*/React.createElement("section", {
+    className: "cj-sec"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "cj-checkin",
+    onClick: () => onCheckIn && onCheckIn(r.id)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cj-checkin__ic"
+  }, /*#__PURE__*/React.createElement(window.Icon, {
+    name: "qr-code",
+    size: 22
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "cj-checkin__tx"
+  }, /*#__PURE__*/React.createElement("b", null, "Hac\xE9 check-in ac\xE1"), /*#__PURE__*/React.createElement("span", null, "Escane\xE1 el QR del mostrador para sumar la visita y poder dejar tu rese\xF1a.")), /*#__PURE__*/React.createElement(window.Icon, {
+    name: "chevron-right",
+    size: 18
+  }))), /*#__PURE__*/React.createElement("section", {
+    className: "cj-sec"
   }, /*#__PURE__*/React.createElement("button", {
     className: "cj-ask",
     onClick: () => onOpenChat(`¿Vale la pena ${r.name} para una cita?`)
@@ -2430,10 +3081,11 @@ function Restaurant({
     variant: "secondary",
     size: "lg",
     iconLeft: /*#__PURE__*/React.createElement(window.Icon, {
-      name: "plus",
+      name: "wallet",
       size: 18
     }),
-    "aria-label": "Agregar a plan"
+    "aria-label": "Usar puntos",
+    onClick: () => onRedeem && onRedeem(r.id)
   }), /*#__PURE__*/React.createElement(Button, {
     variant: "primary",
     size: "lg",
@@ -2499,6 +3151,28 @@ const CJ_REST_CSS = `
   background: var(--caju-050); border: 1px solid var(--caju-100); border-radius: var(--r-lg);
   font-family: var(--font-sans); font-size: 15px; font-weight: 500; color: var(--caju-700); }
 .cj-ask span { flex: 1; text-align: left; }
+.cj-ig__h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cj-ig__handle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600;
+  color: var(--caju-600); font-family: var(--font-sans); }
+.cj-ig__strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cj-ig__cell { position: relative; aspect-ratio: 1; border-radius: var(--r-sm); display: grid; place-items: center;
+  color: rgba(255,255,255,.85); }
+.cj-ig__cell--0 { background: linear-gradient(140deg, var(--caju-300), var(--caju-500)); }
+.cj-ig__cell--1 { background: linear-gradient(140deg, var(--amber-500), var(--caju-400)); }
+.cj-ig__cell--2 { background: linear-gradient(140deg, #B98A5E, #8A6248); }
+.cj-ig__cell--3 { background: linear-gradient(140deg, var(--caju-400), var(--amber-500)); }
+.cj-ig__reel { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,.35); display: grid; place-items: center; }
+.cj-ig__note { font-size: 12px; color: var(--ink-400); line-height: 1.5; margin-top: 10px; }
+.cj-checkin { width: 100%; display: flex; align-items: center; gap: 13px; padding: 15px 16px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); text-align: left; }
+.cj-checkin:active { transform: scale(.99); }
+.cj-checkin__ic { width: 44px; height: 44px; border-radius: 13px; background: var(--ink-900); color: #fff;
+  display: grid; place-items: center; flex-shrink: 0; }
+.cj-checkin__tx { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cj-checkin__tx b { font-size: 15px; color: var(--ink-900); font-weight: 600; }
+.cj-checkin__tx span { font-size: 12.5px; color: var(--ink-500); line-height: 1.4; }
+.cj-checkin i { color: var(--ink-300); }
 .cj-rest-cta { flex-shrink: 0; display: flex; gap: 10px; padding: 12px 16px calc(12px + var(--safe-bottom));
   background: rgba(252,251,248,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line-soft); }
 `;
@@ -2544,10 +3218,15 @@ function App() {
     name: 'map'
   });
   const [overlay, setOverlay] = React.useState(null); // 'capture' | 'feedback'
+  const [scan, setScan] = React.useState(null); // { mode, restaurantId } | null
   const [query, setQuery] = React.useState('');
   const [saved, setSaved] = React.useState({
     osaka: true,
     cuervo: true
+  });
+  const openCheckIn = (restaurantId, mode = 'checkin') => setScan({
+    mode,
+    restaurantId
   });
   const toggleSave = id => setSaved(s => ({
     ...s,
@@ -2604,16 +3283,30 @@ function App() {
     onBack: goMap,
     onOpenChat: openChat,
     onOpenRestaurant: openRestaurant,
+    onCheckIn: id => openCheckIn(id, 'checkin'),
+    onRedeem: id => openCheckIn(id, 'redeem'),
     saved: saved,
     toggleSave: toggleSave
   });else if (route.name === 'profile') screen = /*#__PURE__*/React.createElement(window.Profile, {
     saved: saved,
     onOpenRestaurant: openRestaurant,
     onFeedback: () => setOverlay('feedback'),
-    onCapture: () => setOverlay('capture')
+    onCapture: () => setOverlay('capture'),
+    onPassport: () => setRoute({
+      name: 'passport'
+    })
+  });else if (route.name === 'passport') screen = /*#__PURE__*/React.createElement(window.Passport, {
+    onBack: () => {
+      setTab('profile');
+      setRoute({
+        name: 'profile'
+      });
+    },
+    onOpenRestaurant: openRestaurant,
+    onCheckIn: () => openCheckIn('osaka', 'checkin')
   });
   const darkStatus = route.name === 'restaurant';
-  const hideTabs = route.name === 'convo' || route.name === 'restaurant';
+  const hideTabs = route.name === 'convo' || route.name === 'restaurant' || route.name === 'passport';
   return /*#__PURE__*/React.createElement("div", {
     className: "cj-desk"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2635,6 +3328,11 @@ function App() {
       setOverlay(null);
       goMap();
     }
+  }), scan && /*#__PURE__*/React.createElement(window.CheckIn, {
+    mode: scan.mode,
+    restaurantId: scan.restaurantId,
+    onClose: () => setScan(null),
+    onDone: () => setScan(null)
   })), /*#__PURE__*/React.createElement("div", {
     className: "cj-homebar"
   })), /*#__PURE__*/React.createElement("p", {
@@ -2837,6 +3535,73 @@ window.CAJU_DATA = {
       kind: 'community',
       weight: 'weak'
     }]
+  }],
+  /* Wider café catalog for the Passport (SPEC-021) — grouped by barrio.
+     visited: first real check-in date (SPEC-020) or null = por visitar.
+     `isNew` flags a novelty pin (SPEC-024). */
+  cafes: [{
+    id: 'osaka',
+    name: 'Osaka',
+    neighborhood: 'Palermo',
+    visited: '2026-06-12'
+  }, {
+    id: 'cuervo',
+    name: 'Cuervo Café',
+    neighborhood: 'Villa Crespo',
+    visited: '2026-06-28'
+  }, {
+    id: 'anafe',
+    name: 'Anafe',
+    neighborhood: 'Chacarita',
+    visited: null,
+    isNew: true
+  }, {
+    id: 'lab',
+    name: 'LAB Tostadores',
+    neighborhood: 'Palermo',
+    visited: '2026-05-30'
+  }, {
+    id: 'felix',
+    name: 'Félix Felicis',
+    neighborhood: 'Palermo',
+    visited: null
+  }, {
+    id: 'birkin',
+    name: 'Birkin',
+    neighborhood: 'Palermo',
+    visited: null
+  }, {
+    id: 'rondo',
+    name: 'Rondó',
+    neighborhood: 'Villa Crespo',
+    visited: null,
+    isNew: true
+  }, {
+    id: 'salvaje',
+    name: 'Salvaje Bakery',
+    neighborhood: 'Villa Crespo',
+    visited: null
+  }, {
+    id: 'coco',
+    name: 'Coco Espresso',
+    neighborhood: 'Chacarita',
+    visited: null
+  }, {
+    id: 'toro',
+    name: 'Toro Café',
+    neighborhood: 'Chacarita',
+    visited: null
+  }, {
+    id: 'nucha',
+    name: 'Nucha',
+    neighborhood: 'Colegiales',
+    visited: null
+  }, {
+    id: 'ninina',
+    name: 'Ninina',
+    neighborhood: 'Colegiales',
+    visited: null,
+    isNew: true
   }],
   events: [{
     id: 'feria',

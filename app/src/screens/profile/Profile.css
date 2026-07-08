@@ -46,6 +46,11 @@
   border: 1px solid var(--caju-100);
   border-radius: var(--r-lg);
 }
+.cj-prof-nudge--pass {
+  background: var(--leaf-050);
+  border-color: var(--leaf-100);
+  color: var(--leaf-700);
+}
 .cj-prof-nudge__t {
   flex: 1;
   display: flex;

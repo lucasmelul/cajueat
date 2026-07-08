@@ -48,3 +48,23 @@ export interface ConversationTurn {
   /** Real Caju Points awarded for `learnedAbout`. */
   learnedPoints?: number;
 }
+
+/** SPEC-020 QR Check-in / SPEC-023 redemption — a discriminated result, not a thrown error, for every expected outcome (same pattern as verifySyncCode's `conflict`). */
+export interface CheckinResult {
+  ok: boolean;
+  restaurant?: Restaurant;
+  pointsAwarded?: number;
+  firstVisit?: boolean;
+  pointsSpent?: number;
+  remainingBalance?: number;
+  error?: 'out_of_range' | 'already_checked_in_today' | 'invalid_token' | 'restaurant_not_found' | 'insufficient_points' | 'cooldown_active' | 'points_required';
+  balance?: number;
+  retryAt?: number;
+}
+
+/** SPEC-021 Mi Pasaporte — real visited/pending state against the real catalog, never a fixture goal. */
+export interface Passport {
+  catalogSize: number;
+  visited: { restaurant: Restaurant; firstVisitAt: number }[];
+  pendingByNeighborhood: { neighborhood: string; restaurants: Restaurant[] }[];
+}

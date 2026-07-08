@@ -13,9 +13,11 @@ Open **`index.html`** for the full prototype: an iPhone frame you can actually u
 | `Restaurant.jsx` | **Restaurant Experience** — editorial ficha: hero, Brain summary, quick facts, qué pedir, Brain tips, sources, ideal/no-ideal | SPEC-003 |
 | `KnowledgeCapture.jsx` | **Knowledge Capture** — voz/foto/reel/nota → Brain analiza → aprende → Caju Points | SPEC-004 |
 | `Feedback.jsx` | **Post-visit Feedback** — 3-4 question conversation, not a review; earns Caju Points | CP-009 |
-| `Profile.jsx` | **Profile / Memory** — gastronomic DNA, points, saved, contributions | SPEC-010 |
+| `Profile.jsx` | **Profile / Memory** — gastronomic DNA, points, saved, contributions, passport card | SPEC-010 |
+| `CheckIn.jsx` | **QR Check-in** — in-app camera, 3-signal validation, success/error; also **points redemption** (mode `redeem`) | SPEC-020 / SPEC-023 |
+| `Passport.jsx` | **Mi Pasaporte de Cafés** — visited stamps + por-visitar by barrio, real-catalog progress, no streaks | SPEC-021 |
 
-Supporting: `Shell.jsx` (phone frame + tab bar + navigation + overlays), `MapCanvas.jsx` (stylized calm map backdrop), `kit.jsx` (Icon + StatusBar helpers), `data.js` (fictional Buenos Aires sample data).
+Supporting: `Shell.jsx` (phone frame + tab bar + navigation + overlays), `MapCanvas.jsx` (stylized calm map backdrop), `kit.jsx` (Icon + StatusBar helpers), `data.js` (fictional Buenos Aires sample data), `CheckIn.jsx` (QR check-in SPEC-020 + points redemption SPEC-023), `Passport.jsx` (Coffee Passport SPEC-021).
 
 ## What you can do in the prototype
 - Tap map pins → peek card → open the full restaurant ficha.

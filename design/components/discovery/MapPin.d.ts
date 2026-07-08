@@ -11,6 +11,8 @@ export interface MapPinProps {
   selected?: boolean;
   /** Force the compact dot form even with a label. */
   dotOnly?: boolean;
+  /** Amber content ring — signals new Instagram activity (SPEC-024). */
+  novelty?: boolean;
   onClick?: () => void;
   className?: string;
 }

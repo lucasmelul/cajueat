@@ -127,4 +127,21 @@ export const httpBrainClient: BrainClient = {
   verifySyncCode: (phone, code) => request('/identity/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
 
   getActivity: () => request('/activity'),
+
+  // SPEC-020/023: every expected outcome (out of range, already checked in, cooldown,
+  // insufficient points) is a real, documented error the backend returns as a typed JSON
+  // body on a non-2xx status — read here instead of using `request()`, which would only
+  // throw a generic Error and lose that detail.
+  checkin: async ({ token, position, mode, points }) => {
+    const res = await fetch(`${BASE_URL}/api/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Caju-User-Id': getAnonId() },
+      body: JSON.stringify({ token, position, mode, points }),
+    });
+    const body = await res.json();
+    if (!res.ok) return { ok: false, error: body.error, balance: body.balance, retryAt: body.retryAt };
+    return { ok: true, ...body };
+  },
+
+  getPassport: () => request('/passport'),
 };

@@ -82,5 +82,22 @@ window.CAJU_DATA = {
       ],
     },
   ],
+  /* Wider café catalog for the Passport (SPEC-021) — grouped by barrio.
+     visited: first real check-in date (SPEC-020) or null = por visitar.
+     `isNew` flags a novelty pin (SPEC-024). */
+  cafes: [
+    { id: 'osaka',   name: 'Osaka',        neighborhood: 'Palermo',      visited: '2026-06-12' },
+    { id: 'cuervo',  name: 'Cuervo Café',  neighborhood: 'Villa Crespo', visited: '2026-06-28' },
+    { id: 'anafe',   name: 'Anafe',        neighborhood: 'Chacarita',    visited: null, isNew: true },
+    { id: 'lab',     name: 'LAB Tostadores', neighborhood: 'Palermo',    visited: '2026-05-30' },
+    { id: 'felix',   name: 'Félix Felicis', neighborhood: 'Palermo',     visited: null },
+    { id: 'birkin',  name: 'Birkin',       neighborhood: 'Palermo',      visited: null },
+    { id: 'rondo',   name: 'Rondó',        neighborhood: 'Villa Crespo', visited: null, isNew: true },
+    { id: 'salvaje', name: 'Salvaje Bakery', neighborhood: 'Villa Crespo', visited: null },
+    { id: 'coco',    name: 'Coco Espresso', neighborhood: 'Chacarita',   visited: null },
+    { id: 'toro',    name: 'Toro Café',    neighborhood: 'Chacarita',    visited: null },
+    { id: 'nucha',   name: 'Nucha',        neighborhood: 'Colegiales',   visited: null },
+    { id: 'ninina',  name: 'Ninina',       neighborhood: 'Colegiales',   visited: null, isNew: true },
+  ],
   events: [{ id: 'feria', name: 'Feria gastronómica', when: 'sáb', pos: { top: '30%', left: '66%' } }],
 };

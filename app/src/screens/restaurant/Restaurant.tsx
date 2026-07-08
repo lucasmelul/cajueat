@@ -15,6 +15,7 @@ import {
   Heart,
   Laptop,
   Navigation,
+  QrCode,
   Share2,
   Sun,
   ThumbsUp,
@@ -289,8 +290,9 @@ export function Restaurant() {
         </div>
       </div>
 
-      {/* Sticky primary CTA — one action, external deep link (never in-app navigation) */}
-      <div className="cj-rest-cta">
+      {/* Sticky CTAs — "Cómo llegar" is an external deep link (never in-app navigation);
+          "Hacer check-in" (SPEC-020) is the real evidence that unlocks leaving a review. */}
+      <div className="cj-rest-cta cj-rest-cta--stack">
         <Button
           variant="primary"
           size="lg"
@@ -299,6 +301,9 @@ export function Restaurant() {
           onClick={() => window.open(directionsUrl(restaurant), '_blank', 'noopener')}
         >
           Cómo llegar
+        </Button>
+        <Button variant="secondary" size="md" block iconLeft={<QrCode size={16} />} onClick={() => navigate(`/checkin/${restaurant.id}`)}>
+          Hacer check-in
         </Button>
       </div>
     </div>

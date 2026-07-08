@@ -24,6 +24,10 @@ Reference renders of each screen (full device frame) are in `handoff_screenshots
 4. `4-knowledge-capture.png` — Knowledge Capture sheet
 5. `5-profile.png` — Profile / Memory
 6. `6-feedback.png` — Post-visit Feedback
+7. `7-checkin-scan.png` — QR Check-in scan (SPEC-020)
+8. `8-checkin-success.png` — Check-in verified + points + review unlock
+9. `9-passport.png` — Mi Pasaporte de Cafés (SPEC-021)
+10. `10-redeem-voucher.png` — Points redeemed as credit (SPEC-023)
 
 ## Recommended stack
 - **React + Vite + TypeScript**, configured as an installable **PWA** (`vite-plugin-pwa`), mobile-first.
@@ -73,7 +77,10 @@ Detailed layout & component specs live in `COMPONENT_LIBRARY.md`, `INFORMATION_A
 3. **Restaurant Experience** — `Restaurant.jsx` · SPEC-003. Editorial ficha (not a directory). Order: hero (½ screen: image, name in serif, cuisine, TrustMeter, price) → Brain Summary (serif, ≤3 párrafos) → single primary CTA (Cómo llegar) → Quick Facts (≤6) → Qué pedir (por perfil) → Personality → Brain Tips → ¿Por qué? (weighted SourceChips) → Ideal / No ideal → Cerca de acá (nearby) → Ask Caju. Sticky CTA bar. **All decisive info before the first scroll. No stars/review counts.**
 4. **Knowledge Capture** — `KnowledgeCapture.jsx` · PRD-004. Overlay sheet: voz/foto/reel-link/nota → Brain analyzes step-by-step → shows what it learned (serif) + Caju Points. < 30s, no forms.
 5. **Post-visit Feedback** — `Feedback.jsx` · CP-009. Overlay: 3–4 chip-answer questions with progress + per-answer confirmation → what the Brain learned about you + Caju Points. Not a review.
-6. **Profile / Memory** — `Profile.jsx` · SPEC-010. Avatar + name + Caju Points; pending-feedback nudge; **editable** ADN gastronómico (chips, edit mode with remove/add); Guardados; aportes timeline; aportar CTA.
+6. **Profile / Memory** — `Profile.jsx` · SPEC-010. Avatar + name + Caju Points; **Mi Pasaporte** preview card; pending-feedback nudge; **editable** ADN gastronómico (chips, edit mode with remove/add); Guardados; aportes timeline; aportar CTA.
+7. **QR Check-in** — `CheckIn.jsx` · SPEC-020. Full-screen in-app camera (never the system camera): framing reticle + scan line → validating three real signals step-by-step (restaurante verificado, estás en el lugar via geolocation, timestamp de servidor) → success sheet (check-in registered + discovery points + **unlocks leaving a review**). Error state = out-of-range (must be physically present). **The check-in is real evidence — never self-declared.** Entry from the Restaurant ficha and the Passport.
+8. **Mi Pasaporte de Cafés** — `Passport.jsx` · SPEC-021. Album of real progress: cafés **visited** (only via a real check-in, with first-visit date) as stamps, and cafés **por visitar grouped by barrio**, with a progress ring measured against the **real catalog size** (never an invented goal). **NO streaks, NO leaderboards, NO FOMO** (respects `gamification.md`). Private to the user. Reached from the Profile passport card.
+9. **Points redemption** — `CheckIn.jsx` (mode `redeem`) · SPEC-023. Reuses the same scan → validating, then a simple **"elegí cuántos puntos"** stepper (100 pts = $500 demo rate) → voucher (amount, place, timestamp, code) to show the operator. **15-day cooldown per venue** (adopted from the Pasito pattern).
 
 ## Interactions & behavior
 Full flows in `USER_FLOWS.md`. Key rules:
@@ -82,6 +89,12 @@ Full flows in `USER_FLOWS.md`. Key rules:
 - "Cómo llegar" opens Google/Apple Maps (no in-app navigation).
 - Zoom changes context (far → barrios, near → restaurantes), doesn't just scale.
 - Entrances decelerate; sheets spring-snap; press shrinks to .97.
+
+## Newer specs covered (SPEC-020/021/023/024)
+- **SPEC-020 QR Check-in** is the foundational evidence: a signed QR token (`restaurantId` + local secret + short validity) + **real geolocation** near the venue (reuse `haversineKm` from `brain/src/geo/geo.ts`) + **server timestamp**. One check-in per user per restaurant per day; check-ins are append-only (never edited/deleted); a review requires a prior real check-in. New `checkinStore.ts` (same JSON-persisted pattern as the other stores). QR generation lives in Admin CMS.
+- **SPEC-021 Passport** reuses `addCajuPoints`/`recordContribution` in `memoryStore.ts` — **no second points currency**. Group por-visitar by the existing `neighborhood` field (no new ETL). Depends firmly on SPEC-020.
+- **SPEC-023 Redemption** consumes points as credit only against a real check-in; 15-day cooldown per venue.
+- **SPEC-024** adds an Instagram section to the ficha (Brain reads recent posts to keep menu/novelty fresh) and an **amber novelty ring** on map pins (`MapPin novelty` prop) for venues with new activity.
 
 ## State management
 - `route` (map | convo | restaurant:id | profile), `overlay` (capture | feedback | null), `selectedPin`, `saved: Record<id,bool>`, `conversation.turns`, `query`, editable `dna`.

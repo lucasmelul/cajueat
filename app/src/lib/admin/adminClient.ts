@@ -115,6 +115,14 @@ export interface GoogleLinkResult {
   businessStatus: GoogleBusinessStatus;
 }
 
+/** SPEC-023: real Caju Points consumed per restaurant — never a peso equivalent, only counts. */
+export interface ConsumptionSummaryRow {
+  restaurantId: string;
+  restaurantName: string;
+  totalPoints: number;
+  count: number;
+}
+
 /** Dashboard overview — every field is a direct read of real data (never a placeholder metric). */
 export interface AdminStats {
   restaurants: {
@@ -181,4 +189,9 @@ export const adminClient = {
 
   refreshFromGoogle: (restaurantId: string) =>
     request<GoogleLinkResult>(`/admin/restaurants/${restaurantId}/refresh-google`, { method: 'POST' }),
+
+  /** SPEC-020: the static signed token this restaurant's printed/displayed QR should encode — the operator renders it as an image client-side. */
+  getCheckinToken: (restaurantId: string) => request<{ token: string }>(`/admin/restaurants/${restaurantId}/checkin-token`),
+
+  getConsumption: () => request<ConsumptionSummaryRow[]>('/admin/consumption'),
 };

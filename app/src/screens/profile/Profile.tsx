@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ChevronRight, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
+import { Bell, ChevronRight, Plus, ShieldCheck, Stamp, Trash2, X } from 'lucide-react';
 import { Badge, Button, Chip, IconButton } from '../../components/core';
 import { CajuPoints, RestaurantCard } from '../../components/discovery';
 import { BrainMark } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { getCurrentSubscription, getPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../../lib/push/pushClient';
 import { useAppStore } from '../../lib/store/useAppStore';
-import type { Contribution, PendingFeedback, Restaurant } from '../../types';
+import type { Contribution, Passport, PendingFeedback, Restaurant } from '../../types';
 import './Profile.css';
 
 /** "hace 2 días" / "hace 1 semana" style, same tone as the rest of the product — no raw dates in the UI. */
@@ -48,6 +48,7 @@ export function Profile() {
   const [pushState, setPushState] = useState<'idle' | 'checking' | 'granted' | 'denied' | 'unsupported'>('idle');
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [pendingFeedback, setPendingFeedback] = useState<PendingFeedback[]>([]);
+  const [passport, setPassport] = useState<Passport | null>(null);
 
   useEffect(() => {
     if (!user) brain.getUser().then(setUser);
@@ -58,6 +59,7 @@ export function Profile() {
       setContributions(contributions);
       setPendingFeedback(pendingFeedback);
     });
+    brain.getPassport().then(setPassport);
     if (!isPushSupported()) {
       setPushState('unsupported');
     } else {
@@ -128,16 +130,44 @@ export function Profile() {
           {user && <CajuPoints value={user.cajuPoints} size="lg" unit="Caju Points" />}
         </div>
 
-        {pendingFeedback.length > 0 && (
-          <div className="cj-prof-nudge" onClick={() => openOverlay('feedback', pendingFeedback[0].restaurantId)}>
-            <BrainMark size={34} radius={11} />
+        {passport && (
+          <div className="cj-prof-nudge cj-prof-nudge--pass" onClick={() => navigate('/passport')}>
+            <Stamp size={22} />
             <div className="cj-prof-nudge__t">
-              <b>¿Cómo estuvo {pendingFeedback[0].restaurantName}?</b>
-              <span>Contame en 20s y mejorás tus próximas recomendaciones.</span>
+              <b>Mi Pasaporte</b>
+              <span>
+                {passport.visited.length} de {passport.catalogSize} lugares visitados
+              </span>
             </div>
             <ChevronRight size={20} />
           </div>
         )}
+
+        {pendingFeedback.length > 0 &&
+          (() => {
+            const next = pendingFeedback[0];
+            // SPEC-020: dejar una opinión exige un check-in real previo — si todavía no lo hizo, el nudge lo manda a hacer check-in primero, nunca directo al feedback.
+            const checkedIn = passport?.visited.some((v) => v.restaurant.id === next.restaurantId) ?? false;
+            return checkedIn ? (
+              <div className="cj-prof-nudge" onClick={() => openOverlay('feedback', next.restaurantId)}>
+                <BrainMark size={34} radius={11} />
+                <div className="cj-prof-nudge__t">
+                  <b>¿Cómo estuvo {next.restaurantName}?</b>
+                  <span>Contame en 20s y mejorás tus próximas recomendaciones.</span>
+                </div>
+                <ChevronRight size={20} />
+              </div>
+            ) : (
+              <div className="cj-prof-nudge" onClick={() => navigate(`/checkin/${next.restaurantId}`)}>
+                <BrainMark size={34} radius={11} />
+                <div className="cj-prof-nudge__t">
+                  <b>Hacé check-in en {next.restaurantName}</b>
+                  <span>Confirmá que fuiste de verdad para poder dejar tu opinión.</span>
+                </div>
+                <ChevronRight size={20} />
+              </div>
+            );
+          })()}
 
         <section className="cj-prof-sec">
           <div className="cj-prof-sech">

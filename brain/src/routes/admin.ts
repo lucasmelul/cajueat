@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { generateCheckinToken } from '../checkin/checkinTokens.js';
+import { getConsumptionSummary } from '../checkin/consumptionStore.js';
 import { getAllCurators } from '../curators/curatorStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
@@ -379,4 +381,31 @@ adminRouter.delete('/admin/events/:id', (req, res) => {
     return;
   }
   res.status(204).end();
+});
+
+/**
+ * SPEC-020: the static signed token this restaurant's printed/displayed QR encodes.
+ * Deterministic from restaurantId + CHECKIN_SECRET — regenerating it here any time
+ * shows the exact same QR, nothing to persist.
+ */
+adminRouter.get('/admin/restaurants/:id/checkin-token', (req, res) => {
+  const restaurant = getRestaurantById(req.params.id);
+  if (!restaurant) {
+    res.status(404).json({ error: 'restaurant_not_found' });
+    return;
+  }
+  res.json({ token: generateCheckinToken(restaurant.id) });
+});
+
+/** SPEC-023: real Caju Points consumed per restaurant — the system only reports, a human decides how to compensate the venue outside CajuEat. */
+adminRouter.get('/admin/consumption', (_req, res) => {
+  const catalog = getCatalog({ includeDemo: true });
+  const summary = getConsumptionSummary()
+    .map((row) => {
+      const restaurant = catalog.find((r) => r.id === row.restaurantId);
+      return restaurant ? { ...row, restaurantName: restaurant.name } : null;
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .sort((a, b) => b.totalPoints - a.totalPoints);
+  res.json(summary);
 });

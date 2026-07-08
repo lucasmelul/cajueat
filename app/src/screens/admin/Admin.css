@@ -250,3 +250,34 @@
   color: var(--ink-500);
   margin-top: 6px;
 }
+
+.cj-admin-page-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 28px 0 4px;
+}
+.cj-admin-qr {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.cj-admin-qr__img {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--r-md);
+  background: #fff;
+  padding: 8px;
+}
+.cj-admin-row__points {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--caju-600);
+  flex-shrink: 0;
+}

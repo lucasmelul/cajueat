@@ -19,7 +19,7 @@ function LivingMap({ onOpenRestaurant, onOpenChat, onOpenCapture, saved, toggleS
           <span key={r.id} className="cj-pin-at" style={r.pos}>
             {r.type === 'recommended' && r.id !== sel && <span className="cj-pin-halo" />}
             <MapPin type={r.type} label={r.id === sel ? r.name : (r.type === 'recommended' ? r.name : null)}
-                    selected={r.id === sel} onClick={() => setSel(r.id)} />
+                    selected={r.id === sel} novelty={r.type === 'new'} onClick={() => setSel(r.id)} />
           </span>
         ))}
         {D.events.map(e => (

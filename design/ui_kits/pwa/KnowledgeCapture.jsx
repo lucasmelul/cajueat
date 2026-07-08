@@ -8,6 +8,8 @@ function KnowledgeCapture({ onClose }) {
   const [link, setLink] = React.useState('');
   const [aStep, setAStep] = React.useState(0);
 
+  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
   const start = () => {
     setStage('analyzing'); setAStep(0);
     setTimeout(() => setAStep(1), 650);

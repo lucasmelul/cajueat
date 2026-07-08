@@ -17,6 +17,8 @@ function Feedback({ onClose }) {
   const [picked, setPicked] = React.useState(null);
   const done = step >= questions.length;
 
+  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
   const pick = (a) => {
     setPicked(a);
     setAnswers(prev => [...prev, a]);

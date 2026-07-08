@@ -132,7 +132,7 @@ Each component ships a `.jsx`, a `.d.ts` (props contract), a `.prompt.md` (usage
 - **`tokens/`** — `colors.css`, `typography.css`, `spacing.css`, `radius.css`, `elevation.css`, `motion.css`, `fonts.css`, `base.css`.
 - **`components/`** — `core/`, `brain/`, `discovery/` (see Components above).
 - **`guidelines/`** — foundation specimen cards (Colors, Type, Spacing, Elevation, Motion, Brand) shown in the Design System tab.
-- **`ui_kits/pwa/`** — the interactive PWA prototype (Living Map, Conversation, Restaurant, Knowledge Capture, Feedback, Profile). Open `ui_kits/pwa/index.html`.
+- **`ui_kits/pwa/`** — the interactive PWA prototype (Living Map, Conversation, Restaurant, Knowledge Capture, Feedback, Profile, QR Check-in, Coffee Passport, points redemption). Open `ui_kits/pwa/index.html`.
 - **Design docs** (for the product team, per the design brief):
   - `DESIGN_ANALYSIS.md` — audit of the docs, principles, components detected, questions & decisions.
   - `DESIGN_SYSTEM.md` — the full visual-system rulebook.

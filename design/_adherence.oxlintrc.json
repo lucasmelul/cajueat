@@ -82,8 +82,8 @@
         "message": "<IconButton> doesn't accept that prop. Declared props: icon, label, variant, size."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MapPin'] > JSXAttribute > JSXIdentifier[name!=/^(?:type|label|selected|dotOnly|onClick|className|key|ref|className|style|children)$/]",
-        "message": "<MapPin> doesn't accept that prop. Declared props: type, label, selected, dotOnly, onClick, className."
+        "selector": "JSXOpeningElement[name.name='MapPin'] > JSXAttribute > JSXIdentifier[name!=/^(?:type|label|selected|dotOnly|novelty|onClick|className|key|ref|className|style|children)$/]",
+        "message": "<MapPin> doesn't accept that prop. Declared props: type, label, selected, dotOnly, novelty, onClick, className."
       },
       {
         "selector": "JSXOpeningElement[name.name='PromptBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|onSend|onVoice|placeholder|showMark|className|key|ref|className|style|children)$/]",

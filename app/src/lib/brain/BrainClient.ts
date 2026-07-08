@@ -1,10 +1,13 @@
 import type {
+  CheckinResult,
   Collection,
   CompareResult,
   ConversationTurn,
   Contribution,
   DnaTag,
+  GeoPoint,
   MapEvent,
+  Passport,
   PendingFeedback,
   RecommendationContext,
   Recommendations,
@@ -64,4 +67,9 @@ export interface BrainClient {
 
   /** SPEC-011/SPEC-016: real contributions timeline + real saved-without-feedback restaurants — never fixture text. */
   getActivity(): Promise<{ contributions: Contribution[]; pendingFeedback: PendingFeedback[] }>;
+
+  /** SPEC-020 QR Check-in / SPEC-023 redemption — `mode` defaults to 'checkin'; 'redeem' requires `points`. */
+  checkin(input: { token: string; position: GeoPoint; mode?: 'checkin' | 'redeem'; points?: number }): Promise<CheckinResult>;
+  /** SPEC-021 Mi Pasaporte — real visited/pending state, never fixture. */
+  getPassport(): Promise<Passport>;
 }

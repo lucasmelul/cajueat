@@ -67,6 +67,33 @@
 
 ---
 
+## F8 — Check-in con QR (SPEC-020) — verificación real de visita
+
+**Objetivo:** que el Brain sepa, con evidencia real (no autodeclarada), que el usuario estuvo físicamente en un lugar.
+
+1. Desde la ficha del restaurante (o el Pasaporte), el usuario toca **"Hacé check-in acá"** → cámara in-app (no la del sistema).
+2. Encuadra el **QR del mostrador** (marco + línea de escaneo).
+3. El Brain valida **tres señales reales**, paso a paso: restaurante verificado (token) → estás en el lugar (geolocalización real, radio corto) → timestamp del servidor.
+4. Si validan: **check-in registrado** → puntos de descubrimiento + **desbloquea dejar reseña** de ese lugar.
+5. Si falla la geo: estado "todavía no estás en el lugar" → reintentar. Un check-in por usuario/restaurante/día; nunca se edita ni borra.
+
+## F9 — Mi Pasaporte de Cafés (SPEC-021)
+
+**Objetivo:** que conocer la ciudad tenga progreso visible y real, sin adicción.
+
+1. Perfil → tarjeta **Mi Pasaporte** → pantalla del álbum.
+2. **Visitados**: sellos de lugares con check-in real (con fecha de primera visita). **Por visitar**: el resto del catálogo real, **agrupado por barrio**.
+3. Anillo de progreso sobre el **tamaño real del catálogo** (nunca una meta inventada).
+4. CTA para hacer check-in en un lugar nuevo. **Sin rachas, sin ranking, sin FOMO** (respeta `gamification.md`); privado del usuario.
+
+## F10 — Usar puntos como crédito (SPEC-023)
+
+1. En la ficha, botón **cartera** → mismo scan de check-in (verifica presencia real).
+2. Pantalla simple **"elegí cuántos puntos"** (stepper; 100 pts = $500) → confirma.
+3. **Voucher** (monto, lugar, hora, código) para mostrarle al local. Cooldown de **15 días por comercio** (patrón Pasito).
+
+---
+
 ### Reglas transversales de flujo
 
 - Siempre existe una recomendación; el mapa nunca está vacío.

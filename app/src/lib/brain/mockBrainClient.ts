@@ -111,7 +111,14 @@ const memory = {
   dnaCounter: 6,
   collections: [{ id: 'c1', name: 'Sushi', restaurantIds: ['osaka'] }] as Collection[],
   collectionCounter: 1,
+  // SPEC-020/023: restaurantId -> real timestamps, same shape as the Brain's checkinStore/consumptionStore.
+  checkins: {} as Record<string, number[]>,
+  consumptions: {} as Record<string, number[]>,
 };
+
+const CHECKIN_RADIUS_KM = 0.1;
+const DISCOVERY_POINTS = 50;
+const REDEEM_COOLDOWN_MS = 15 * 24 * 60 * 60_000;
 
 export const mockBrainClient: BrainClient = {
   async getUser() {
@@ -232,6 +239,8 @@ export const mockBrainClient: BrainClient = {
   },
 
   async submitFeedback({ restaurantId, answers }) {
+    // SPEC-020 Acceptance Criteria: mirrors the real Brain's 403 — a review always requires a prior real check-in.
+    if (!memory.checkins[restaurantId]?.length) throw new Error('checkin_required');
     const restaurant = FIXTURE_RESTAURANTS.find((r) => r.id === restaurantId);
     memory.user.cajuPoints += 45;
     memory.feedbackGiven[restaurantId] = Date.now();
@@ -346,5 +355,64 @@ export const mockBrainClient: BrainClient = {
       .filter((x): x is { restaurantId: string; restaurantName: string; savedAt: number } => x !== null)
       .sort((a, b) => a.savedAt - b.savedAt);
     return delay({ contributions: memory.contributions, pendingFeedback }, 150);
+  },
+
+  // No real HMAC in the mock — the "token" is just the restaurantId itself, same honesty
+  // level as the mock's fake devCode. Real geolocation + real haversineKm still apply.
+  async checkin({ token, position, mode, points }) {
+    const restaurant = FIXTURE_RESTAURANTS.find((r) => r.id === token);
+    if (!restaurant) return delay({ ok: false, error: 'invalid_token' as const }, 200);
+
+    const distanceKm = haversineKm(position, restaurant.position);
+    if (distanceKm > CHECKIN_RADIUS_KM) return delay({ ok: false, error: 'out_of_range' as const }, 400);
+
+    if (mode === 'redeem') {
+      const pointsSpent = Number(points);
+      if (!Number.isInteger(pointsSpent) || pointsSpent <= 0) return delay({ ok: false, error: 'points_required' as const }, 100);
+      const history = memory.consumptions[restaurant.id] ?? [];
+      const last = history.length ? Math.max(...history) : undefined;
+      if (last && Date.now() - last < REDEEM_COOLDOWN_MS) {
+        return delay({ ok: false, error: 'cooldown_active' as const, retryAt: last + REDEEM_COOLDOWN_MS }, 200);
+      }
+      if (pointsSpent > memory.user.cajuPoints) return delay({ ok: false, error: 'insufficient_points' as const, balance: memory.user.cajuPoints }, 200);
+      memory.user.cajuPoints -= pointsSpent;
+      memory.consumptions[restaurant.id] = [...history, Date.now()];
+      return delay({ ok: true, restaurant, pointsSpent, remainingBalance: memory.user.cajuPoints }, 300);
+    }
+
+    const today = new Date().toDateString();
+    const checkinsToday = (memory.checkins[restaurant.id] ?? []).filter((ms) => new Date(ms).toDateString() === today);
+    if (checkinsToday.length > 0) return delay({ ok: false, error: 'already_checked_in_today' as const }, 200);
+
+    const firstVisit = !(memory.checkins[restaurant.id]?.length > 0);
+    memory.checkins[restaurant.id] = [...(memory.checkins[restaurant.id] ?? []), Date.now()];
+    const pointsAwarded = firstVisit ? DISCOVERY_POINTS : 0;
+    if (firstVisit) {
+      memory.user.cajuPoints += DISCOVERY_POINTS;
+      memory.contributions.unshift({ label: `Descubriste ${restaurant.name}`, points: DISCOVERY_POINTS, when: Date.now() });
+    }
+    return delay({ ok: true, restaurant, pointsAwarded, firstVisit }, 300);
+  },
+
+  async getPassport() {
+    const firstVisitByRestaurant = new Map<string, number>();
+    for (const [id, timestamps] of Object.entries(memory.checkins)) {
+      if (timestamps.length) firstVisitByRestaurant.set(id, Math.min(...timestamps));
+    }
+    const visited = FIXTURE_RESTAURANTS.filter((r) => firstVisitByRestaurant.has(r.id)).map((r) => ({
+      restaurant: r,
+      firstVisitAt: firstVisitByRestaurant.get(r.id)!,
+    }));
+    const pending = FIXTURE_RESTAURANTS.filter((r) => !firstVisitByRestaurant.has(r.id));
+    const byNeighborhood = new Map<string, typeof pending>();
+    for (const r of pending) {
+      const list = byNeighborhood.get(r.neighborhood) ?? [];
+      list.push(r);
+      byNeighborhood.set(r.neighborhood, list);
+    }
+    const pendingByNeighborhood = [...byNeighborhood.entries()]
+      .map(([neighborhood, restaurants]) => ({ neighborhood, restaurants }))
+      .sort((a, b) => b.restaurants.length - a.restaurants.length);
+    return delay({ catalogSize: FIXTURE_RESTAURANTS.length, visited, pendingByNeighborhood }, 150);
   },
 };

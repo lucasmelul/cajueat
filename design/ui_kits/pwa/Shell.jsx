@@ -25,8 +25,11 @@ function App() {
   const [tab, setTab] = React.useState('map');
   const [route, setRoute] = React.useState({ name: 'map' });
   const [overlay, setOverlay] = React.useState(null); // 'capture' | 'feedback'
+  const [scan, setScan] = React.useState(null);        // { mode, restaurantId } | null
   const [query, setQuery] = React.useState('');
   const [saved, setSaved] = React.useState({ osaka: true, cuervo: true });
+
+  const openCheckIn = (restaurantId, mode = 'checkin') => setScan({ mode, restaurantId });
 
   const toggleSave = (id) => setSaved(s => ({ ...s, [id]: !s[id] }));
 
@@ -47,11 +50,12 @@ function App() {
   let screen;
   if (route.name === 'map') screen = <window.LivingMap onOpenRestaurant={openRestaurant} onOpenChat={openChat} onOpenCapture={() => setOverlay('capture')} saved={saved} toggleSave={toggleSave} />;
   else if (route.name === 'convo') screen = <window.Conversation initialQuery={query} onBack={goMap} onOpenRestaurant={openRestaurant} />;
-  else if (route.name === 'restaurant') screen = <window.Restaurant id={route.id} onBack={goMap} onOpenChat={openChat} onOpenRestaurant={openRestaurant} saved={saved} toggleSave={toggleSave} />;
-  else if (route.name === 'profile') screen = <window.Profile saved={saved} onOpenRestaurant={openRestaurant} onFeedback={() => setOverlay('feedback')} onCapture={() => setOverlay('capture')} />;
+  else if (route.name === 'restaurant') screen = <window.Restaurant id={route.id} onBack={goMap} onOpenChat={openChat} onOpenRestaurant={openRestaurant} onCheckIn={(id) => openCheckIn(id, 'checkin')} onRedeem={(id) => openCheckIn(id, 'redeem')} saved={saved} toggleSave={toggleSave} />;
+  else if (route.name === 'profile') screen = <window.Profile saved={saved} onOpenRestaurant={openRestaurant} onFeedback={() => setOverlay('feedback')} onCapture={() => setOverlay('capture')} onPassport={() => setRoute({ name: 'passport' })} />;
+  else if (route.name === 'passport') screen = <window.Passport onBack={() => { setTab('profile'); setRoute({ name: 'profile' }); }} onOpenRestaurant={openRestaurant} onCheckIn={() => openCheckIn('osaka', 'checkin')} />;
 
   const darkStatus = route.name === 'restaurant';
-  const hideTabs = route.name === 'convo' || route.name === 'restaurant';
+  const hideTabs = route.name === 'convo' || route.name === 'restaurant' || route.name === 'passport';
 
   return (
     <div className="cj-desk">
@@ -63,6 +67,8 @@ function App() {
           {!hideTabs && <TabBar tab={tab} onTab={onTab} onCapture={() => setOverlay('capture')} />}
           {overlay === 'capture' && <window.KnowledgeCapture onClose={() => setOverlay(null)} />}
           {overlay === 'feedback' && <window.Feedback onClose={() => { setOverlay(null); goMap(); }} />}
+          {scan && <window.CheckIn mode={scan.mode} restaurantId={scan.restaurantId}
+            onClose={() => setScan(null)} onDone={() => setScan(null)} />}
         </div>
         <div className="cj-homebar" />
       </div>

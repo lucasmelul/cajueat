@@ -6,6 +6,7 @@ import { userRouter } from './routes/user.js';
 import { restaurantsRouter } from './routes/restaurants.js';
 import { recommendationsRouter } from './routes/recommendations.js';
 import { eventsRouter } from './routes/events.js';
+import { checkinRouter } from './routes/checkin.js';
 import { conversationRouter } from './routes/conversation.js';
 import { dnaRouter } from './routes/dna.js';
 import { feedbackRouter } from './routes/feedback.js';
@@ -45,6 +46,7 @@ app.use('/api', compareRouter);
 app.use('/api', adminRouter);
 app.use('/api', pushRouter);
 app.use('/api', activityRouter);
+app.use('/api', checkinRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

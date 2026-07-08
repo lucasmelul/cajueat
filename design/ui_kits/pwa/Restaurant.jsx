@@ -1,7 +1,7 @@
 /* Screen 3 — Restaurant Experience (ficha). Editorial, not a
    directory. Answers "¿vale la pena ir?" before the first scroll. */
 
-function Restaurant({ id, onBack, onOpenChat, onOpenRestaurant, saved, toggleSave }) {
+function Restaurant({ id, onBack, onOpenChat, onOpenRestaurant, onCheckIn, onRedeem, saved, toggleSave }) {
   const NS = window.CajuEatDesignSystem_dbeea0;
   const { TrustMeter, SourceChip, Badge, Button, IconButton, Chip, RestaurantCard } = NS;
   const D = window.CAJU_DATA;
@@ -120,6 +120,35 @@ function Restaurant({ id, onBack, onOpenChat, onOpenRestaurant, saved, toggleSav
             </div>
           </section>
 
+          {/* Instagram — SPEC-024 */}
+          <section className="cj-sec">
+            <div className="cj-ig__h">
+              <Badge tone="over">En Instagram</Badge>
+              <a className="cj-ig__handle" href="#" onClick={(e)=>e.preventDefault()}>@{r.id}.bsas <window.Icon name="external-link" size={13} /></a>
+            </div>
+            <div className="cj-ig__strip">
+              {[0,1,2,3].map(i => (
+                <div className={`cj-ig__cell cj-ig__cell--${i%4}`} key={i}>
+                  <window.Icon name={['image','utensils','coffee','image'][i]} size={20} />
+                  {i === 0 && <span className="cj-ig__reel"><window.Icon name="play" size={11} /></span>}
+                </div>
+              ))}
+            </div>
+            <p className="cj-ig__note">El Brain leyó sus últimos posteos para mantener el menú y las novedades al día.</p>
+          </section>
+
+          {/* Check-in — SPEC-020 entry */}
+          <section className="cj-sec">
+            <button className="cj-checkin" onClick={() => onCheckIn && onCheckIn(r.id)}>
+              <span className="cj-checkin__ic"><window.Icon name="qr-code" size={22} /></span>
+              <span className="cj-checkin__tx">
+                <b>Hacé check-in acá</b>
+                <span>Escaneá el QR del mostrador para sumar la visita y poder dejar tu reseña.</span>
+              </span>
+              <window.Icon name="chevron-right" size={18} />
+            </button>
+          </section>
+
           {/* Ask */}
           <section className="cj-sec">
             <button className="cj-ask" onClick={() => onOpenChat(`¿Vale la pena ${r.name} para una cita?`)}>
@@ -133,7 +162,7 @@ function Restaurant({ id, onBack, onOpenChat, onOpenRestaurant, saved, toggleSav
 
       {/* Sticky primary CTA */}
       <div className="cj-rest-cta">
-        <Button variant="secondary" size="lg" iconLeft={<window.Icon name="plus" size={18} />} aria-label="Agregar a plan" />
+        <Button variant="secondary" size="lg" iconLeft={<window.Icon name="wallet" size={18} />} aria-label="Usar puntos" onClick={() => onRedeem && onRedeem(r.id)} />
         <Button variant="primary" size="lg" block iconLeft={<window.Icon name="navigation" size={18} />}>Cómo llegar</Button>
       </div>
     </div>
@@ -195,6 +224,28 @@ const CJ_REST_CSS = `
   background: var(--caju-050); border: 1px solid var(--caju-100); border-radius: var(--r-lg);
   font-family: var(--font-sans); font-size: 15px; font-weight: 500; color: var(--caju-700); }
 .cj-ask span { flex: 1; text-align: left; }
+.cj-ig__h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cj-ig__handle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600;
+  color: var(--caju-600); font-family: var(--font-sans); }
+.cj-ig__strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cj-ig__cell { position: relative; aspect-ratio: 1; border-radius: var(--r-sm); display: grid; place-items: center;
+  color: rgba(255,255,255,.85); }
+.cj-ig__cell--0 { background: linear-gradient(140deg, var(--caju-300), var(--caju-500)); }
+.cj-ig__cell--1 { background: linear-gradient(140deg, var(--amber-500), var(--caju-400)); }
+.cj-ig__cell--2 { background: linear-gradient(140deg, #B98A5E, #8A6248); }
+.cj-ig__cell--3 { background: linear-gradient(140deg, var(--caju-400), var(--amber-500)); }
+.cj-ig__reel { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,.35); display: grid; place-items: center; }
+.cj-ig__note { font-size: 12px; color: var(--ink-400); line-height: 1.5; margin-top: 10px; }
+.cj-checkin { width: 100%; display: flex; align-items: center; gap: 13px; padding: 15px 16px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); text-align: left; }
+.cj-checkin:active { transform: scale(.99); }
+.cj-checkin__ic { width: 44px; height: 44px; border-radius: 13px; background: var(--ink-900); color: #fff;
+  display: grid; place-items: center; flex-shrink: 0; }
+.cj-checkin__tx { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cj-checkin__tx b { font-size: 15px; color: var(--ink-900); font-weight: 600; }
+.cj-checkin__tx span { font-size: 12.5px; color: var(--ink-500); line-height: 1.4; }
+.cj-checkin i { color: var(--ink-300); }
 .cj-rest-cta { flex-shrink: 0; display: flex; gap: 10px; padding: 12px 16px calc(12px + var(--safe-bottom));
   background: rgba(252,251,248,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line-soft); }
 `;

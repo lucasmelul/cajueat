@@ -29,6 +29,17 @@ function ensureStyles() {
   .caju-pin--selected { transform: scale(1.06); box-shadow: var(--shadow-lg), 0 0 0 3px var(--focus-ring); }
   .caju-pin--selected:active { transform: scale(1.02); }
 
+  /* novelty — amber content ring (SPEC-024: new Instagram activity) */
+  .caju-pin--novelty { box-shadow: var(--elev-pin), var(--ring-hairline), 0 0 0 2px var(--amber-500); }
+  .caju-pin__novelty { position: absolute; inset: -5px; border-radius: var(--r-full);
+    border: 2px solid var(--amber-500); opacity: .55; pointer-events: none;
+    animation: caju-pin-nov 2.4s var(--ease-out) infinite; }
+  @keyframes caju-pin-nov {
+    0% { transform: scale(1); opacity: .55; }
+    70% { opacity: 0; } 100% { transform: scale(1.5); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .caju-pin__novelty { animation: none; opacity: .55; } }
+
   /* type colors on the dot */
   .caju-pin--recommended .caju-pin__dot { background: var(--pin-recommended); }
   .caju-pin--new         .caju-pin__dot { background: var(--pin-new); }
@@ -59,6 +70,7 @@ export function MapPin({
   label = null,
   selected = false,
   dotOnly = false,
+  novelty = false,
   onClick,
   className = '',
   ...rest
@@ -66,11 +78,13 @@ export function MapPin({
   ensureStyles();
   const compact = dotOnly || !label;
   const cls = ['caju-pin', `caju-pin--${type}`,
-    compact ? 'caju-pin--dot' : '', selected ? 'caju-pin--selected' : '', className]
+    compact ? 'caju-pin--dot' : '', selected ? 'caju-pin--selected' : '',
+    novelty ? 'caju-pin--novelty' : '', className]
     .filter(Boolean).join(' ');
   return (
     <button type="button" className={cls} onClick={onClick}
             aria-label={label || type} {...rest}>
+      {novelty && <span className="caju-pin__novelty" aria-hidden="true" />}
       <span className="caju-pin__dot">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

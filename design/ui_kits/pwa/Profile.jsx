@@ -1,7 +1,7 @@
 /* Screen 6 — Profile / Memory. How the Brain understands you.
    Not a social profile: gastronomic DNA, points, saved, feedback. */
 
-function Profile({ saved, onOpenRestaurant, onFeedback, onCapture }) {
+function Profile({ saved, onOpenRestaurant, onFeedback, onCapture, onPassport }) {
   const NS = window.CajuEatDesignSystem_dbeea0;
   const { CajuPoints, Badge, Chip, RestaurantCard, Button } = NS;
   const D = window.CAJU_DATA;
@@ -17,6 +17,23 @@ function Profile({ saved, onOpenRestaurant, onFeedback, onCapture }) {
           <h1>{D.user.name}</h1>
           <CajuPoints value={D.user.points} size="lg" unit="Caju Points" />
         </div>
+
+        {/* Passport preview (SPEC-021) */}
+        <button className="cj-prof-passport" onClick={onPassport}>
+          <div className="cj-prof-passport__ring">
+            <b>{D.cafes.filter(c=>c.visited).length}</b>
+            <span>/{D.cafes.length}</span>
+          </div>
+          <div className="cj-prof-passport__t">
+            <b>Mi Pasaporte de Cafés</b>
+            <span>Vas conociendo la ciudad, café por café.</span>
+          </div>
+          <div className="cj-prof-passport__stamps">
+            {D.cafes.filter(c=>c.visited).slice(0,3).map(c => (
+              <span className="cj-prof-passport__seal" key={c.id}><window.Icon name="check" size={12} /></span>
+            ))}
+          </div>
+        </button>
 
         {/* pending feedback nudge */}
         <div className="cj-prof-nudge" onClick={onFeedback}>
@@ -88,6 +105,22 @@ const CJ_PROF_CSS = `
 .cj-prof-nudge__t b { font-size: 15px; color: var(--ink-900); }
 .cj-prof-nudge__t span { font-size: 13px; color: var(--ink-500); }
 .cj-prof-nudge i { color: var(--caju-400); }
+.cj-prof-passport { width: 100%; display: flex; align-items: center; gap: 13px; padding: 15px; margin-bottom: 8px;
+  cursor: pointer; border: 0; text-align: left; border-radius: var(--r-lg);
+  background: var(--ink-900); color: #fff; position: relative; overflow: hidden; }
+.cj-prof-passport::before { content: ''; position: absolute; right: -24px; bottom: -30px; width: 110px; height: 110px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(248,122,69,.34), transparent 70%); }
+.cj-prof-passport__ring { width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(var(--caju-500) 33%, rgba(255,255,255,.14) 0);
+  display: grid; place-items: center; }
+.cj-prof-passport__ring b { font-family: var(--font-mono); font-size: 15px; line-height: 1; }
+.cj-prof-passport__ring span { display: none; }
+.cj-prof-passport__t { flex: 1; display: flex; flex-direction: column; gap: 2px; z-index: 1; }
+.cj-prof-passport__t b { font-size: 15px; font-weight: 600; }
+.cj-prof-passport__t span { font-size: 12.5px; color: rgba(255,255,255,.65); }
+.cj-prof-passport__stamps { display: flex; gap: -4px; z-index: 1; }
+.cj-prof-passport__seal { width: 24px; height: 24px; border-radius: 50%; background: var(--leaf-500); color: #fff;
+  display: grid; place-items: center; margin-left: -6px; border: 2px solid var(--ink-900); }
 .cj-prof-sec { padding: 20px 0; border-top: 1px solid var(--line-soft); }
 .cj-prof-lead { font-size: 13px; color: var(--ink-500); margin: 8px 0 12px; }
 .cj-dna { display: flex; flex-wrap: wrap; gap: 8px; }
