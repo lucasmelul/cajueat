@@ -70,3 +70,19 @@ Sobre esos PRD-015 a PRD-020 del set vigente: Compare (PRD-017) y Notifications 
 **Contexto:** las fases del roadmap (ver [roadmap.md](roadmap.md)) están definidas por criterio de graduación, no por fechas.
 
 **Pendiente:** fechas objetivo, duración de la beta privada y criterios numéricos concretos de éxito por fase.
+
+### 8. Modelo de liquidación real con comercios (crédito canjeable)
+
+**Contexto:** [SPEC-023 — Puntos como Crédito Canjeable](specs/SPEC-023-points-as-redeemable-credit.md) define una Fase 1 (reporte de crédito redimido, sin mover dinero automáticamente) que sí se puede construir ya. La Fase 2 (pago automático real a los comercios, con markup configurable) implica sostener saldos que representan valor monetario y pagar a terceros por transacciones — algo con implicancias legales/impositivas reales según la jurisdicción.
+
+**Pendiente:** si se resuelve con un procesador de pagos (ej. Stripe Connect), facturación manual entre partes, u otro mecanismo; qué entidad legal factura; validación de que el modelo no cae bajo regulación de instrumentos prepagos.
+
+**Dueño de la decisión final:** Legal/Finanzas, no ingeniería — SPEC-023 explícitamente no avanza a Fase 2 sin esto resuelto.
+
+### 9. Acceso a Instagram Graph API por local
+
+**Contexto:** [SPEC-024 — Contenido de Instagram](specs/SPEC-024-instagram-content-and-map-novelty.md) requiere que cada local conecte su propia cuenta de Instagram Business/Creator vía OAuth — no existe forma de mostrar contenido de una cuenta que no dio ese consentimiento explícito, y las Historias no son accesibles vía API pública bajo ninguna circunstancia.
+
+**Pendiente:** proceso comercial para conseguir que los locales conecten su cuenta (parte del mismo convenio que ya se necesita para el QR de SPEC-020), y si CajuEat gestiona una app aprobada por Meta para esto o se evalúa un proveedor intermediario.
+
+**Dueño de la decisión final:** Producto, en conjunto con quien gestione los convenios comerciales con los locales.
