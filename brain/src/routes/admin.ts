@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getAllCurators } from '../curators/curatorStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
+import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
 import {
@@ -230,6 +231,86 @@ adminRouter.post('/admin/pending-new-places/:id/reject', (req, res) => {
     return;
   }
   res.json(updated);
+});
+
+/**
+ * Google Places: only ever keeps FACTUAL fields in sync (address, position, opening hours,
+ * whether a place is still in business) — never touches `sources[]` or trust. One Details fetch
+ * when the operator links a restaurant, one more each time they tap "Refrescar" — never a
+ * background poll, so cost stays exactly proportional to operator action.
+ */
+adminRouter.get('/admin/google-places/search', async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    if (!q) {
+      res.status(400).json({ error: 'q_required' });
+      return;
+    }
+    res.json(await searchPlaces(q));
+  } catch (err) {
+    if (err instanceof Error && err.message === 'google_places_not_configured') {
+      res.status(503).json({ error: 'google_places_not_configured' });
+      return;
+    }
+    next(err);
+  }
+});
+
+/** Operator picked a real candidate from search — one Details fetch prefills address/position/openHours and stores the id for future refreshes. */
+adminRouter.post('/admin/restaurants/:id/link-google', async (req, res, next) => {
+  try {
+    const placeId = typeof req.body?.placeId === 'string' ? req.body.placeId.trim() : '';
+    if (!placeId) {
+      res.status(400).json({ error: 'placeId_required' });
+      return;
+    }
+    const details = await getPlaceDetails(placeId);
+    const updated = updateRestaurant(req.params.id, {
+      googlePlaceId: details.placeId,
+      address: details.address || undefined,
+      position: details.position,
+      ...(details.openHours ? { openHours: details.openHours } : {}),
+    });
+    if (!updated) {
+      res.status(404).json({ error: 'restaurant_not_found' });
+      return;
+    }
+    res.json({ restaurant: updated, businessStatus: details.businessStatus });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'google_places_not_configured') {
+      res.status(503).json({ error: 'google_places_not_configured' });
+      return;
+    }
+    next(err);
+  }
+});
+
+/** Manual refresh against the already-linked place — same factual-fields-only patch, no new Source, no trust change. */
+adminRouter.post('/admin/restaurants/:id/refresh-google', async (req, res, next) => {
+  try {
+    const restaurant = getRestaurantById(req.params.id);
+    if (!restaurant) {
+      res.status(404).json({ error: 'restaurant_not_found' });
+      return;
+    }
+    if (!restaurant.googlePlaceId) {
+      res.status(400).json({ error: 'not_linked_to_google' });
+      return;
+    }
+    const details = await getPlaceDetails(restaurant.googlePlaceId);
+    const updated = updateRestaurant(req.params.id, {
+      address: details.address || undefined,
+      position: details.position,
+      ...(details.openHours ? { openHours: details.openHours } : {}),
+    });
+    res.json({ restaurant: updated, businessStatus: details.businessStatus });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'google_places_not_configured') {
+      res.status(503).json({ error: 'google_places_not_configured' });
+      return;
+    }
+    next(err);
+  }
 });
 
 /**

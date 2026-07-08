@@ -23,6 +23,8 @@ export interface Source {
   name: string;
   kind: SourceKind;
   weight: SignalWeight;
+  /** ISO date the signal was captured — the Brain already sends this (feeds its Trust Engine freshness decay), just wasn't typed here yet since nothing on this side needed it. */
+  capturedAt: string;
   /** Short, free-text stance this source takes (e.g. "Ambiente ruidoso") — feeds contradiction detection (SPEC-007). */
   claim?: string;
 }
@@ -39,6 +41,8 @@ export interface Restaurant {
   neighborhood: string;
   /** Real street address (calle y altura) — absent means we genuinely don't know it yet, never guessed. */
   address?: string;
+  /** Google Places ID, set once the operator links this restaurant — only meaningful in the Admin CMS. */
+  googlePlaceId?: string;
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';

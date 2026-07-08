@@ -232,3 +232,21 @@
   font-size: 13px;
   color: var(--leaf-600);
 }
+.cj-admin-google {
+  margin-top: 10px;
+}
+.cj-admin-google__candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--ink-700);
+  border-top: 1px solid var(--line-soft);
+}
+.cj-admin-google__status {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  margin-top: 6px;
+}

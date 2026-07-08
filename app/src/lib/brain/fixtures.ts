@@ -41,9 +41,9 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     idealFor: ['Primera cita', 'Ocasión especial', 'Solo en la barra'],
     notFor: ['Grupos grandes', 'Ir con chicos'],
     sources: [
-      { name: '@buenospaladaires', kind: 'curator', weight: 'strong', claim: 'Excelente para una primera cita' },
-      { name: 'Tu visita', kind: 'visit', weight: 'strong', claim: 'Ideal para ir en pareja' },
-      { name: '42 personas', kind: 'community', weight: 'medium', claim: 'Buen lugar para ir de a dos' },
+      { name: '@buenospaladaires', kind: 'curator', weight: 'strong', capturedAt: '2026-06-01T00:00:00.000Z', claim: 'Excelente para una primera cita' },
+      { name: 'Tu visita', kind: 'visit', weight: 'strong', capturedAt: '2026-06-01T00:00:00.000Z', claim: 'Ideal para ir en pareja' },
+      { name: '42 personas', kind: 'community', weight: 'medium', capturedAt: '2026-06-01T00:00:00.000Z', claim: 'Buen lugar para ir de a dos' },
     ],
   },
   {
@@ -76,8 +76,8 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     idealFor: ['Amigos', 'Después del trabajo'],
     notFor: ['Charla tranquila', 'Reuniones de negocios'],
     sources: [
-      { name: '@salt_argentina', kind: 'curator', weight: 'medium', claim: 'Ambiente tranquilo, bueno para charlar' },
-      { name: '18 personas', kind: 'community', weight: 'medium', claim: 'Bastante ruidoso los fines de semana' },
+      { name: '@salt_argentina', kind: 'curator', weight: 'medium', capturedAt: '2026-06-01T00:00:00.000Z', claim: 'Ambiente tranquilo, bueno para charlar' },
+      { name: '18 personas', kind: 'community', weight: 'medium', capturedAt: '2026-06-01T00:00:00.000Z', claim: 'Bastante ruidoso los fines de semana' },
     ],
   },
   {
@@ -104,8 +104,8 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     idealFor: ['Trabajar solo', 'Café tranquilo'],
     notFor: ['Cena', 'Grupos'],
     sources: [
-      { name: 'Tu visita', kind: 'visit', weight: 'strong' },
-      { name: '9 personas', kind: 'community', weight: 'weak' },
+      { name: 'Tu visita', kind: 'visit', weight: 'strong', capturedAt: '2026-06-01T00:00:00.000Z' },
+      { name: '9 personas', kind: 'community', weight: 'weak', capturedAt: '2026-06-01T00:00:00.000Z' },
     ],
   },
   {
@@ -137,9 +137,9 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     idealFor: ['Primera cita', 'Cena romántica', 'Aniversario'],
     notFor: ['Grupos grandes', 'Ir con apuro'],
     sources: [
-      { name: '@buenospaladaires', kind: 'curator', weight: 'strong' },
-      { name: 'Tu visita', kind: 'visit', weight: 'strong' },
-      { name: '21 personas', kind: 'community', weight: 'medium' },
+      { name: '@buenospaladaires', kind: 'curator', weight: 'strong', capturedAt: '2026-06-01T00:00:00.000Z' },
+      { name: 'Tu visita', kind: 'visit', weight: 'strong', capturedAt: '2026-06-01T00:00:00.000Z' },
+      { name: '21 personas', kind: 'community', weight: 'medium', capturedAt: '2026-06-01T00:00:00.000Z' },
     ],
   },
   {
@@ -171,8 +171,8 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     idealFor: ['Grupos grandes', 'Cumpleaños', 'Después del trabajo'],
     notFor: ['Charla tranquila', 'Primera cita'],
     sources: [
-      { name: '@salt_argentina', kind: 'curator', weight: 'weak' },
-      { name: '27 personas', kind: 'community', weight: 'medium' },
+      { name: '@salt_argentina', kind: 'curator', weight: 'weak', capturedAt: '2026-06-01T00:00:00.000Z' },
+      { name: '27 personas', kind: 'community', weight: 'medium', capturedAt: '2026-06-01T00:00:00.000Z' },
     ],
   },
   {
@@ -203,7 +203,7 @@ export const FIXTURE_RESTAURANTS: Restaurant[] = [
     tips: ['Las mesas del fondo tienen mejor luz', 'Pedí el wifi en la barra'],
     idealFor: ['Trabajar solo', 'Reuniones cortas', 'Almuerzo liviano'],
     notFor: ['Cena', 'Grupos grandes'],
-    sources: [{ name: '12 personas', kind: 'community', weight: 'weak' }],
+    sources: [{ name: '12 personas', kind: 'community', weight: 'weak', capturedAt: '2026-06-01T00:00:00.000Z' }],
   },
 ];
 

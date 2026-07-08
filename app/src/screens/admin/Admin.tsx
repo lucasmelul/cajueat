@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { Badge, Button } from '../../components/core';
-import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorAnalysis, CuratorRecord, NewPlaceSuggestion, NewRestaurantMention, PendingContribution } from '../../lib/admin/adminClient';
+import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, GooglePlacesNotConfiguredError, setOperatorToken } from '../../lib/admin/adminClient';
+import type {
+  CuratorAnalysis,
+  CuratorRecord,
+  GooglePlaceCandidate,
+  NewPlaceSuggestion,
+  NewRestaurantMention,
+  PendingContribution,
+} from '../../lib/admin/adminClient';
 import type { MapEvent, Restaurant } from '../../types';
 import './Admin.css';
 
@@ -26,6 +33,13 @@ export function Admin() {
   const [newPlaceDrafts, setNewPlaceDrafts] = useState<Record<string, { name: string; cuisine: string; neighborhood: string; address: string }>>({});
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+
+  const [linkingId, setLinkingId] = useState<string | null>(null);
+  const [googleQuery, setGoogleQuery] = useState('');
+  const [googleCandidates, setGoogleCandidates] = useState<GooglePlaceCandidate[]>([]);
+  const [googleSearching, setGoogleSearching] = useState(false);
+  const [googleBusyId, setGoogleBusyId] = useState<string | null>(null);
+  const [googleStatusById, setGoogleStatusById] = useState<Record<string, string>>({});
 
   const [curatorHandle, setCuratorHandle] = useState('');
   const [curatorText, setCuratorText] = useState('');
@@ -245,6 +259,81 @@ export function Admin() {
     }
   };
 
+  const googleErrorMessage = (err: unknown) => (err instanceof GooglePlacesNotConfiguredError ? err.message : 'No se pudo conectar con Google Places.');
+
+  const startGoogleLink = (id: string) => {
+    setLinkingId(id);
+    setGoogleQuery('');
+    setGoogleCandidates([]);
+  };
+
+  const searchGoogle = async () => {
+    if (!googleQuery.trim() || !linkingId) return;
+    setGoogleSearching(true);
+    try {
+      setGoogleCandidates(await adminClient.searchGooglePlaces(googleQuery.trim()));
+    } catch (err) {
+      setGoogleStatusById((prev) => ({ ...prev, [linkingId]: googleErrorMessage(err) }));
+    } finally {
+      setGoogleSearching(false);
+    }
+  };
+
+  const linkGoogle = async (id: string, placeId: string) => {
+    setGoogleBusyId(id);
+    try {
+      const { businessStatus } = await adminClient.linkGooglePlace(id, placeId);
+      setGoogleStatusById((prev) => ({
+        ...prev,
+        [id]: businessStatus === 'CLOSED_PERMANENTLY' ? 'Vinculado — Google lo marca cerrado permanentemente.' : 'Vinculado y actualizado desde Google.',
+      }));
+      setLinkingId(null);
+      loadCatalog();
+    } catch (err) {
+      setGoogleStatusById((prev) => ({ ...prev, [id]: googleErrorMessage(err) }));
+    } finally {
+      setGoogleBusyId(null);
+    }
+  };
+
+  const refreshFromGoogle = async (id: string) => {
+    setGoogleBusyId(id);
+    try {
+      const { businessStatus } = await adminClient.refreshFromGoogle(id);
+      setGoogleStatusById((prev) => ({
+        ...prev,
+        [id]:
+          businessStatus === 'CLOSED_PERMANENTLY'
+            ? 'Google dice que este lugar cerró permanentemente.'
+            : businessStatus === 'CLOSED_TEMPORARILY'
+              ? 'Google dice que está cerrado temporalmente.'
+              : 'Actualizado desde Google.',
+      }));
+      loadCatalog();
+    } catch (err) {
+      setGoogleStatusById((prev) => ({ ...prev, [id]: googleErrorMessage(err) }));
+    } finally {
+      setGoogleBusyId(null);
+    }
+  };
+
+  // Radar de desactualizados: nada nuevo del backend — el catálogo ya trae sources[] con
+  // capturedAt real, así que la antigüedad de la señal más fresca se deriva acá mismo. "Sin
+  // fuentes" se trata como el caso más urgente (ni un solo dato real todavía), no como "sin info".
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const staleRestaurants = catalog
+    .filter((r) => !r.isDemo)
+    .map((r) => {
+      const freshestMs = r.sources.reduce((max, s) => Math.max(max, new Date(s.capturedAt).getTime()), 0);
+      const daysSinceFresh = freshestMs === 0 ? null : Math.floor((Date.now() - freshestMs) / DAY_MS);
+      return { restaurant: r, daysSinceFresh };
+    })
+    .sort((a, b) => {
+      if (a.daysSinceFresh === null) return -1;
+      if (b.daysSinceFresh === null) return 1;
+      return b.daysSinceFresh - a.daysSinceFresh;
+    });
+
   if (!authed) {
     return (
       <div className="cj-admin cj-admin--gate">
@@ -303,6 +392,74 @@ export function Admin() {
                   </div>
                 </div>
                 <p className="cj-admin-row__rationale">{r.trustRationale}</p>
+                {!r.isDemo && (
+                  <div className="cj-admin-google">
+                    {r.googlePlaceId ? (
+                      <Button size="sm" variant="secondary" disabled={googleBusyId === r.id} onClick={() => refreshFromGoogle(r.id)}>
+                        Refrescar desde Google
+                      </Button>
+                    ) : linkingId === r.id ? (
+                      <div className="cj-admin-form">
+                        <input
+                          value={googleQuery}
+                          onChange={(e) => setGoogleQuery(e.target.value)}
+                          placeholder="Buscar en Google Places…"
+                          onKeyDown={(e) => e.key === 'Enter' && searchGoogle()}
+                        />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <Button size="sm" variant="secondary" loading={googleSearching} onClick={searchGoogle} disabled={!googleQuery.trim()}>
+                            Buscar
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setLinkingId(null)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                        {googleCandidates.map((c) => (
+                          <div className="cj-admin-google__candidate" key={c.placeId}>
+                            <span>
+                              {c.name} — {c.address}
+                            </span>
+                            <Button size="sm" variant="primary" disabled={googleBusyId === r.id} onClick={() => linkGoogle(r.id, c.placeId)}>
+                              Vincular
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => startGoogleLink(r.id)}>
+                        Vincular con Google
+                      </Button>
+                    )}
+                    {googleStatusById[r.id] && <p className="cj-admin-google__status">{googleStatusById[r.id]}</p>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="cj-admin-sec">
+          <Badge tone="over">Radar de desactualizados</Badge>
+          <p className="cj-admin-lead">
+            Ordenado por antigüedad de la señal más reciente — nada te avisa solo, pero acá ves dónde conviene
+            reverificar primero. La confianza ya baja sola con el tiempo (semivida de 270 días); esto es para que
+            vos decidas dónde poner el esfuerzo.
+          </p>
+          {staleRestaurants.length === 0 && <p className="cj-admin-lead">Todavía no hay restaurantes reales cargados.</p>}
+          <div className="cj-admin-table">
+            {staleRestaurants.map(({ restaurant: r, daysSinceFresh }) => (
+              <div className="cj-admin-row" key={r.id}>
+                <div className="cj-admin-row__head">
+                  <div className="cj-admin-row__main">
+                    <b>{r.name}</b>
+                    <span>
+                      {r.cuisine} · {r.neighborhood}
+                    </span>
+                  </div>
+                  <Badge tone={daysSinceFresh === null || daysSinceFresh > 180 ? 'danger' : daysSinceFresh > 60 ? 'brand' : 'success'}>
+                    {daysSinceFresh === null ? 'Sin fuentes' : `Hace ${daysSinceFresh} días`}
+                  </Badge>
+                </div>
               </div>
             ))}
           </div>

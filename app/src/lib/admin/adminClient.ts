@@ -28,12 +28,20 @@ export class AdminAuthError extends Error {
   }
 }
 
+/** By the time any other admin call happens the operator already got past the login gate, so a 503 here can only mean the Brain's GOOGLE_PLACES_API_KEY isn't set — never the operator gate itself. */
+export class GooglePlacesNotConfiguredError extends Error {
+  constructor() {
+    super('Google Places no está configurado en el Brain (falta GOOGLE_PLACES_API_KEY).');
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}/api${path}`, {
     headers: { 'Content-Type': 'application/json', 'X-Caju-Operator-Token': getOperatorToken() ?? '' },
     ...init,
   });
   if (res.status === 401) throw new AdminAuthError();
+  if (res.status === 503) throw new GooglePlacesNotConfiguredError();
   if (!res.ok) throw new Error(`Admin request failed: ${init?.method ?? 'GET'} ${path} (${res.status})`);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -94,6 +102,19 @@ export interface NewPlaceSuggestion {
 
 export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborhood?: string; address?: string; position?: { lat: number; lng: number } };
 
+export interface GooglePlaceCandidate {
+  placeId: string;
+  name: string;
+  address: string;
+}
+
+export type GoogleBusinessStatus = 'OPERATIONAL' | 'CLOSED_TEMPORARILY' | 'CLOSED_PERMANENTLY' | 'BUSINESS_STATUS_UNSPECIFIED';
+
+export interface GoogleLinkResult {
+  restaurant: Restaurant;
+  businessStatus: GoogleBusinessStatus;
+}
+
 export const adminClient = {
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
 
@@ -128,4 +149,12 @@ export const adminClient = {
 
   addSource: (restaurantId: string, source: { name: string; kind: string; weight: string; claim?: string }) =>
     request<Restaurant>(`/admin/restaurants/${restaurantId}/sources`, { method: 'POST', body: JSON.stringify(source) }),
+
+  searchGooglePlaces: (query: string) => request<GooglePlaceCandidate[]>(`/admin/google-places/search?q=${encodeURIComponent(query)}`),
+
+  linkGooglePlace: (restaurantId: string, placeId: string) =>
+    request<GoogleLinkResult>(`/admin/restaurants/${restaurantId}/link-google`, { method: 'POST', body: JSON.stringify({ placeId }) }),
+
+  refreshFromGoogle: (restaurantId: string) =>
+    request<GoogleLinkResult>(`/admin/restaurants/${restaurantId}/refresh-google`, { method: 'POST' }),
 };

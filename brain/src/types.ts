@@ -49,6 +49,8 @@ export interface Restaurant {
   neighborhood: string;
   /** Real street address (calle y altura) — absence means we genuinely don't know it yet, never guessed. */
   address?: string;
+  /** Google Places ID, set once when the operator links this restaurant to a real Google Place — never inferred, always an explicit operator action. Powers "Refrescar desde Google" (address/position/openHours/business status only, never trust or sources). */
+  googlePlaceId?: string;
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */
