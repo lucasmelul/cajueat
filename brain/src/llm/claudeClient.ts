@@ -20,6 +20,19 @@ function getClient(): Anthropic {
   return client;
 }
 
+/**
+ * Every call site below used to fall back to a hardcoded empty result (`{ restaurantIds: [],
+ * reply: '', chips: [] }` and friends) whenever Claude didn't return a text block — which made
+ * a real LLM failure look like a successful-but-empty answer instead of an actual error. This
+ * throws instead, so a Claude failure surfaces as a real 500 through each route's existing
+ * `try/catch -> next(err)` handler rather than a silent, misleading "no results."
+ */
+function requireTextBlock(content: Anthropic.ContentBlock[]): Anthropic.TextBlock {
+  const textBlock = content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+  if (!textBlock) throw new Error('Claude response had no text block');
+  return textBlock;
+}
+
 function catalogForPrompt(catalog: Restaurant[]) {
   return catalog.map((r) => ({
     id: r.id,
@@ -105,8 +118,7 @@ export async function interpretQuery(
   }
 
   const finalMessage = await stream.finalMessage();
-  const textBlock = finalMessage.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock ? (JSON.parse(textBlock.text) as InterpretedQuery) : { restaurantIds: [], reply: '', chips: [] };
+  const parsed = JSON.parse(requireTextBlock(finalMessage.content).text) as InterpretedQuery;
 
   // Never trust the model's IDs blindly — only real, known restaurants leave this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
@@ -129,8 +141,7 @@ export async function explainRecommendation(input: { restaurant: Restaurant; sig
       },
     ],
   });
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  return textBlock?.text.trim() ?? input.restaurant.why;
+  return requireTextBlock(response.content).text.trim();
 }
 
 export interface NoteExtraction {
@@ -171,8 +182,7 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock ? (JSON.parse(textBlock.text) as NoteExtraction) : { restaurantId: null, learned: '' };
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as NoteExtraction;
 
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
@@ -216,8 +226,7 @@ export async function extractConversationKnowledge(input: { text: string; catalo
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock ? (JSON.parse(textBlock.text) as NoteExtraction) : { restaurantId: null, learned: '' };
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as NoteExtraction;
 
   const knownIds = new Set(input.catalog.map((r) => r.id));
   return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
@@ -269,10 +278,7 @@ export async function compareRestaurants(input: {
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock
-    ? (JSON.parse(textBlock.text) as CompareResult)
-    : { recommendedId: null, reasoning: '', whenToChooseOther: null };
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as CompareResult;
 
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.restaurants.map((r) => r.id));
@@ -327,8 +333,7 @@ export async function extractPhotoKnowledge(input: {
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock ? (JSON.parse(textBlock.text) as PhotoExtraction) : { restaurantId: null, learned: '' };
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as PhotoExtraction;
 
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
@@ -395,13 +400,10 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
     },
   });
 
-  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
-  const parsed = textBlock
-    ? (JSON.parse(textBlock.text) as {
-        matches: { restaurantId: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
-        unmatchedMentions: string[];
-      })
-    : { matches: [], unmatchedMentions: [] };
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as {
+    matches: { restaurantId: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
+    unmatchedMentions: string[];
+  };
 
   // Grounding check: only a real, known restaurant can leave this function as a match.
   const byId = new Map(input.catalog.map((r) => [r.id, r]));

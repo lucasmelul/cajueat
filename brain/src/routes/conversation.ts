@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { getCatalog } from '../data/restaurants.js';
 import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
@@ -9,12 +10,6 @@ import type { ConversationTurn } from '../types.js';
 const CONVERSATION_LEARN_POINTS = 30;
 
 export const conversationRouter = Router();
-
-let turnCounter = 0;
-function nextTurnId() {
-  turnCounter += 1;
-  return `turn-${turnCounter}`;
-}
 
 conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
   try {
@@ -59,7 +54,7 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     }
 
     const turn: ConversationTurn = {
-      id: nextTurnId(),
+      id: randomUUID(),
       role: 'brain',
       text: interpreted.reply,
       restaurants,

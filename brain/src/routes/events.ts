@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { EVENTS } from '../data/restaurants.js';
+import { getEvents } from '../data/eventsStore.js';
 
 export const eventsRouter = Router();
 
 eventsRouter.get('/events', (_req, res) => {
-  res.json(EVENTS);
+  res.json(getEvents());
 });

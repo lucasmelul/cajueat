@@ -45,7 +45,9 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const addCajuPoints = useAppStore((s) => s.addCajuPoints);
   const pendingShare = useAppStore((s) => s.pendingShare);
   const setPendingShare = useAppStore((s) => s.setPendingShare);
-  const [stage, setStage] = useState<Stage>('pick');
+  const pendingCaptureStage = useAppStore((s) => s.pendingCaptureStage);
+  const setPendingCaptureStage = useAppStore((s) => s.setPendingCaptureStage);
+  const [stage, setStage] = useState<Stage>(() => pendingCaptureStage ?? 'pick');
   const [link, setLink] = useState(() => {
     // SPEC-004 Share Sheet: pre-fill from whatever the OS handed off, never auto-submit —
     // the user still has to tap "Enviar" once they see it, same confirmation step as pasting manually.
@@ -68,6 +70,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   useEffect(() => {
     setSpeechSupported(!!getSpeechRecognition());
     if (pendingShare) setPendingShare(null); // consumed once into `link`'s initial value above
+    if (pendingCaptureStage) setPendingCaptureStage(null); // consumed once into `stage`'s initial value above
     return () => recognitionRef.current?.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

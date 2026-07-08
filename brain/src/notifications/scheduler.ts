@@ -1,4 +1,5 @@
-import { EVENTS, getRestaurantById } from '../data/restaurants.js';
+import { getEvents } from '../data/eventsStore.js';
+import { getRestaurantById } from '../data/restaurants.js';
 import { getProfile, getPendingFeedback, getLastActiveAt, wasNotifiedRecently, markNotified } from '../memory/memoryStore.js';
 import { getRecommendations } from '../recommend/recommendationEngine.js';
 import { sendPushToUser } from './pushSender.js';
@@ -65,7 +66,7 @@ async function checkEvents(userId: string): Promise<void> {
   if (dna.length === 0) return; // no established profile yet — same bar as "Recomendaciones"
 
   const now = Date.now();
-  for (const event of EVENTS) {
+  for (const event of getEvents()) {
     const eventAt = Date.parse(event.whenAt);
     if (Number.isNaN(eventAt) || eventAt <= now || eventAt - now > EVENT_LEAD_TIME_MS) continue;
     const key = `event:${event.id}`;

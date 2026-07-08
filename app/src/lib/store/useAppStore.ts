@@ -25,6 +25,10 @@ interface AppState {
   pendingShare: { url: string; text: string } | null;
   setPendingShare: (share: { url: string; text: string } | null) => void;
 
+  /** Living Map's mic FAB ("Aportar por voz") wants Knowledge Capture to open straight to its Voice step instead of the picker — consumed once, same pattern as `pendingShare`. */
+  pendingCaptureStage: 'voiceInput' | null;
+  setPendingCaptureStage: (stage: 'voiceInput' | null) => void;
+
   /**
    * Shared across screens so Caju Points earned in one place (Feedback,
    * Knowledge Capture) show up everywhere (Living Map header, Profile)
@@ -80,6 +84,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   pendingShare: null,
   setPendingShare: (share) => set({ pendingShare: share }),
+
+  pendingCaptureStage: null,
+  setPendingCaptureStage: (stage) => set({ pendingCaptureStage: stage }),
 
   user: null,
   setUser: (u) => set({ user: u }),

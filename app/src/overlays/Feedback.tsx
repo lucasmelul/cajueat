@@ -13,13 +13,13 @@ interface Question {
 }
 
 export interface FeedbackProps {
-  /** Which visit this feedback is about — Profile's nudge always passes the real oldest saved-without-feedback restaurant (SPEC-016). */
-  restaurantId?: string;
+  /** Which visit this feedback is about — Profile's nudge always passes the real oldest saved-without-feedback restaurant (SPEC-016). Required: there's no honest fallback restaurant to default to. */
+  restaurantId: string;
   onClose: () => void;
 }
 
 /** Post-visit feedback: a 3–4 question conversation, not a review (SPEC-011, CP-009). */
-export function Feedback({ restaurantId = 'osaka', onClose }: FeedbackProps) {
+export function Feedback({ restaurantId, onClose }: FeedbackProps) {
   const { user, addCajuPoints } = useAppStore();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [step, setStep] = useState(0);

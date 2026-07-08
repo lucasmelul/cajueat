@@ -47,7 +47,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     sources: [
       src('@buenospaladaires', 'curator', 'strong', 40, 'Excelente para una primera cita'),
       src('Tu visita', 'visit', 'strong', 10, 'Ideal para ir en pareja'),
-      src('42 personas', 'community', 'medium', 20, 'Buen lugar para ir de a dos'),
+      src('Comunidad', 'community', 'medium', 20, 'Buen lugar para ir de a dos'),
     ],
     // Barra nikkei de cena — cierra los lunes, como la mayoría de sus pares en Palermo.
     openHours: [{ days: [2, 3, 4, 5, 6, 0], from: '20:00', to: '00:00' }],
@@ -80,7 +80,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     notFor: ['Charla tranquila', 'Reuniones de negocios'],
     sources: [
       src('@salt_argentina', 'curator', 'medium', 200, 'Ambiente tranquilo, bueno para charlar'),
-      src('18 personas', 'community', 'medium', 15, 'Bastante ruidoso los fines de semana'),
+      src('Comunidad', 'community', 'medium', 15, 'Bastante ruidoso los fines de semana'),
     ],
     // Bodegón de cena, martes a domingo — cierra los lunes.
     openHours: [{ days: [2, 3, 4, 5, 6, 0], from: '20:00', to: '00:30' }],
@@ -108,7 +108,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     notFor: ['Cena', 'Grupos'],
     sources: [
       src('Tu visita', 'visit', 'strong', 5),
-      src('9 personas', 'community', 'weak', 30),
+      src('Comunidad', 'community', 'weak', 30),
       src('@buenospaladaires', 'curator', 'medium', 60),
     ],
     // Café de mañana, todos los días — "el mejor momento es antes del mediodía".
@@ -143,7 +143,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     sources: [
       src('@buenospaladaires', 'curator', 'strong', 15),
       src('Tu visita', 'visit', 'strong', 3),
-      src('21 personas', 'community', 'medium', 10),
+      src('Comunidad', 'community', 'medium', 10),
     ],
     // Trattoria de cena romántica, miércoles a domingo.
     openHours: [{ days: [3, 4, 5, 6, 0], from: '20:00', to: '00:00' }],
@@ -173,7 +173,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     tips: ['Andá con hambre', 'Pedí mesa en la terraza si el clima acompaña'],
     idealFor: ['Grupos grandes', 'Cumpleaños', 'Después del trabajo'],
     notFor: ['Charla tranquila', 'Primera cita'],
-    sources: [src('@salt_argentina', 'curator', 'weak', 90), src('27 personas', 'community', 'medium', 10)],
+    sources: [src('@salt_argentina', 'curator', 'weak', 90), src('Comunidad', 'community', 'medium', 10)],
     // Parrilla con terraza — almuerzo y cena, jueves a domingo (el resto de la semana, cerrada).
     openHours: [
       { days: [4, 5, 6, 0], from: '12:00', to: '16:00' },
@@ -205,7 +205,7 @@ export const CATALOG_SEED: RawRestaurant[] = [
     tips: ['Las mesas del fondo tienen mejor luz', 'Pedí el wifi en la barra'],
     idealFor: ['Trabajar solo', 'Reuniones cortas', 'Almuerzo liviano'],
     notFor: ['Cena', 'Grupos grandes'],
-    sources: [src('12 personas', 'community', 'weak', 8)],
+    sources: [src('Comunidad', 'community', 'weak', 8)],
     // Café/almuerzo de días de semana — pensado para trabajar, no abre fines de semana.
     openHours: [{ days: [1, 2, 3, 4, 5], from: '08:00', to: '17:00' }],
   },

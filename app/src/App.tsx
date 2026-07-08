@@ -46,8 +46,9 @@ function App() {
         </div>
         {showTabBar && <TabBar />}
         {overlay === 'capture' && <KnowledgeCapture onClose={closeOverlay} />}
-        {/* Feedback's CTA reads "Volver al mapa" — it always returns Home, not just wherever it was opened from. */}
-        {overlay === 'feedback' && (
+        {/* Feedback's CTA reads "Volver al mapa" — it always returns Home, not just wherever it was opened from.
+            Requires a real restaurantId — never falls back to a fake one if somehow opened without it. */}
+        {overlay === 'feedback' && overlayRestaurantId && (
           <Feedback
             restaurantId={overlayRestaurantId}
             onClose={() => {

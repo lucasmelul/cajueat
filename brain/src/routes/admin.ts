@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getAllCurators } from '../curators/curatorStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
+import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
 import { getPendingContributionById, getPendingContributions, markContributionStatus } from '../moderation/pendingContributionsStore.js';
@@ -156,4 +157,35 @@ adminRouter.post('/admin/pending-contributions/:id/reject', (req, res) => {
     return;
   }
   res.json(updated);
+});
+
+/**
+ * Events had no CRUD before this — the map only ever showed a single
+ * hardcoded fixture, with no way for an operator to add a real one. Same
+ * pattern as restaurants: direct create/delete, no confirmation queue,
+ * because an operator typing a real event isn't an AI extraction that needs
+ * review.
+ */
+adminRouter.get('/admin/events', (_req, res) => {
+  res.json(getEvents());
+});
+
+adminRouter.post('/admin/events', (req, res) => {
+  const { name, whenAt, position } = req.body ?? {};
+  const validPosition = position && typeof position.lat === 'number' && typeof position.lng === 'number';
+  if (typeof name !== 'string' || !name.trim() || typeof whenAt !== 'string' || Number.isNaN(Date.parse(whenAt)) || !validPosition) {
+    res.status(400).json({ error: 'name_whenAt_position_required' });
+    return;
+  }
+  const created = createEvent({ name: name.trim(), whenAt, position });
+  res.status(201).json(created);
+});
+
+adminRouter.delete('/admin/events/:id', (req, res) => {
+  const deleted = deleteEvent(req.params.id);
+  if (!deleted) {
+    res.status(404).json({ error: 'event_not_found' });
+    return;
+  }
+  res.status(204).end();
 });

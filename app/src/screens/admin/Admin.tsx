@@ -4,7 +4,7 @@ import { ChevronLeft, LogOut } from 'lucide-react';
 import { Badge, Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
 import type { CuratorAnalysis, CuratorRecord, PendingContribution } from '../../lib/admin/adminClient';
-import type { Restaurant } from '../../types';
+import type { MapEvent, Restaurant } from '../../types';
 import './Admin.css';
 
 const TRUST_TONE: Record<Restaurant['trust'], 'success' | 'brand' | 'danger'> = { high: 'success', mid: 'brand', low: 'danger' };
@@ -21,6 +21,8 @@ export function Admin() {
   const [curators, setCurators] = useState<CuratorRecord[]>([]);
   const [pendingContributions, setPendingContributions] = useState<PendingContribution[]>([]);
   const [pendingBusyId, setPendingBusyId] = useState<string | null>(null);
+  const [events, setEvents] = useState<MapEvent[]>([]);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   const [curatorHandle, setCuratorHandle] = useState('');
   const [curatorText, setCuratorText] = useState('');
@@ -35,13 +37,25 @@ export function Admin() {
   const [creating, setCreating] = useState(false);
   const [createdMsg, setCreatedMsg] = useState('');
 
+  const [newEventName, setNewEventName] = useState('');
+  const [newEventWhenAt, setNewEventWhenAt] = useState('');
+  const [newEventLat, setNewEventLat] = useState('');
+  const [newEventLng, setNewEventLng] = useState('');
+  const [creatingEvent, setCreatingEvent] = useState(false);
+
   const loadCatalog = async () => {
     setGateLoading(true);
     try {
-      const [data, curatorData, pending] = await Promise.all([adminClient.getCatalog(), adminClient.getCurators(), adminClient.getPendingContributions()]);
+      const [data, curatorData, pending, evts] = await Promise.all([
+        adminClient.getCatalog(),
+        adminClient.getCurators(),
+        adminClient.getPendingContributions(),
+        adminClient.getEvents(),
+      ]);
       setCatalog(data);
       setCurators(curatorData);
       setPendingContributions(pending);
+      setEvents(evts);
       setAuthed(true);
       setGateError('');
     } catch (err) {
@@ -143,6 +157,33 @@ export function Admin() {
     }
   };
 
+  const createEvent = async () => {
+    const lat = Number(newEventLat);
+    const lng = Number(newEventLng);
+    if (!newEventName.trim() || !newEventWhenAt || Number.isNaN(lat) || Number.isNaN(lng)) return;
+    setCreatingEvent(true);
+    try {
+      await adminClient.createEvent({ name: newEventName.trim(), whenAt: new Date(newEventWhenAt).toISOString(), position: { lat, lng } });
+      setNewEventName('');
+      setNewEventWhenAt('');
+      setNewEventLat('');
+      setNewEventLng('');
+      setEvents(await adminClient.getEvents());
+    } finally {
+      setCreatingEvent(false);
+    }
+  };
+
+  const removeEvent = async (id: string) => {
+    setDeletingEventId(id);
+    try {
+      await adminClient.deleteEvent(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
   if (!authed) {
     return (
       <div className="cj-admin cj-admin--gate">
@@ -217,6 +258,44 @@ export function Admin() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="cj-admin-sec">
+          <Badge tone="over">Eventos</Badge>
+          <p className="cj-admin-lead">
+            Antes solo existía un evento fijo en el código, sin forma de cargar uno real — esto reemplaza esa
+            simulación por un CRUD real, igual que restaurantes.
+          </p>
+          {events.length === 0 && <p className="cj-admin-lead">No hay eventos cargados.</p>}
+          <div className="cj-admin-table">
+            {events.map((e) => (
+              <div className="cj-admin-row" key={e.id}>
+                <div className="cj-admin-row__head">
+                  <div className="cj-admin-row__main">
+                    <b>{e.name}</b>
+                    <span>{new Date(e.whenAt).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                  </div>
+                  <Button size="sm" variant="secondary" disabled={deletingEventId === e.id} onClick={() => removeEvent(e.id)}>
+                    Borrar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="cj-admin-form">
+            <input value={newEventName} onChange={(ev) => setNewEventName(ev.target.value)} placeholder="Nombre del evento" />
+            <input type="datetime-local" value={newEventWhenAt} onChange={(ev) => setNewEventWhenAt(ev.target.value)} />
+            <input value={newEventLat} onChange={(ev) => setNewEventLat(ev.target.value)} placeholder="Latitud (ej: -34.6)" />
+            <input value={newEventLng} onChange={(ev) => setNewEventLng(ev.target.value)} placeholder="Longitud (ej: -58.43)" />
+            <Button
+              variant="primary"
+              onClick={createEvent}
+              loading={creatingEvent}
+              disabled={!newEventName.trim() || !newEventWhenAt || !newEventLat.trim() || !newEventLng.trim()}
+            >
+              Crear evento
+            </Button>
           </div>
         </section>
 

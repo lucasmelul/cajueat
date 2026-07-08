@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, ChevronDown, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search } from 'lucide-react';
+import { Bookmark, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search } from 'lucide-react';
 import { LivingMapCanvas, type LivingMapCanvasHandle } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
@@ -8,7 +8,7 @@ import { CajuPoints, RestaurantCard, BottomSheet, type SheetState } from '../../
 import { BrainCard, PromptBar, highlightText } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { DEFAULT_MAP_CENTER } from '../../lib/brain/fixtures';
-import { getCurrentPosition } from '../../lib/geo/geolocation';
+import { getCurrentPosition, haversineKm } from '../../lib/geo/geolocation';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { BrainCardData, MapEvent, Restaurant } from '../../types';
 import './LivingMap.css';
@@ -29,6 +29,7 @@ export function LivingMap() {
     openOverlay,
     userLocation,
     setUserLocation,
+    setPendingCaptureStage,
   } = useAppStore();
 
   const [loading, setLoading] = useState(true);
@@ -118,9 +119,20 @@ export function LivingMap() {
     navigate('/conversation');
   };
 
-  // Knowledge Capture (voice-first import, SPEC-004) doesn't exist yet — route to
-  // Conversation for now rather than leaving the mic as a dead tap.
-  const handleVoice = () => navigate('/conversation');
+  // "Aportar por voz" opens Knowledge Capture straight to its Voice step (SPEC-015,
+  // already real) instead of the picker — the mic promises a voice contribution, not a chat.
+  const handleVoice = () => {
+    setPendingCaptureStage('voiceInput');
+    openOverlay('capture');
+  };
+
+  // Real neighborhood, never a fixed label: the closest currently-loaded restaurant's
+  // neighborhood once we have a real position, honest city-level fallback otherwise —
+  // there's no reverse-geocoding here, so a specific barrio is never guessed without one.
+  const nearestNeighborhood =
+    userLocation && restaurants.length > 0
+      ? restaurants.reduce((closest, r) => (haversineKm(userLocation, r.position) < haversineKm(userLocation, closest.position) ? r : closest)).neighborhood
+      : null;
 
   return (
     <div className="cj-screen">
@@ -145,9 +157,9 @@ export function LivingMap() {
       </div>
 
       <div className="cj-chips">
-        <button className="cj-loc" type="button">
-          <MapPinIcon size={14} /> Palermo <ChevronDown size={13} />
-        </button>
+        <span className="cj-loc">
+          <MapPinIcon size={14} /> {nearestNeighborhood ?? 'Buenos Aires'}
+        </span>
         <span className="cj-chips__div" />
         {!userLocation && (
           <Chip icon={<LocateFixed size={15} />} onClick={requestLocation}>

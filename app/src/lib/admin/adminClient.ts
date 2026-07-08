@@ -1,4 +1,4 @@
-import type { Restaurant } from '../../types';
+import type { MapEvent, Restaurant } from '../../types';
 
 /**
  * SPEC-018 Admin CMS: a genuinely different client of the Brain, not a
@@ -35,6 +35,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (res.status === 401) throw new AdminAuthError();
   if (!res.ok) throw new Error(`Admin request failed: ${init?.method ?? 'GET'} ${path} (${res.status})`);
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -68,10 +69,18 @@ export interface PendingContribution {
   status: 'pending' | 'confirmed' | 'rejected';
 }
 
+export type CreateEventInput = { name: string; whenAt: string; position: { lat: number; lng: number } };
+
 export const adminClient = {
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
 
   getCurators: () => request<CuratorRecord[]>('/admin/curators'),
+
+  getEvents: () => request<MapEvent[]>('/admin/events'),
+
+  createEvent: (input: CreateEventInput) => request<MapEvent>('/admin/events', { method: 'POST', body: JSON.stringify(input) }),
+
+  deleteEvent: (id: string) => request<void>(`/admin/events/${id}`, { method: 'DELETE' }),
 
   getPendingContributions: () => request<PendingContribution[]>('/admin/pending-contributions'),
 
