@@ -17,6 +17,12 @@
   display: flex;
   flex-direction: column;
 }
+/* Admin CMS is an operator tool used from a real computer, never a phone PWA screen — it gets the
+   full browser width instead of the 440px canvas the rest of the app is deliberately locked to. */
+.cj-canvas--wide {
+  max-width: none;
+  box-shadow: none;
+}
 .cj-canvas__main {
   position: relative;
   flex: 1;

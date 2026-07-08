@@ -115,7 +115,31 @@ export interface GoogleLinkResult {
   businessStatus: GoogleBusinessStatus;
 }
 
+/** Dashboard overview — every field is a direct read of real data (never a placeholder metric). */
+export interface AdminStats {
+  restaurants: {
+    total: number;
+    demo: number;
+    byTrust: { high: number; mid: number; low: number };
+    linkedToGoogle: number;
+    stale: number;
+  };
+  users: {
+    totalUsers: number;
+    phoneLinked: number;
+    activeLast7d: number;
+    activeLast30d: number;
+    totalCajuPoints: number;
+    totalSavedRestaurants: number;
+  };
+  curators: number;
+  events: number;
+  pending: { contributions: number; newPlaces: number };
+}
+
 export const adminClient = {
+  getStats: () => request<AdminStats>('/admin/stats'),
+
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
 
   getCurators: () => request<CuratorRecord[]>('/admin/curators'),

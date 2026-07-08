@@ -155,6 +155,37 @@ export function getProfile(userId: string) {
   return { user: state.user, saved: state.saved, dna: state.dna, contributions: state.contributions };
 }
 
+export interface UserStats {
+  totalUsers: number;
+  phoneLinked: number;
+  activeLast7d: number;
+  activeLast30d: number;
+  totalCajuPoints: number;
+  totalSavedRestaurants: number;
+}
+
+/**
+ * Admin Dashboard: every field here is a direct read of data the Brain already tracks for real
+ * product reasons (SPEC-013 identity, SPEC-016 scheduling) — never a fabricated or estimated
+ * number. `totalUsers` counts real rows, created the first time a client's anonymous id ever
+ * hits an authenticated route (e.g. GET /api/user on first app open) — a pure catalog-browsing
+ * visit that never calls a personal-memory route wouldn't create one, which is a real, honest
+ * scope limit, not an undercount to paper over.
+ */
+export function getUserStats(): UserStats {
+  const now = Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const rows = Object.values(store.users);
+  return {
+    totalUsers: rows.length,
+    phoneLinked: rows.filter((s) => !!s.user.phone).length,
+    activeLast7d: rows.filter((s) => now - s.lastActiveAt <= 7 * DAY_MS).length,
+    activeLast30d: rows.filter((s) => now - s.lastActiveAt <= 30 * DAY_MS).length,
+    totalCajuPoints: rows.reduce((sum, s) => sum + s.user.cajuPoints, 0),
+    totalSavedRestaurants: rows.reduce((sum, s) => sum + Object.values(s.saved).filter(Boolean).length, 0),
+  };
+}
+
 export function isSaved(userId: string, restaurantId: string): boolean {
   return !!getOrCreateUser(userId).saved[restaurantId];
 }

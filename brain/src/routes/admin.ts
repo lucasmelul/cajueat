@@ -4,6 +4,7 @@ import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById,
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
+import { getUserStats } from '../memory/memoryStore.js';
 import { requireOperator } from '../middleware/operator.js';
 import {
   getNewPlaceSuggestionById,
@@ -34,6 +35,42 @@ adminRouter.get('/admin/restaurants', (_req, res) => {
 /** SPEC-017: curator reputation per domain — internal to the operator view only, per the spec's own open question on end-user visibility (kept unresolved, so kept unexposed). */
 adminRouter.get('/admin/curators', (_req, res) => {
   res.json(getAllCurators());
+});
+
+/** Days since a restaurant's freshest source — same definition the Radar de desactualizados uses client-side, kept in sync here for the Dashboard's aggregate count. */
+const STALE_THRESHOLD_DAYS = 180;
+function daysSinceFreshestSource(sources: { capturedAt: string }[]): number | null {
+  const freshestMs = sources.reduce((max, s) => Math.max(max, new Date(s.capturedAt).getTime()), 0);
+  return freshestMs === 0 ? null : Math.floor((Date.now() - freshestMs) / (24 * 60 * 60 * 1000));
+}
+
+/** Dashboard overview: every number here is a direct read of real data (catalog, curator store, moderation queues, user stats) — never a placeholder metric. */
+adminRouter.get('/admin/stats', (_req, res) => {
+  const real = getCatalog({ includeDemo: true }).filter((r) => !r.isDemo);
+  const demoCount = getCatalog({ includeDemo: true }).length - real.length;
+  res.json({
+    restaurants: {
+      total: real.length,
+      demo: demoCount,
+      byTrust: {
+        high: real.filter((r) => r.trust === 'high').length,
+        mid: real.filter((r) => r.trust === 'mid').length,
+        low: real.filter((r) => r.trust === 'low').length,
+      },
+      linkedToGoogle: real.filter((r) => !!r.googlePlaceId).length,
+      stale: real.filter((r) => {
+        const days = daysSinceFreshestSource(r.sources);
+        return days === null || days > STALE_THRESHOLD_DAYS;
+      }).length,
+    },
+    users: getUserStats(),
+    curators: getAllCurators().length,
+    events: getEvents().length,
+    pending: {
+      contributions: getPendingContributions().length,
+      newPlaces: getNewPlaceSuggestions().length,
+    },
+  });
 });
 
 adminRouter.post('/admin/restaurants', (req, res) => {

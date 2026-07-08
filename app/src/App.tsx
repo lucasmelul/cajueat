@@ -14,19 +14,21 @@ const TOP_LEVEL_ROUTES = ['/', '/profile'];
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isAdmin = location.pathname.startsWith('/admin');
   const showTabBar = TOP_LEVEL_ROUTES.includes(location.pathname);
   const { overlay, overlayRestaurantId, closeOverlay, user, setUser } = useAppStore();
 
   // First-run gate (PRD-010 Onboarding): route to /onboarding until the Brain says it's done,
   // and don't let an already-onboarded user land back on it (e.g. via a stale/direct URL).
-  // /admin is exempt — an operator (SPEC-018) is never an end user going through this quiz.
+  // /admin (and every nested page under it) is exempt — an operator (SPEC-018) is never an end
+  // user going through this quiz.
   const gate = (u: { onboarded: boolean }) => {
-    if (location.pathname === '/admin') return;
+    if (isAdmin) return;
     if (!u.onboarded && location.pathname !== '/onboarding') navigate('/onboarding');
     else if (u.onboarded && location.pathname === '/onboarding') navigate('/');
   };
   useEffect(() => {
-    if (location.pathname === '/admin') return;
+    if (isAdmin) return;
     if (user) {
       gate(user);
       return;
@@ -40,7 +42,7 @@ function App() {
 
   return (
     <div className="cj-canvas-wrap">
-      <div className="cj-canvas">
+      <div className={`cj-canvas ${isAdmin ? 'cj-canvas--wide' : ''}`}>
         <div className="cj-canvas__main">
           <Outlet />
         </div>
