@@ -83,7 +83,20 @@ export async function getRecommendations(userId: string, context: Recommendation
     candidates = withinRadius.length > 0 ? withinRadius : [...candidates].sort((a, b) => haversineKm(point, a.position) - haversineKm(point, b.position));
   }
   // Without real geolocation, 'near' has no coordinates to filter by — pass through rather than fake a location.
-  if (candidates.length === 0) candidates = getCatalog(); // never an empty result (CP-018 Discovery Engine)
+  if (candidates.length === 0) candidates = getCatalog(); // never an empty result from filtering alone (CP-018 Discovery Engine)
+
+  // A genuinely empty catalog (no real restaurants loaded yet, e.g. right after the demo
+  // fixtures were hidden) is a real, honest state — never a bug to paper over with a fake pick.
+  if (candidates.length === 0) {
+    return {
+      brainCard: {
+        eyebrow: 'CAJU',
+        message: 'Todavía no hay lugares cargados.',
+        sub: 'En cuanto se sume el primer restaurante real, vas a empezar a ver recomendaciones acá.',
+      },
+      restaurants: [],
+    };
+  }
 
   const ranked = candidates.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score);
   const picked = diversify(ranked, MAX_RESULTS);

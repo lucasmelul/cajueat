@@ -6,7 +6,7 @@ import { isOpenNow } from '../geo/geo.js';
 import { computeTrust, detectContradiction } from '../trust/trustEngine.js';
 import { DATA_DIR } from '../paths.js';
 import type { QuickFact, Restaurant, Source } from '../types.js';
-import { CATALOG_SEED, type RawRestaurant } from './catalogSeed.js';
+import { CATALOG_SEED, DEMO_SEED_IDS, type RawRestaurant } from './catalogSeed.js';
 
 /**
  * SPEC-018 Admin CMS prerequisite: the catalog stops being `RAW_RESTAURANTS`
@@ -35,6 +35,20 @@ function persist() {
 }
 
 if (!existsSync(CATALOG_FILE)) persist();
+
+// One-time backfill: a catalog.json persisted before `isDemo` existed still has the 6
+// fixture places without the flag — self-healing here means both local dev and an
+// already-deployed Railway volume pick it up on next boot, no manual migration script.
+{
+  let backfilled = false;
+  for (const raw of catalog) {
+    if (DEMO_SEED_IDS.has(raw.id) && raw.isDemo !== true) {
+      raw.isDemo = true;
+      backfilled = true;
+    }
+  }
+  if (backfilled) persist();
+}
 
 /**
  * SPEC-017: whether a curator's claim was sustained or contradicted by the
@@ -73,8 +87,14 @@ if (!curatorsFileExists()) {
  * the same way — never a hardcoded label that could go stale the moment
  * the clock moves.
  */
-export function getCatalog(): Restaurant[] {
-  return catalog.map((raw) => {
+/**
+ * `includeDemo` defaults to false: every end-user-facing caller (recommendations, search,
+ * conversation, capture extraction, the plain restaurants routes) sees only real places.
+ * Only the Admin CMS's own catalog view passes includeDemo:true, since an operator still
+ * needs to see/manage the hand-authored fixture places even though real users never do.
+ */
+export function getCatalog(opts?: { includeDemo?: boolean }): Restaurant[] {
+  const withComputedFields = catalog.map((raw) => {
     const sourcesWithReputation = raw.sources.map((s) =>
       s.kind === 'curator' ? { ...s, weight: getEffectiveWeight(s.name, raw.cuisine, s.weight) } : s,
     );
@@ -90,10 +110,12 @@ export function getCatalog(): Restaurant[] {
       trustRationale: rationale,
     };
   });
+  return opts?.includeDemo ? withComputedFields : withComputedFields.filter((r) => !r.isDemo);
 }
 
+/** Lookup by an explicit, already-known id — always demo-inclusive, since a listing decision (hide demo) doesn't apply once the caller already has the exact id (e.g. an operator confirming a source on a demo place). */
 export function getRestaurantById(id: string): Restaurant | undefined {
-  return getCatalog().find((r) => r.id === id);
+  return getCatalog({ includeDemo: true }).find((r) => r.id === id);
 }
 
 export type RestaurantInput = Omit<RawRestaurant, 'id'> & { id?: string };

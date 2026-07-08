@@ -47,6 +47,8 @@ export interface Restaurant {
   name: string;
   cuisine: string;
   neighborhood: string;
+  /** Real street address (calle y altura) — absence means we genuinely don't know it yet, never guessed. */
+  address?: string;
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */
@@ -66,6 +68,8 @@ export interface Restaurant {
   image?: string;
   /** Real weekly hours (SPEC-001 "Abierto ahora") — absence means we genuinely don't know, never guessed. */
   openHours?: OpenPeriod[];
+  /** Hand-authored demo/fixture data, never a real place — hidden from every end-user-facing read (getCatalog defaults to excluding it), visible only in the Admin CMS. */
+  isDemo?: boolean;
 }
 
 export interface MapEvent {

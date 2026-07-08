@@ -4,10 +4,19 @@ import { getCatalog } from '../data/restaurants.js';
 import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
-import { enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
+import { enqueueNewPlaceSuggestion, enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
 import type { ConversationTurn } from '../types.js';
 
 const CONVERSATION_LEARN_POINTS = 30;
+
+/**
+ * Cheap local signal that the message is sharing a real-world experience, not asking a
+ * question — used alongside a known-name match to decide whether the extra extraction call
+ * is worth it. Without this, recommending a place NOT already in the catalog (the exact case
+ * that used to silently vanish) never matched anything, since a name match can only ever find
+ * names the catalog already has.
+ */
+const RECOMMENDATION_HINTS = /\b(fui a|estuve en|prob[ée]|conozco|recomiendo|hay un lugar|se llama|com[ií] en|cen[ée] en|almorc[ée] en|un lugar que|un restaurante que)\b/i;
 
 export const conversationRouter = Router();
 
@@ -34,14 +43,16 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     const restaurants = interpreted.restaurantIds.map((id) => catalog.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => !!r);
 
     // SPEC-004 "Desde conversación": most messages are questions, not knowledge — only worth a
-    // second, conservative check when the raw text actually names a real place. Gating on
-    // `interpreted.restaurantIds` would miss the main case (sharing an experience produces no
-    // recommendation at all, so interpretQuery legitimately grounds nothing) — a cheap local
-    // name match is the right gate here, not the recommendation result.
-    const mentionsRealPlace = catalog.some((r) => text.toLowerCase().includes(r.name.toLowerCase()));
+    // second, conservative check when there's a real signal. Gating on `interpreted.restaurantIds`
+    // would miss the main case (sharing an experience produces no recommendation at all, so
+    // interpretQuery legitimately grounds nothing) — a cheap local check is the right gate here,
+    // not the recommendation result. A known-name match covers existing places; the recommendation
+    // hint regex covers the case a name match structurally can't: a place NOT in the catalog yet.
+    const mentionsKnownPlace = catalog.some((r) => text.toLowerCase().includes(r.name.toLowerCase()));
+    const worthChecking = mentionsKnownPlace || RECOMMENDATION_HINTS.test(text);
     let learnedAbout: string | undefined;
     let learnedPoints: number | undefined;
-    if (mentionsRealPlace) {
+    if (worthChecking) {
       const knowledge = await extractConversationKnowledge({ text, catalog });
       const restaurant = knowledge.restaurantId ? catalog.find((r) => r.id === knowledge.restaurantId) : undefined;
       if (restaurant && knowledge.learned) {
@@ -49,6 +60,13 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
         // SPEC-019: same moderation queue as Nota/Foto/Voz — never straight to the shared catalog.
         enqueuePendingContribution({ restaurantId: restaurant.id, claim: knowledge.learned, source: 'conversation' });
         learnedAbout = restaurant.name;
+        learnedPoints = CONVERSATION_LEARN_POINTS;
+      } else if (knowledge.newPlace?.name) {
+        // Previously: this vanished completely (no known-name match was even possible). Now it
+        // still gives the user credit immediately and queues a reviewable new-place suggestion.
+        recordContribution(req.userId!, `Le contaste a Caju sobre ${knowledge.newPlace.name}`, CONVERSATION_LEARN_POINTS);
+        enqueueNewPlaceSuggestion({ ...knowledge.newPlace, claim: knowledge.learned, source: 'conversation' });
+        learnedAbout = knowledge.newPlace.name;
         learnedPoints = CONVERSATION_LEARN_POINTS;
       }
     }

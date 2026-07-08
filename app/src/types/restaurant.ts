@@ -37,6 +37,8 @@ export interface Restaurant {
   name: string;
   cuisine: string;
   neighborhood: string;
+  /** Real street address (calle y altura) — absent means we genuinely don't know it yet, never guessed. */
+  address?: string;
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';
@@ -57,4 +59,6 @@ export interface Restaurant {
   notFor: string[];
   sources: Source[];
   image?: string;
+  /** Hand-authored demo/fixture data, never a real place — only ever present (and true) in the Admin CMS's catalog view. */
+  isDemo?: boolean;
 }

@@ -3,7 +3,7 @@ import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
-import { enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
+import { enqueueNewPlaceSuggestion, enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
 
 export const captureRouter = Router();
 
@@ -38,11 +38,16 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     const extraction = await extractNoteKnowledge({ text, catalog: getCatalog() });
     const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
     const learned = extraction.learned || `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento.`;
+    const contributionSource = kind === 'voice' ? 'voice' : 'note';
     recordContribution(req.userId!, restaurant ? `Aportaste ${label} sobre ${restaurant.name}` : `Aportaste ${label}`, POINTS);
     // SPEC-019: real, grounded knowledge about a real place goes to the moderation queue —
     // never straight to the shared catalog, no matter how confident the extraction is.
     if (restaurant && extraction.learned) {
-      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: kind === 'voice' ? 'voice' : 'note' });
+      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: contributionSource });
+    } else if (extraction.newPlace?.name) {
+      // Previously: a note about a place not yet in the catalog silently vanished here — no
+      // admin trace, generic points only. Now it queues as a reviewable new-place suggestion.
+      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: contributionSource });
     }
     res.json({ learned, pointsAwarded: POINTS });
     return;
@@ -60,6 +65,8 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     recordContribution(req.userId!, restaurant ? `Aportaste una foto de ${restaurant.name}` : 'Aportaste una foto', POINTS);
     if (restaurant && extraction.learned) {
       enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'photo' });
+    } else if (extraction.newPlace?.name) {
+      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'photo' });
     }
     res.json({ learned, pointsAwarded: POINTS });
     return;

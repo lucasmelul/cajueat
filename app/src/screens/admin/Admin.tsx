@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { Badge, Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorAnalysis, CuratorRecord, PendingContribution } from '../../lib/admin/adminClient';
+import type { CuratorAnalysis, CuratorRecord, NewPlaceSuggestion, NewRestaurantMention, PendingContribution } from '../../lib/admin/adminClient';
 import type { MapEvent, Restaurant } from '../../types';
 import './Admin.css';
 
@@ -21,6 +21,9 @@ export function Admin() {
   const [curators, setCurators] = useState<CuratorRecord[]>([]);
   const [pendingContributions, setPendingContributions] = useState<PendingContribution[]>([]);
   const [pendingBusyId, setPendingBusyId] = useState<string | null>(null);
+  const [pendingNewPlaces, setPendingNewPlaces] = useState<NewPlaceSuggestion[]>([]);
+  const [newPlaceBusyId, setNewPlaceBusyId] = useState<string | null>(null);
+  const [newPlaceDrafts, setNewPlaceDrafts] = useState<Record<string, { name: string; cuisine: string; neighborhood: string; address: string }>>({});
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
@@ -33,6 +36,7 @@ export function Admin() {
   const [newName, setNewName] = useState('');
   const [newCuisine, setNewCuisine] = useState('');
   const [newNeighborhood, setNewNeighborhood] = useState('');
+  const [newAddress, setNewAddress] = useState('');
   const [newWhy, setNewWhy] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdMsg, setCreatedMsg] = useState('');
@@ -46,15 +50,24 @@ export function Admin() {
   const loadCatalog = async () => {
     setGateLoading(true);
     try {
-      const [data, curatorData, pending, evts] = await Promise.all([
+      const [data, curatorData, pending, newPlaces, evts] = await Promise.all([
         adminClient.getCatalog(),
         adminClient.getCurators(),
         adminClient.getPendingContributions(),
+        adminClient.getPendingNewPlaces(),
         adminClient.getEvents(),
       ]);
       setCatalog(data);
       setCurators(curatorData);
       setPendingContributions(pending);
+      setPendingNewPlaces(newPlaces);
+      setNewPlaceDrafts((prev) => {
+        const next = { ...prev };
+        for (const p of newPlaces) {
+          if (!next[p.id]) next[p.id] = { name: p.name, cuisine: p.cuisine, neighborhood: p.neighborhood, address: p.address ?? '' };
+        }
+        return next;
+      });
       setEvents(evts);
       setAuthed(true);
       setGateError('');
@@ -135,6 +148,52 @@ export function Admin() {
     }
   };
 
+  const updateNewPlaceDraft = (id: string, patch: Partial<{ name: string; cuisine: string; neighborhood: string; address: string }>) => {
+    setNewPlaceDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  };
+
+  // Antes esto se perdía en silencio (un aporte sobre un lugar que no estaba en el catálogo no tenía
+  // dónde ir) — el borrador es editable porque la extracción puede dejar cocina/barrio vacíos, nunca
+  // inventados, y el operador los completa acá antes de confirmar.
+  const confirmNewPlace = async (id: string) => {
+    const draft = newPlaceDrafts[id];
+    if (!draft?.name.trim() || !draft?.cuisine.trim() || !draft?.neighborhood.trim()) return;
+    setNewPlaceBusyId(id);
+    try {
+      await adminClient.confirmNewPlace(id, {
+        name: draft.name.trim(),
+        cuisine: draft.cuisine.trim(),
+        neighborhood: draft.neighborhood.trim(),
+        address: draft.address.trim() || undefined,
+      });
+      setPendingNewPlaces((prev) => prev.filter((p) => p.id !== id));
+      loadCatalog();
+    } finally {
+      setNewPlaceBusyId(null);
+    }
+  };
+
+  const rejectNewPlace = async (id: string) => {
+    setNewPlaceBusyId(id);
+    try {
+      await adminClient.rejectNewPlace(id);
+      setPendingNewPlaces((prev) => prev.filter((p) => p.id !== id));
+    } finally {
+      setNewPlaceBusyId(null);
+    }
+  };
+
+  // "Analizá contenido de curador" puede encontrar lugares reales que el texto menciona pero que no
+  // están en el catálogo — en vez de un flujo de creación paralelo, precarga el mismo formulario de
+  // "Agregar restaurante" de más abajo, para no duplicar lógica.
+  const prefillNewRestaurant = (nr: NewRestaurantMention) => {
+    setNewName(nr.name);
+    setNewCuisine(nr.cuisine);
+    setNewNeighborhood(nr.neighborhood);
+    setNewWhy(nr.claim);
+    document.getElementById('cj-admin-create-restaurant')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const createRestaurant = async () => {
     if (!newName.trim() || !newCuisine.trim() || !newNeighborhood.trim()) return;
     setCreating(true);
@@ -144,12 +203,14 @@ export function Admin() {
         name: newName.trim(),
         cuisine: newCuisine.trim(),
         neighborhood: newNeighborhood.trim(),
+        ...(newAddress.trim() ? { address: newAddress.trim() } : {}),
         why: newWhy.trim(),
       });
       setCreatedMsg(`Creado: ${created.name}`);
       setNewName('');
       setNewCuisine('');
       setNewNeighborhood('');
+      setNewAddress('');
       setNewWhy('');
       loadCatalog();
     } finally {
@@ -221,6 +282,10 @@ export function Admin() {
       <div className="cj-admin__scroll">
         <section className="cj-admin-sec">
           <Badge tone="over">Catálogo · confianza</Badge>
+          <p className="cj-admin-lead">
+            "Demo" marca lugares ficticios de las fixtures originales — nunca se muestran a un usuario real, solo
+            acá para que sepas que existen.
+          </p>
           <div className="cj-admin-table">
             {catalog.map((r) => (
               <div className="cj-admin-row" key={r.id}>
@@ -229,9 +294,13 @@ export function Admin() {
                     <b>{r.name}</b>
                     <span>
                       {r.cuisine} · {r.neighborhood}
+                      {r.address ? ` · ${r.address}` : ''}
                     </span>
                   </div>
-                  <Badge tone={TRUST_TONE[r.trust]}>{r.trust}</Badge>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {r.isDemo && <Badge tone="danger">Demo</Badge>}
+                    <Badge tone={TRUST_TONE[r.trust]}>{r.trust}</Badge>
+                  </div>
                 </div>
                 <p className="cj-admin-row__rationale">{r.trustRationale}</p>
               </div>
@@ -328,6 +397,52 @@ export function Admin() {
         </section>
 
         <section className="cj-admin-sec">
+          <Badge tone="over">Lugares nuevos sugeridos</Badge>
+          <p className="cj-admin-lead">
+            Un usuario recomendó un lugar que todavía no está en el catálogo — antes esto se perdía sin dejar rastro.
+            Completá lo que falte (la extracción nunca inventa cocina o barrio si el texto no lo decía) y confirmá
+            para crearlo como restaurante real.
+          </p>
+          {pendingNewPlaces.length === 0 && <p className="cj-admin-lead">No hay lugares nuevos pendientes de revisión.</p>}
+          <div className="cj-admin-analysis">
+            {pendingNewPlaces.map((p) => {
+              const draft = newPlaceDrafts[p.id] ?? { name: p.name, cuisine: p.cuisine, neighborhood: p.neighborhood, address: p.address ?? '' };
+              const canConfirm = !!draft.name.trim() && !!draft.cuisine.trim() && !!draft.neighborhood.trim();
+              return (
+                <div className="cj-admin-match" key={p.id}>
+                  <div className="cj-admin-match__head">
+                    <Badge tone="brand">{SOURCE_LABEL[p.source]}</Badge>
+                  </div>
+                  <p>{p.claim}</p>
+                  <div className="cj-admin-form">
+                    <input value={draft.name} onChange={(e) => updateNewPlaceDraft(p.id, { name: e.target.value })} placeholder="Nombre" />
+                    <input value={draft.cuisine} onChange={(e) => updateNewPlaceDraft(p.id, { cuisine: e.target.value })} placeholder="Cocina" />
+                    <input
+                      value={draft.neighborhood}
+                      onChange={(e) => updateNewPlaceDraft(p.id, { neighborhood: e.target.value })}
+                      placeholder="Barrio"
+                    />
+                    <input
+                      value={draft.address}
+                      onChange={(e) => updateNewPlaceDraft(p.id, { address: e.target.value })}
+                      placeholder="Dirección (calle y altura, opcional)"
+                    />
+                  </div>
+                  <div className="cj-admin-pending__actions">
+                    <Button size="sm" variant="primary" disabled={newPlaceBusyId === p.id || !canConfirm} onClick={() => confirmNewPlace(p.id)}>
+                      Confirmar y crear restaurante
+                    </Button>
+                    <Button size="sm" variant="secondary" disabled={newPlaceBusyId === p.id} onClick={() => rejectNewPlace(p.id)}>
+                      Rechazar
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="cj-admin-sec">
           <Badge tone="over">Analizar contenido de curador</Badge>
           <p className="cj-admin-lead">
             Pegá texto real que ya leíste (caption, comentario, lista) — nunca se lee la plataforma directamente.
@@ -366,22 +481,32 @@ export function Admin() {
                   </Button>
                 </div>
               ))}
-              {analysis.unmatchedMentions.length > 0 && (
-                <p className="cj-admin-unmatched">No reconocido en el catálogo: {analysis.unmatchedMentions.join(', ')}</p>
-              )}
-              {analysis.matches.length === 0 && analysis.unmatchedMentions.length === 0 && (
+              {analysis.newRestaurants.map((nr, i) => (
+                <div className="cj-admin-match" key={`new-${nr.name}-${i}`}>
+                  <div className="cj-admin-match__head">
+                    <b>{nr.name}</b>
+                    <Badge tone="danger">No está en el catálogo</Badge>
+                  </div>
+                  <p>{nr.claim}</p>
+                  <Button size="sm" variant="primary" onClick={() => prefillNewRestaurant(nr)}>
+                    Crear como restaurante nuevo
+                  </Button>
+                </div>
+              ))}
+              {analysis.matches.length === 0 && analysis.newRestaurants.length === 0 && (
                 <p className="cj-admin-lead">No se identificó ningún restaurante real en el texto.</p>
               )}
             </div>
           )}
         </section>
 
-        <section className="cj-admin-sec">
+        <section className="cj-admin-sec" id="cj-admin-create-restaurant">
           <Badge tone="over">Agregar restaurante</Badge>
           <div className="cj-admin-form">
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nombre" />
             <input value={newCuisine} onChange={(e) => setNewCuisine(e.target.value)} placeholder="Cocina" />
             <input value={newNeighborhood} onChange={(e) => setNewNeighborhood(e.target.value)} placeholder="Barrio" />
+            <input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Dirección (calle y altura, opcional)" />
             <input value={newWhy} onChange={(e) => setNewWhy(e.target.value)} placeholder="Por qué ir (una línea)" />
             <Button
               variant="primary"

@@ -15,7 +15,8 @@ const src = (name: string, kind: Source['kind'], weight: Source['weight'], captu
   ...(claim ? { claim } : {}),
 });
 
-export const CATALOG_SEED: RawRestaurant[] = [
+/** Hand-authored fixture places from early scaffolding — never real restaurants, kept only as isDemo:true so the Admin CMS can still see/manage them while every end-user-facing read hides them. */
+const RAW_SEED: RawRestaurant[] = [
   {
     id: 'osaka',
     name: 'Osaka',
@@ -210,3 +211,8 @@ export const CATALOG_SEED: RawRestaurant[] = [
     openHours: [{ days: [1, 2, 3, 4, 5], from: '08:00', to: '17:00' }],
   },
 ];
+
+export const CATALOG_SEED: RawRestaurant[] = RAW_SEED.map((r) => ({ ...r, isDemo: true }));
+
+/** Backfill target for catalogStore.ts: a catalog.json persisted before isDemo existed still has these 6 fixture ids without the flag. */
+export const DEMO_SEED_IDS = new Set(RAW_SEED.map((r) => r.id));

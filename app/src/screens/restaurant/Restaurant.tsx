@@ -150,6 +150,7 @@ export function Restaurant() {
               </span>
             </div>
             <h1 className="cj-hero__name">{restaurant.name}</h1>
+            {restaurant.address && <p className="cj-hero__address">{restaurant.address}</p>}
             <div className="cj-hero__row">
               <TrustMeter level={restaurant.trust} pill />
               <span className="cj-hero__price">{restaurant.price}</span>

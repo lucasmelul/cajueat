@@ -144,16 +144,41 @@ export async function explainRecommendation(input: { restaurant: Restaurant; sig
   return requireTextBlock(response.content).text.trim();
 }
 
+/** A place the user described that isn't in the catalog yet — fields are only ever what the text actually said, empty string means genuinely unstated (an operator fills gaps before it becomes real, never Claude guessing). */
+export interface NewPlaceInfo {
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+}
+
+const NEW_PLACE_SCHEMA = {
+  type: ['object', 'null'],
+  properties: {
+    name: { type: 'string' },
+    cuisine: { type: 'string' },
+    neighborhood: { type: 'string' },
+  },
+  required: ['name', 'cuisine', 'neighborhood'],
+  additionalProperties: false,
+} as const;
+
 export interface NoteExtraction {
   restaurantId: string | null;
   learned: string;
+  /** Set only when the note is clearly about a real place that ISN'T in the catalog — the previous behavior silently dropped this case entirely. */
+  newPlace: NewPlaceInfo | null;
 }
 
 const NOTE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te escribió una nota libre contando algo que
-vivió o sabe sobre un lugar. Tu trabajo: identificar, ÚNICAMENTE de la lista de restaurantes reales que te paso,
-a cuál se refiere la nota (o null si no se refiere a ninguno de la lista), y resumir en UNA oración corta qué
-aprendiste, basándote solo en lo que el usuario escribió — nunca inventes datos que no estén en la nota. Español,
-tono cercano.`;
+vivió o sabe sobre un lugar. Tu trabajo: identificar a cuál restaurante se refiere. Primero buscá si es alguno de
+la lista de restaurantes reales que te paso — si es así, devolvé su restaurantId y newPlace null. Si la nota
+claramente habla de un lugar real que NO está en esa lista (un lugar nuevo que el usuario está recomendando),
+devolvé restaurantId null y completá newPlace con lo que el texto realmente diga: name siempre que lo mencione,
+cuisine y neighborhood solo si el texto los deja claro (si no los dice, dejalos como string vacío — nunca
+inventes un barrio o tipo de cocina que la nota no mencionó). Si la nota no habla de ningún lugar concreto
+(ninguno de la lista ni uno nuevo), devolvé restaurantId null y newPlace null. Resumí siempre en UNA oración
+corta qué aprendiste, basándote solo en lo que el usuario escribió — nunca inventes datos que no estén en la
+nota. Español, tono cercano.`;
 
 export async function extractNoteKnowledge(input: { text: string; catalog: Restaurant[] }): Promise<NoteExtraction> {
   const response = await getClient().messages.create({
@@ -174,8 +199,9 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
           properties: {
             restaurantId: { type: ['string', 'null'] },
             learned: { type: 'string' },
+            newPlace: NEW_PLACE_SCHEMA,
           },
-          required: ['restaurantId', 'learned'],
+          required: ['restaurantId', 'learned', 'newPlace'],
           additionalProperties: false,
         },
       },
@@ -186,17 +212,22 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
 
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
-  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+  const restaurantId = parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null;
+  // Mutually exclusive by construction — a matched restaurant never also carries a newPlace suggestion.
+  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace };
 }
 
 const CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en medio de una conversación normal — la
 mayoría de los mensajes son preguntas o pedidos de recomendación, NO aportes de conocimiento nuevo. Tu única tarea
 acá es detectar el caso excepcional: que el usuario, de paso, te haya contado algo real que vivió o sabe sobre un
-lugar (una opinión, una experiencia, una corrección, un dato concreto) — nunca una pregunta ni un pedido, aunque
-mencione un restaurante real. Si el mensaje es una pregunta o un pedido (ej. "recomendame algo cerca", "¿Osaka es
-bueno para ir en pareja?"), devolvé restaurantId null y learned vacío — ahí no hay nada que aprender. Si realmente
-compartió algo nuevo sobre un restaurante real de la lista, identificá cuál (o null si no está en la lista) y
-resumí en UNA oración corta qué aprendiste, basándote solo en lo que escribió — nunca inventes. Español.`;
+lugar (una opinión, una experiencia, una corrección, un dato concreto, o una recomendación de un lugar nuevo) —
+nunca una pregunta ni un pedido. Si el mensaje es una pregunta o un pedido (ej. "recomendame algo cerca", "¿Osaka
+es bueno para ir en pareja?"), devolvé restaurantId null, newPlace null y learned vacío — ahí no hay nada que
+aprender. Si realmente compartió algo nuevo sobre un restaurante real de la lista, identificá cuál y devolvé
+newPlace null. Si compartió algo sobre un lugar real que NO está en la lista (por ejemplo, recomendándolo), devolvé
+restaurantId null y completá newPlace con lo que el mensaje realmente diga (name siempre, cuisine/neighborhood
+solo si los menciona, string vacío si no — nunca inventes). Resumí siempre en UNA oración corta qué aprendiste,
+basándote solo en lo que escribió — nunca inventes. Español.`;
 
 /** SPEC-004 "Desde conversación": a normal chat message can also teach the Brain something, without a separate capture flow — same grounded discipline as extractNoteKnowledge, but conservative about not treating questions as knowledge. */
 export async function extractConversationKnowledge(input: { text: string; catalog: Restaurant[] }): Promise<NoteExtraction> {
@@ -218,8 +249,9 @@ export async function extractConversationKnowledge(input: { text: string; catalo
           properties: {
             restaurantId: { type: ['string', 'null'] },
             learned: { type: 'string' },
+            newPlace: NEW_PLACE_SCHEMA,
           },
-          required: ['restaurantId', 'learned'],
+          required: ['restaurantId', 'learned', 'newPlace'],
           additionalProperties: false,
         },
       },
@@ -229,7 +261,8 @@ export async function extractConversationKnowledge(input: { text: string; catalo
   const parsed = JSON.parse(requireTextBlock(response.content).text) as NoteExtraction;
 
   const knownIds = new Set(input.catalog.map((r) => r.id));
-  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+  const restaurantId = parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null;
+  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace };
 }
 
 export interface CompareResult {
@@ -288,13 +321,19 @@ export async function compareRestaurants(input: {
 export interface PhotoExtraction {
   restaurantId: string | null;
   learned: string;
+  /** Set only when the photo (e.g. a storefront sign or a menu header) clearly names a real place that ISN'T in the catalog. */
+  newPlace: NewPlaceInfo | null;
 }
 
 const PHOTO_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te mandó una foto (menú, plato, ticket, carta de
-vinos, fachada) sobre un lugar. Tu trabajo: identificar, ÚNICAMENTE de la lista de restaurantes reales que te paso,
-a cuál se refiere la foto (o null si no aplica ninguno o no podés identificarlo), y resumir en UNA oración corta qué
-aprendiste — basado únicamente en lo que la imagen realmente muestra, nunca inventando un plato o precio que no sea
-legible. Si la imagen es ilegible o ambigua, decilo explícitamente en vez de adivinar. Español, tono cercano.`;
+vinos, fachada) sobre un lugar. Tu trabajo: identificar a cuál restaurante se refiere. Primero buscá si es alguno
+de la lista de restaurantes reales que te paso — si es así, devolvé su restaurantId y newPlace null. Si la foto
+deja ver claramente el nombre de un lugar real que NO está en esa lista (ej. un cartel, el encabezado de un menú),
+devolvé restaurantId null y completá newPlace con name (y cuisine/neighborhood solo si son evidentes en la imagen,
+string vacío si no) — nunca inventes un dato que la foto no muestre. Si no podés identificar ningún lugar, devolvé
+restaurantId null y newPlace null. Resumí siempre en UNA oración corta qué aprendiste — basado únicamente en lo
+que la imagen realmente muestra, nunca inventando un plato o precio que no sea legible. Si la imagen es ilegible
+o ambigua, decilo explícitamente en vez de adivinar. Español, tono cercano.`;
 
 export async function extractPhotoKnowledge(input: {
   imageBase64: string;
@@ -325,8 +364,9 @@ export async function extractPhotoKnowledge(input: {
           properties: {
             restaurantId: { type: ['string', 'null'] },
             learned: { type: 'string' },
+            newPlace: NEW_PLACE_SCHEMA,
           },
-          required: ['restaurantId', 'learned'],
+          required: ['restaurantId', 'learned', 'newPlace'],
           additionalProperties: false,
         },
       },
@@ -337,7 +377,8 @@ export async function extractPhotoKnowledge(input: {
 
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
-  return { ...parsed, restaurantId: parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null };
+  const restaurantId = parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null;
+  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace };
 }
 
 export interface CuratorMatch {
@@ -347,19 +388,28 @@ export interface CuratorMatch {
   suggestedWeight: 'strong' | 'medium' | 'weak';
 }
 
+/** A place the pasted text mentions that isn't in the catalog yet — same grounding discipline as NewPlaceInfo, plus the claim the text actually makes about it (an operator reviews before it becomes a real restaurant + source). */
+export interface NewRestaurantMention {
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  claim: string;
+}
+
 export interface CuratorAnalysis {
   matches: CuratorMatch[];
-  unmatchedMentions: string[];
+  newRestaurants: NewRestaurantMention[];
 }
 
 /** SPEC-018 Admin CMS: an operator pastes real curator/Reel text they already read — this never reads the platform itself. */
 const CURATOR_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en modo operador (Admin CMS). Un miembro del equipo pegó texto
 real de un curador o post (caption, comentario, lista) que ya leyó — vos nunca leés la fuente original, solo este texto.
-Tu trabajo: identificar, ÚNICAMENTE contra la lista de restaurantes reales que te paso, cuáles menciona el texto, con
-qué afirmación concreta (claim) hace sobre cada uno y qué peso (strong/medium/weak) te parece razonable según cuán
-específico y respaldado suena ese fragmento — nunca inventes un restaurante que no esté en la lista ni un dato que el
-texto no diga. Si el texto menciona un lugar que no reconocés en la lista, incluilo en unmatchedMentions con el nombre
-tal como aparece, nunca lo descartes en silencio. Español.`;
+Tu trabajo: identificar todos los lugares reales que el texto menciona. Para cada uno, primero buscá si está en la
+lista de restaurantes reales que te paso — si es así, va en matches, con la afirmación concreta (claim) que el texto
+hace sobre él y qué peso (strong/medium/weak) te parece razonable según cuán específico y respaldado suena ese
+fragmento. Si el texto menciona un lugar real que NO está en esa lista, va en newRestaurants con su name, y
+cuisine/neighborhood solo si el texto los deja claro (string vacío si no) y el claim que el texto hace sobre él —
+nunca inventes un dato que el texto no diga, y nunca descartes en silencio un lugar mencionado. Español.`;
 
 export async function analyzeCuratorContent(input: { text: string; catalog: Restaurant[] }): Promise<CuratorAnalysis> {
   const response = await getClient().messages.create({
@@ -391,9 +441,22 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
                 additionalProperties: false,
               },
             },
-            unmatchedMentions: { type: 'array', items: { type: 'string' } },
+            newRestaurants: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  cuisine: { type: 'string' },
+                  neighborhood: { type: 'string' },
+                  claim: { type: 'string' },
+                },
+                required: ['name', 'cuisine', 'neighborhood', 'claim'],
+                additionalProperties: false,
+              },
+            },
           },
-          required: ['matches', 'unmatchedMentions'],
+          required: ['matches', 'newRestaurants'],
           additionalProperties: false,
         },
       },
@@ -402,7 +465,7 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
 
   const parsed = JSON.parse(requireTextBlock(response.content).text) as {
     matches: { restaurantId: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
-    unmatchedMentions: string[];
+    newRestaurants: NewRestaurantMention[];
   };
 
   // Grounding check: only a real, known restaurant can leave this function as a match.
@@ -416,5 +479,5 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
       suggestedWeight: m.suggestedWeight,
     }));
 
-  return { matches, unmatchedMentions: parsed.unmatchedMentions ?? [] };
+  return { matches, newRestaurants: parsed.newRestaurants ?? [] };
 }

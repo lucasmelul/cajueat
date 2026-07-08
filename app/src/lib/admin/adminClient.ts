@@ -46,9 +46,17 @@ export interface CuratorMatch {
   suggestedWeight: 'strong' | 'medium' | 'weak';
 }
 
+/** A place the pasted curator text mentions that isn't in the catalog yet — cuisine/neighborhood may be empty when the text didn't state them. */
+export interface NewRestaurantMention {
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  claim: string;
+}
+
 export interface CuratorAnalysis {
   matches: CuratorMatch[];
-  unmatchedMentions: string[];
+  newRestaurants: NewRestaurantMention[];
 }
 
 export type CreateRestaurantInput = Pick<Restaurant, 'name' | 'cuisine' | 'neighborhood'> & Partial<Restaurant>;
@@ -71,6 +79,21 @@ export interface PendingContribution {
 
 export type CreateEventInput = { name: string; whenAt: string; position: { lat: number; lng: number } };
 
+/** SPEC-019 extension: a place a user described that wasn't in the catalog yet — name/cuisine/neighborhood/address may be blank where the source text didn't say, an operator fills gaps before confirming. */
+export interface NewPlaceSuggestion {
+  id: string;
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  address?: string;
+  claim: string;
+  source: 'note' | 'photo' | 'voice' | 'conversation';
+  createdAt: number;
+  status: 'pending' | 'confirmed' | 'rejected';
+}
+
+export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborhood?: string; address?: string; position?: { lat: number; lng: number } };
+
 export const adminClient = {
   getCatalog: () => request<Restaurant[]>('/admin/restaurants'),
 
@@ -87,6 +110,13 @@ export const adminClient = {
   confirmPendingContribution: (id: string) => request<Restaurant>(`/admin/pending-contributions/${id}/confirm`, { method: 'POST' }),
 
   rejectPendingContribution: (id: string) => request<PendingContribution>(`/admin/pending-contributions/${id}/reject`, { method: 'POST' }),
+
+  getPendingNewPlaces: () => request<NewPlaceSuggestion[]>('/admin/pending-new-places'),
+
+  confirmNewPlace: (id: string, input?: ConfirmNewPlaceInput) =>
+    request<Restaurant>(`/admin/pending-new-places/${id}/confirm`, { method: 'POST', body: JSON.stringify(input ?? {}) }),
+
+  rejectNewPlace: (id: string) => request<NewPlaceSuggestion>(`/admin/pending-new-places/${id}/reject`, { method: 'POST' }),
 
   updateRestaurant: (id: string, patch: Partial<Restaurant>) =>
     request<Restaurant>(`/admin/restaurants/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),

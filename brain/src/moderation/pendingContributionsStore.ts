@@ -27,19 +27,41 @@ export interface PendingContribution {
   status: ContributionStatus;
 }
 
+/**
+ * A place a user described that wasn't in the catalog yet — the case the
+ * original SPEC-019 queue above couldn't represent at all (it only ever
+ * attaches a claim to an EXISTING restaurantId). Before this, a note/photo/
+ * voice/conversation message about an unknown place silently vanished with
+ * generic points and no admin trace. name/cuisine/neighborhood/address may
+ * be empty strings — whatever the source text didn't state, an operator
+ * fills in before confirming, never Claude guessing.
+ */
+export interface NewPlaceSuggestion {
+  id: string;
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  address?: string;
+  claim: string;
+  source: ContributionSource;
+  createdAt: number;
+  status: ContributionStatus;
+}
+
 interface Store {
   contributions: PendingContribution[];
+  newPlaces: NewPlaceSuggestion[];
 }
 
 const DATA_FILE = join(DATA_DIR, 'pending-contributions.json');
 
 function load(): Store {
-  if (!existsSync(DATA_FILE)) return { contributions: [] };
+  if (!existsSync(DATA_FILE)) return { contributions: [], newPlaces: [] };
   try {
     const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<Store>;
-    return { contributions: parsed.contributions ?? [] };
+    return { contributions: parsed.contributions ?? [], newPlaces: parsed.newPlaces ?? [] };
   } catch {
-    return { contributions: [] };
+    return { contributions: [], newPlaces: [] };
   }
 }
 
@@ -74,6 +96,44 @@ export function getPendingContributionById(id: string): PendingContribution | un
 
 export function markContributionStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): PendingContribution | undefined {
   const entry = store.contributions.find((c) => c.id === id);
+  if (!entry) return undefined;
+  entry.status = status;
+  persist();
+  return entry;
+}
+
+export function enqueueNewPlaceSuggestion(input: {
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  claim: string;
+  source: ContributionSource;
+}): NewPlaceSuggestion {
+  const entry: NewPlaceSuggestion = {
+    id: randomUUID(),
+    name: input.name,
+    cuisine: input.cuisine,
+    neighborhood: input.neighborhood,
+    claim: input.claim,
+    source: input.source,
+    createdAt: Date.now(),
+    status: 'pending',
+  };
+  store.newPlaces.unshift(entry);
+  persist();
+  return entry;
+}
+
+export function getNewPlaceSuggestions(): NewPlaceSuggestion[] {
+  return store.newPlaces.filter((p) => p.status === 'pending');
+}
+
+export function getNewPlaceSuggestionById(id: string): NewPlaceSuggestion | undefined {
+  return store.newPlaces.find((p) => p.id === id);
+}
+
+export function markNewPlaceStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): NewPlaceSuggestion | undefined {
+  const entry = store.newPlaces.find((p) => p.id === id);
   if (!entry) return undefined;
   entry.status = status;
   persist();

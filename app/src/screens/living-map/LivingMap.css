@@ -52,6 +52,9 @@
 .cj-chips::-webkit-scrollbar {
   display: none;
 }
+.cj-chips--cuisine {
+  top: 140px;
+}
 .cj-loc {
   display: inline-flex;
   align-items: center;

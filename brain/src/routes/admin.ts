@@ -4,7 +4,14 @@ import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById,
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { analyzeCuratorContent } from '../llm/claudeClient.js';
 import { requireOperator } from '../middleware/operator.js';
-import { getPendingContributionById, getPendingContributions, markContributionStatus } from '../moderation/pendingContributionsStore.js';
+import {
+  getNewPlaceSuggestionById,
+  getNewPlaceSuggestions,
+  getPendingContributionById,
+  getPendingContributions,
+  markContributionStatus,
+  markNewPlaceStatus,
+} from '../moderation/pendingContributionsStore.js';
 import { notifyNewPlaceIfMatches, notifyTrustChangeIfSaved } from '../notifications/triggers.js';
 import type { Source, SourceKind, SignalWeight } from '../types.js';
 
@@ -18,9 +25,9 @@ export const adminRouter = Router();
 
 adminRouter.use('/admin', requireOperator);
 
-/** Read-only overview — trust/trustRationale/sources for the whole catalog at once, which no end-user screen ever shows. */
+/** Read-only overview — trust/trustRationale/sources for the whole catalog at once, which no end-user screen ever shows. includeDemo:true so the operator can still see/manage the hand-authored fixture places even though real users never do. */
 adminRouter.get('/admin/restaurants', (_req, res) => {
-  res.json(getCatalog());
+  res.json(getCatalog({ includeDemo: true }));
 });
 
 /** SPEC-017: curator reputation per domain — internal to the operator view only, per the spec's own open question on end-user visibility (kept unresolved, so kept unexposed). */
@@ -39,6 +46,7 @@ adminRouter.post('/admin/restaurants', (req, res) => {
     name: body.name,
     cuisine: body.cuisine,
     neighborhood: body.neighborhood,
+    ...(body.address ? { address: body.address } : {}),
     price: body.price ?? '$$',
     type: body.type ?? 'new',
     why: body.why ?? '',
@@ -154,6 +162,71 @@ adminRouter.post('/admin/pending-contributions/:id/reject', (req, res) => {
   const updated = markContributionStatus(req.params.id, 'rejected');
   if (!updated) {
     res.status(404).json({ error: 'pending_contribution_not_found' });
+    return;
+  }
+  res.json(updated);
+});
+
+/**
+ * A place a user described that wasn't in the catalog yet (SPEC-019 extension): before this,
+ * recommending an unknown place from a Nota/Foto/Voz/conversation vanished with no admin trace
+ * at all. Same "operator reviews, never applies on its own" pattern — except confirming here
+ * creates a brand-new restaurant instead of adding a source to an existing one, so the operator
+ * can fill in whatever the extraction left blank (cuisine/neighborhood/address) before it goes live.
+ */
+adminRouter.get('/admin/pending-new-places', (_req, res) => {
+  res.json(getNewPlaceSuggestions());
+});
+
+adminRouter.post('/admin/pending-new-places/:id/confirm', (req, res) => {
+  const pending = getNewPlaceSuggestionById(req.params.id);
+  if (!pending || pending.status !== 'pending') {
+    res.status(404).json({ error: 'pending_new_place_not_found' });
+    return;
+  }
+  const body = req.body ?? {};
+  const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : pending.name;
+  const cuisine = typeof body.cuisine === 'string' && body.cuisine.trim() ? body.cuisine.trim() : pending.cuisine;
+  const neighborhood = typeof body.neighborhood === 'string' && body.neighborhood.trim() ? body.neighborhood.trim() : pending.neighborhood;
+  const address = typeof body.address === 'string' && body.address.trim() ? body.address.trim() : pending.address;
+  const position = body.position && typeof body.position.lat === 'number' && typeof body.position.lng === 'number' ? body.position : undefined;
+  if (!name || !cuisine || !neighborhood) {
+    res.status(400).json({ error: 'name_cuisine_neighborhood_required' });
+    return;
+  }
+  try {
+    const created = createRestaurant({
+      name,
+      cuisine,
+      neighborhood,
+      ...(address ? { address } : {}),
+      price: '$$',
+      type: 'new',
+      why: '',
+      tags: [],
+      personality: [],
+      position: position ?? { lat: -34.6, lng: -58.43 },
+      summary: '',
+      quickFacts: [],
+      order: [],
+      tips: [],
+      idealFor: [],
+      notFor: [],
+      sources: [{ name: 'Un usuario', kind: 'community', weight: 'weak', capturedAt: new Date().toISOString(), claim: pending.claim }],
+    });
+    markNewPlaceStatus(pending.id, 'confirmed');
+    res.status(201).json(created);
+    notifyNewPlaceIfMatches(created).catch((err) => console.error('notify_new_place_failed', err));
+  } catch (err) {
+    res.status(409).json({ error: (err as Error).message });
+  }
+});
+
+/** Reject: marked, never deleted — same convention as the rest of the moderation queues. */
+adminRouter.post('/admin/pending-new-places/:id/reject', (req, res) => {
+  const updated = markNewPlaceStatus(req.params.id, 'rejected');
+  if (!updated) {
+    res.status(404).json({ error: 'pending_new_place_not_found' });
     return;
   }
   res.json(updated);

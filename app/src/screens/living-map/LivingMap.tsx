@@ -37,6 +37,7 @@ export function LivingMap() {
   const [brainCard, setBrainCard] = useState<BrainCardData | null>(null);
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [activeChip, setActiveChip] = useState<ContextChip>('open');
+  const [cuisineFilter, setCuisineFilter] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
   const mapRef = useRef<LivingMapCanvasHandle>(null);
@@ -95,7 +96,15 @@ export function LivingMap() {
     if (!userLocation) requestLocation();
   };
 
-  const selected = restaurants.find((r) => r.id === selectedRestaurantId) ?? null;
+  // Cuisine pills: purely client-side over whatever the Recommendation Engine already returned
+  // for the active context chip — never a second backend round-trip for what's just a narrower
+  // view of the same set. Derived, never hardcoded, so it always matches what's actually on the map.
+  // Falls back to no filter if the active chip's results no longer include the selected cuisine.
+  const cuisines = Array.from(new Set(restaurants.map((r) => r.cuisine))).sort();
+  const activeCuisineFilter = cuisineFilter && cuisines.includes(cuisineFilter) ? cuisineFilter : null;
+  const visibleRestaurants = activeCuisineFilter ? restaurants.filter((r) => r.cuisine === activeCuisineFilter) : restaurants;
+
+  const selected = visibleRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 
   const handleSelectPin = (id: string) => {
     setSelectedRestaurantId(id);
@@ -139,7 +148,7 @@ export function LivingMap() {
       <LivingMapCanvas
         ref={mapRef}
         center={DEFAULT_MAP_CENTER}
-        restaurants={restaurants}
+        restaurants={visibleRestaurants}
         events={events}
         selectedId={selectedRestaurantId}
         onSelectRestaurant={handleSelectPin}
@@ -182,6 +191,19 @@ export function LivingMap() {
           Guardados
         </Chip>
       </div>
+
+      {cuisines.length > 1 && (
+        <div className="cj-chips cj-chips--cuisine">
+          <Chip selected={!activeCuisineFilter} onClick={() => setCuisineFilter(null)}>
+            Todos
+          </Chip>
+          {cuisines.map((c) => (
+            <Chip key={c} selected={activeCuisineFilter === c} onClick={() => setCuisineFilter(c)}>
+              {c}
+            </Chip>
+          ))}
+        </div>
+      )}
 
       <div className="cj-map-fabs">
         <IconButton icon={<Search size={20} />} label="Buscar" variant="float" size="md" onClick={() => openOverlay('search')} />
