@@ -7,10 +7,13 @@ explícitas (ver [PENDING-FEATURES.md](PENDING-FEATURES.md)).
 
 ## 1. Railway — `brain/`
 
-1. En el dashboard de Railway: **New Project → Deploy from GitHub repo**, seleccioná este repo.
-2. **Root Directory**: `cajueat/brain` (Railway necesita esto explícito — es un monorepo, no un
-   proyecto Node en la raíz). `brain/railway.json` ya define el build (`npm run build`) y el
-   start (`npm run start`) — no hace falta tocar nada más ahí.
+1. En el dashboard de Railway: **New Project → Deploy from GitHub repo**, seleccioná
+   `lucasmelul/cajueat` (ese es el repo real conectado a GitHub — la raíz que ve Railway
+   YA es esta carpeta, no `caju_brain/` ni nada por encima).
+2. **Root Directory**: `brain` (sin `cajueat/` adelante — Railway necesita esto explícito
+   porque es un monorepo, no un proyecto Node en la raíz del repo). `brain/railway.json` ya
+   define el build (`npm run build`) y el start (`npm run start`) — no hace falta tocar nada
+   más ahí.
 3. **Agregar un Volume** (Settings → Volumes → New Volume): montalo en, por ejemplo, `/data`.
    Sin esto, cada redeploy borra `catalog.json`/`memory.json`/todo lo que los usuarios cargaron
    — el filesystem del build no es persistente.
@@ -32,8 +35,9 @@ tiene que devolver el catálogo real (6 restaurantes, `trust`/`trustRationale` c
 
 ## 2. Vercel — `app/`
 
-1. **New Project → Import** este repo.
-2. **Root Directory**: `cajueat/app`. Framework preset: Vite (Vercel lo detecta solo).
+1. **New Project → Import** `lucasmelul/cajueat`.
+2. **Root Directory**: `app` (mismo criterio que en Railway — sin `cajueat/` adelante).
+   Framework preset: Vite (Vercel lo detecta solo).
 3. **Variables de entorno** (Settings → Environment Variables):
    - `VITE_BRAIN_URL` = la URL de Railway del paso 1.5 (sin `/` final).
 4. Deploy. Vercel te da una URL pública (`https://<algo>.vercel.app`) — volvé a Railway y
