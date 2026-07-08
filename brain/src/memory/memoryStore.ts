@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { DATA_DIR } from '../paths.js';
 import type { Collection, DnaTag, User } from '../types.js';
 
 /**
@@ -58,8 +58,6 @@ interface PendingOtp {
 const pendingOtps = new Map<string, PendingOtp>();
 const OTP_TTL_MS = 5 * 60_000;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '../../data');
 const DATA_FILE = join(DATA_DIR, 'memory.json');
 
 function todayKey(): string {

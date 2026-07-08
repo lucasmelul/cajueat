@@ -21,7 +21,10 @@ import { activityRouter } from './routes/activity.js';
 import { startNotificationScheduler } from './notifications/scheduler.js';
 
 const app = express();
-app.use(cors());
+// Open by default (fine for local dev / a single trusted PWA origin isn't set up yet).
+// In production, set ALLOWED_ORIGIN to the deployed PWA's real origin (e.g. the Vercel
+// domain) to stop stray browsers from hitting the API directly with someone else's data.
+app.use(cors(process.env.ALLOWED_ORIGIN ? { origin: process.env.ALLOWED_ORIGIN } : undefined));
 // Default 100kb limit is too small for base64-encoded photos (SPEC-015 Knowledge Capture).
 app.use(express.json({ limit: '10mb' }));
 app.use(identityMiddleware);

@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { curatorsFileExists, getEffectiveWeight, recordCuratorOutcome } from '../curators/curatorStore.js';
 import { isOpenNow } from '../geo/geo.js';
 import { computeTrust, detectContradiction } from '../trust/trustEngine.js';
+import { DATA_DIR } from '../paths.js';
 import type { QuickFact, Restaurant, Source } from '../types.js';
 import { CATALOG_SEED, type RawRestaurant } from './catalogSeed.js';
 
@@ -15,8 +15,6 @@ import { CATALOG_SEED, type RawRestaurant } from './catalogSeed.js';
  * `CATALOG_SEED` only bootstraps the file the first time it doesn't exist yet.
  */
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '../../data');
 const CATALOG_FILE = join(DATA_DIR, 'catalog.json');
 
 function load(): RawRestaurant[] {

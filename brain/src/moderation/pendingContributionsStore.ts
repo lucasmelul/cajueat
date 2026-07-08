@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { DATA_DIR } from '../paths.js';
 
 /**
  * SPEC-019 User Contribution Moderation: a third store, separate from the
@@ -31,8 +31,6 @@ interface Store {
   contributions: PendingContribution[];
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '../../data');
 const DATA_FILE = join(DATA_DIR, 'pending-contributions.json');
 
 function load(): Store {

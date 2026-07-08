@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { DATA_DIR } from '../paths.js';
 import type { SignalWeight } from '../types.js';
 
 /**
@@ -28,8 +28,6 @@ interface Store {
   curators: Record<string, CuratorRecord>;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '../../data');
 const DATA_FILE = join(DATA_DIR, 'curators.json');
 
 function load(): Store {

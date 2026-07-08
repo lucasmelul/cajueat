@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { DATA_DIR } from '../paths.js';
 import type { MapEvent } from '../types.js';
 
 /**
@@ -16,8 +16,6 @@ const SEED: MapEvent[] = [
   { id: 'feria', name: 'Feria gastronómica', when: 'sáb', whenAt: '2026-07-11T18:00:00-03:00', position: { lat: -34.585, lng: -58.43 } },
 ];
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '../../data');
 const EVENTS_FILE = join(DATA_DIR, 'events.json');
 
 function load(): MapEvent[] {
