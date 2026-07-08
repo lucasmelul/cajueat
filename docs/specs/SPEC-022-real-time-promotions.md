@@ -19,6 +19,12 @@ Que un café pueda avisar a la comunidad de CajuEat, en tiempo real, de dos situ
 
 ---
 
+# Confirmado con el usuario (2026-07-08)
+
+El manejo es siempre desde Admin — el operador (no un dueño de local con acceso directo, al menos en este alcance) carga la promo y dispara el push, nunca algo automático que un local gestione solo todavía. La infraestructura de push de la que depende esto (VAPID, service worker, `pushSender.ts`, opt-in en Profile) ya está construida e implementada (SPEC-016, completado en una sesión anterior) — este spec no tiene ningún prerequisito de infraestructura faltante, solo el trabajo de producto descrito abajo.
+
+---
+
 # Dos casos de uso, un mismo mecanismo
 
 El pedido original los describe como dos ideas separadas, pero ambas son la misma forma: **un local publica una oferta con vigencia corta, el Brain decide a quién de verdad le interesa, y solo a esos usuarios les llega una notificación real.**

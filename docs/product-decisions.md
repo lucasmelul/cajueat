@@ -71,18 +71,21 @@ Sobre esos PRD-015 a PRD-020 del set vigente: Compare (PRD-017) y Notifications 
 
 **Pendiente:** fechas objetivo, duración de la beta privada y criterios numéricos concretos de éxito por fase.
 
-### 8. Modelo de liquidación real con comercios (crédito canjeable)
+### 8. Compensación real a comercios por consumo de puntos
 
-**Contexto:** [SPEC-023 — Puntos como Crédito Canjeable](specs/SPEC-023-points-as-redeemable-credit.md) define una Fase 1 (reporte de crédito redimido, sin mover dinero automáticamente) que sí se puede construir ya. La Fase 2 (pago automático real a los comercios, con markup configurable) implica sostener saldos que representan valor monetario y pagar a terceros por transacciones — algo con implicancias legales/impositivas reales según la jurisdicción.
+**Contexto (actualizado 2026-07-08 — resuelto en parte):** la primera versión de esta decisión asumía que CajuEat iba a mover dinero real dentro de la app. El usuario aclaró que no es así: [SPEC-023 — Consumo de Caju Points en Comercios](specs/SPEC-023-points-as-redeemable-credit.md) es solo un ledger de puntos consumidos por local — el sistema nunca calcula un equivalente en pesos ni ejecuta ningún pago. La conversión a pesos y la compensación al local ocurren completamente por fuera de CajuEat, de manera informal.
 
-**Pendiente:** si se resuelve con un procesador de pagos (ej. Stripe Connect), facturación manual entre partes, u otro mecanismo; qué entidad legal factura; validación de que el modelo no cae bajo regulación de instrumentos prepagos.
+**Pendiente:** esto sigue siendo una decisión de negocio, aunque de mucho menor riesgo que la versión original — cómo y con qué criterio se compensa a cada local a partir del reporte de consumo (efectivo, producto, algún acuerdo comercial), fuera del sistema. No requiere validación legal/financiera del tipo que sí exigiría mover dinero dentro de la app.
 
-**Dueño de la decisión final:** Legal/Finanzas, no ingeniería — SPEC-023 explícitamente no avanza a Fase 2 sin esto resuelto.
+**Dueño de la decisión final:** Producto/Negocio — ya no es una decisión que dependa de Legal/Finanzas antes de poder implementar SPEC-023, dado que el sistema no maneja valor monetario.
 
-### 9. Acceso a Instagram Graph API por local
+### 9. Acceso a contenido de Instagram por local (actualizado 2026-07-08, con investigación real)
 
-**Contexto:** [SPEC-024 — Contenido de Instagram](specs/SPEC-024-instagram-content-and-map-novelty.md) requiere que cada local conecte su propia cuenta de Instagram Business/Creator vía OAuth — no existe forma de mostrar contenido de una cuenta que no dio ese consentimiento explícito, y las Historias no son accesibles vía API pública bajo ninguna circunstancia.
+**Contexto:** [SPEC-024 — Contenido de Instagram](specs/SPEC-024-instagram-content-and-map-novelty.md) plantea dos caminos técnicos reales, confirmados contra el estado actual de las herramientas (no de memoria vieja):
 
-**Pendiente:** proceso comercial para conseguir que los locales conecten su cuenta (parte del mismo convenio que ya se necesita para el QR de SPEC-020), y si CajuEat gestiona una app aprobada por Meta para esto o se evalúa un proveedor intermediario.
+1. **Camino oficial (recomendado)** — el local conecta su cuenta Instagram Business/Creator vía OAuth (Graph API / Instagram API with Instagram Login). Desde octubre 2025 esto es más simple que antes: ya no exige verificación de Meta Business, solo el login/autorización estándar del local. Muestra posts reales, nunca Historias (no accesibles por ninguna API pública, oficial o no, bajo ninguna circunstancia — confirmado también para las herramientas de terceros de abajo).
+2. **Widgets de terceros sin conexión** (ej. Elfsight, SnapWidget, LightWidget) — pueden mostrar el feed de **cualquier cuenta pública** con solo poner el `@usuario`, sin que su dueño autorice nada. Es el "JS para embeber cualquier perfil" al que se refería el pedido original — existe, es real, y es tan simple como un `<script>`. Pero: muestra contenido sin el consentimiento explícito del local, es más frágil (depende de que Instagram no les bloquee el acceso, refresca cada ~48hs, no en tiempo real), y choca con el principio de consentimiento que ya rige el resto del proyecto (nunca usar contenido de un tercero sin que haya dado su autorización, ver `sources-and-curators.md`).
 
-**Dueño de la decisión final:** Producto, en conjunto con quien gestione los convenios comerciales con los locales.
+**Pendiente:** si se usa el camino 1 (oficial, con consentimiento, pero requiere que cada local complete un paso de conexión) o el camino 2 (sin fricción para el local, pero sin su consentimiento explícito) — es una decisión de producto/ética de marca, no solo técnica. El camino 1 es el que mejor encaja con cómo se construyó el resto de CajuEat hasta ahora.
+
+**Dueño de la decisión final:** Producto, en conjunto con quien gestione los convenios comerciales con los locales (mismo convenio que ya hace falta para el QR de SPEC-020, así que puede resolverse en la misma conversación con cada local).

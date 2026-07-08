@@ -26,6 +26,12 @@ El pedido original menciona una app de "pasitos" como referencia — pasos/racha
 
 Este spec toma la parte del pedido que sí encaja — un álbum de progreso real, basado en evidencia real (check-ins), que efectivamente empuja a conocer lugares nuevos — y descarta explícitamente la parte que no encajaría: no hay racha que se "rompe" si un día no visitás nada, no hay ranking público entre usuarios, no hay urgencia artificial.
 
+## Qué es real de la referencia (Pasito) y qué es una extensión propia
+
+Investigando la app real (pasito.app, y una nota de La Nación sobre su funcionamiento, 2026-07-08): el mecanismo real de Pasito es más simple de lo que el pedido original sugería — **1.000 pasos = 1 "pasito"**, con 20 pasitos canjeables directo por un premio (medialunas, entradas de cine), y una regla real de **un canje por comercio cada 15 días** para repartir la demanda entre todos los locales adheridos, en vez de que todos se concentren en el mismo. En sus propias pruebas, el 87% de los canjes incluyó una compra adicional — un dato de peso para argumentarle a un local por qué le conviene sumarse.
+
+Pasito **no tiene** álbum, zonas que se desbloquean, ni rankings — eso es una extensión que el pedido original agregó sobre la referencia, no algo que Pasito en sí haga. Este spec la conserva porque encaja bien con lo que ya define `gamification.md` (conocer la ciudad, no solo acumular), pero vale aclarar que no es "copiar Pasito 1 a 1" — es tomar prestada la idea de convertir una acción real (caminar / visitar) en puntos con canje real, y sumarle el álbum como una capa propia. El patrón real del cooldown de 15 días por comercio sí se adoptó tal cual — ver [SPEC-023](SPEC-023-points-as-redeemable-credit.md), que es donde vive el consumo/canje de puntos.
+
 ---
 
 # Comportamiento

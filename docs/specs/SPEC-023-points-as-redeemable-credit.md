@@ -1,9 +1,9 @@
-# SPEC-023 — Puntos como Crédito Canjeable y Liquidación con Comercios (nueva)
+# SPEC-023 — Consumo de Caju Points en Comercios (nueva)
 
-**Status:** Draft — requiere validación legal/financiera antes de pasar a implementación, ver advertencia abajo
+**Status:** Draft
 **Priority:** P3
-**Owner:** Producto + Legal/Finanzas (no Claude Code — ver advertencia)
-**Consumers:** Claude Code (solo Fase 1, ver alcance)
+**Owner:** Claude Code
+**Consumers:** Claude Code
 
 Depends On
 
@@ -13,78 +13,64 @@ Depends On
 
 ---
 
-# ⚠️ Advertencia — leer antes de construir cualquier cosa acá
+# Corrección de alcance (2026-07-08)
 
-Este spec describe **mover dinero real** entre CajuEat, el usuario y el comercio: el usuario "gasta" crédito, CajuEat le paga (o le debe) esa plata al local, potencialmente reteniendo un margen. Eso ya no es una feature de producto — es una operación financiera con implicancias reales:
+La primera versión de este spec asumía que CajuEat iba a mover dinero real (pagarle al comercio, retener un margen). El usuario aclaró explícitamente que **no es así**: el sistema nunca maneja plata ni ejecuta ninguna operación financiera. El concepto real es más simple — los Caju Points se **consumen** en un comercio (una transacción dentro del sistema, sin equivalente monetario que la app calcule ni mueva); el Admin puede ver cuántos puntos se consumieron en cada local; y la conversión a pesos y el pago en efectivo al local ocurren **completamente por fuera de CajuEat**, de manera informal, sin ninguna operación formal registrada por el sistema.
 
-- Sostener saldos de usuarios que representan valor monetario (aunque se llamen "puntos") puede caer bajo regulación de instrumentos prepagos o dinero electrónico según la jurisdicción — esto varía y requiere asesoría legal real, no una decisión de ingeniería.
-- Pagar a comercios por transacciones de terceros normalmente requiere un procesador de pagos real (Stripe Connect u homólogo, o un esquema de facturación entre partes) — no es algo que se resuelva con una tabla en una base de datos.
-- Un porcentaje de markup "configurable desde el Admin" implica que CajuEat factura o retiene una comisión — esto tiene implicancias impositivas reales.
-
-**Este documento no construye la ejecución real de pagos.** Define el modelo de producto y dejarlo listo para implementar, pero la Fase 2 (pagos automáticos reales) explícitamente no se arranca sin que el usuario confirme que ya resolvió la parte legal/financiera — no es una decisión que un asistente de código deba tomar ni asumir.
+Esto baja drásticamente el riesgo del spec — ya no hay saldo que represente valor monetario dentro de la app, ni pago a terceros que ejecute el sistema. Es, en esencia, un **ledger de consumo interno** más un reporte para Admin.
 
 ---
 
 # Objetivo
 
-Que los Caju Points dejen de ser solo un contador de gamificación y se conviertan en crédito real canjeable por productos en los locales adheridos — resolviendo, en parte, la Decisión abierta #4 de `product-decisions.md` ("si existen... recompensas canjeables").
+Que los Caju Points se puedan **gastar** en un comercio adherido (no solo acumular) — dándole a los puntos un uso real y tangible — mientras el sistema se mantiene 100% dentro del mundo de "puntos", nunca tocando dinero.
 
 ---
 
-# Fase 1 — Lo que se puede construir ya, sin tocar dinero real
+# Comportamiento
 
-Todo lo de acá es producto/software puro, sin fricción legal, y es un prerequisito real de cualquier Fase 2 futura — sin esto, tampoco habría forma de auditar cuánto se le debería pagar a cada local.
+1. El usuario, en el mostrador, elige "usar mis puntos" en la app y escanea el mismo QR de check-in ([SPEC-020](SPEC-020-qr-checkin.md)) — pero en **modo consumo**, no modo check-in. Mismo estándar de verificación real: geolocalización del usuario + timestamp de servidor, nunca confiado del cliente.
+2. El usuario elige cuántos puntos consumir (dentro de su balance disponible) — no hay conversión a un monto en pesos calculado por el sistema, solo una cantidad de puntos.
+3. El Brain registra un **Consumo** real: `{ userId, restaurantId, pointsSpent, consumedAt }` — inmutable, mismo principio que un check-in (nunca se edita ni se borra).
+4. Los puntos se descuentan del balance del usuario en el momento exacto del consumo confirmado — no antes.
+5. El Admin tiene un panel de **Consumo por local**: la suma de puntos consumidos por restaurante en un período — para que el operador humano decida, por fuera del sistema y a su propio criterio, cómo compensar a cada local (efectivo, un producto, lo que hayan acordado). El sistema **no calcula ningún equivalente en pesos** ni asume ninguna tasa de conversión — eso queda completamente afuera del alcance técnico.
 
-## Comportamiento
+## Patrón de Pasito que vale la pena adoptar: cooldown por comercio
 
-1. El Admin define, por restaurante o global, una **tasa de conversión** (ej. "100 Caju Points = $500 de crédito") — configurable, nunca hardcodeada.
-2. El usuario ve su crédito disponible en Profile, calculado a partir de sus puntos según la tasa vigente — nunca un número aparte que se pueda desincronizar del balance real de puntos.
-3. **Redención**: el usuario, en el mostrador, elige "usar mi crédito" en la app y escanea el mismo QR de check-in (SPEC-020) — pero esta vez en modo redención, no modo check-in. El scan exige, igual que el check-in, geolocalización real y timestamp de servidor — no se puede redimir crédito sin estar físicamente ahí, por la misma razón que no se puede dejar un review sin haber ido.
-4. El Brain registra una **Redención** real: `{ userId, restaurantId, pointsSpent, creditValue, redeemedAt }` — inmutable, igual que un check-in.
-5. Los puntos se descuentan del balance del usuario en el momento de la redención — no antes (elegir "quiero canjear" sin completar el scan no descuenta nada).
-6. El Admin tiene un panel de **Liquidaciones pendientes**: la suma de crédito redimido por local, en un período, con el markup configurado ya calculado — para que el operador humano pueda pagarle al local por fuera de la app (transferencia, efectivo, lo que ya usen) mientras no exista Fase 2. Esto ya resuelve el pedido de "un porcentaje de markup configurable" sin necesitar mover un peso automáticamente.
+Investigando la referencia real que motivó este spec (Pasito, ver [product-decisions.md](../product-decisions.md)), su mecanismo real es: pasos → puntos → canje directo en un comercio, con una regla explícita de **un canje por comercio cada 15 días por usuario** — para repartir la demanda entre todos los locales adheridos en vez de que uno solo concentre todos los canjes. En sus propias pruebas, el 87% de los canjes incluyó compra adicional real — un dato que vale la pena tener en cuenta como argumento para que un local quiera sumarse: el consumo de puntos rara vez es la única venta de esa visita.
 
-## Qué SÍ resuelve la Fase 1
-
-- Auditoría real y completa de cuánto crédito se generó, se usó, y qué le corresponde a cada local — con evidencia de check-in/redención real, nunca estimada.
-- Cero riesgo legal nuevo — no se mueve dinero automáticamente, es un panel de reporte que un humano usa para pagar como ya paga hoy cualquier otra cosa.
-
----
-
-# Fase 2 — Pagos automáticos (explícitamente fuera de alcance de este spec)
-
-Automatizar el pago real al local (vía un procesador de pagos, transferencia programática, o facturación electrónica) — **no se especifica en detalle acá** porque depende de una decisión de negocio (qué procesador, qué entidad legal factura, cómo se retiene el markup) que todavía no está tomada. Cuando esa decisión exista, este spec se actualiza con el mecanismo real elegido.
+Este spec adopta el mismo patrón: un **cooldown configurable por comercio** (mismo local, mismo usuario) para evitar que el consumo se concentre siempre en el mismo lugar — valor exacto a definir (Pasito usa 15 días como punto de partida razonable).
 
 ---
 
 # Qué NO hace este spec
 
-No define la tasa de conversión exacta puntos→crédito (Decisión abierta #4, heredada). No implementa ningún pago automático (Fase 2, explícitamente fuera de alcance). No resuelve qué pasa si un usuario acumula crédito y el local se da de baja del programa (Open Question). No asume ningún procesador de pagos específico.
+No calcula ni muestra ningún equivalente en pesos de los puntos — es intencional, para no acercarse a nada que se parezca a manejar dinero. No ejecuta ningún pago, transferencia, ni liquidación automática al comercio — el Admin solo reporta, un humano decide y actúa por fuera del sistema. No define una tasa de conversión puntos→producto — esa negociación es entre CajuEat y cada local, fuera del alcance técnico.
 
 ---
 
-# Acceptance Criteria (solo Fase 1)
+# Acceptance Criteria
 
-✓ El crédito disponible de un usuario siempre se deriva de su balance real de puntos y la tasa vigente — nunca un valor guardado aparte que pueda desincronizarse.
+✓ Un consumo de puntos exige el mismo nivel de verificación real que un check-in (geolocalización + timestamp de servidor) — nunca se descuentan puntos sin un scan válido.
 
-✓ Una redención exige el mismo nivel de verificación real que un check-in (geolocalización + timestamp de servidor) — nunca se descuentan puntos sin un scan válido.
+✓ Los puntos se descuentan en el momento exacto del consumo confirmado, nunca antes ni de forma estimada.
 
-✓ Los puntos se descuentan en el momento exacto de la redención confirmada, nunca antes.
+✓ El sistema nunca calcula, muestra, ni persiste un valor en pesos equivalente a los puntos — en ningún endpoint, en ninguna vista.
 
-✓ El panel de liquidaciones en Admin muestra, por local y por período, el crédito redimido real y el markup ya calculado — sin necesitar ningún cálculo manual del operador.
+✓ El panel de Admin muestra consumo real de puntos por local y por período, sin necesitar ningún cálculo manual para armarlo — pero sin proponer ni ejecutar ningún pago.
 
-✓ Ninguna redención mueve dinero real de forma automática — la Fase 1 es 100% reporte + registro, el pago ocurre fuera de la app.
+✓ Un usuario no puede consumir puntos en el mismo local dos veces dentro de la ventana de cooldown configurada.
 
 ---
 
 # Open Questions
 
-- Qué pasa con el crédito de un usuario si un local se da de baja antes de que lo use — ¿se pierde, se puede redimir en cualquier otro local del programa, o se convierte de nuevo en puntos? Es una decisión de producto real, no técnica.
-- Tasa de conversión: ¿global para todo el catálogo, o configurable por local? El pedido original sugiere que el markup sí es configurable — la tasa de conversión podría serlo también, pero complica la experiencia del usuario (mismo punto vale distinto según dónde lo gaste). Recomendación: empezar con una tasa global única, dejar por-local para una iteración futura si hace falta.
-- Fase 2 completa (mecanismo de pago real) — deliberadamente sin especificar hasta que exista una decisión de negocio/legal tomada.
+- Valor exacto del cooldown por comercio — Pasito usa 15 días, punto de partida razonable, a validar con uso real.
+- Qué pasa si un usuario intenta consumir más puntos de los que tiene disponibles al momento del scan (debería simplemente no permitirse, pero conviene un mensaje claro en el momento, no un error genérico).
+- Si el consumo de puntos debería, además, contar como evidencia de visita para el Pasaporte (SPEC-021) igual que un check-in — probablemente sí, ya que implica estar físicamente ahí con el mismo nivel de verificación.
 
 ---
 
 # Notas para Claude Code
 
-Solo implementar Fase 1 sin pedido explícito adicional del usuario, y solo después de que exista `SPEC-020` (check-ins) funcionando de verdad — la redención reusa exactamente el mismo flujo de scan, solo cambia el modo. Nuevo store `redemptionsStore.ts`, mismo patrón JSON-persistido. Nunca construir nada de Fase 2 (integración con un procesador de pagos real, movimiento de dinero automático) sin que el usuario lo pida explícitamente y confirme que la parte legal ya está resuelta — no es una decisión de ingeniería a tomar por cuenta propia.
+Reusar exactamente el flujo de scan de SPEC-020 (check-in), solo cambia el modo — no duplicar la lógica de verificación de geolocalización/timestamp. Nuevo store `consumptionStore.ts`, mismo patrón JSON-persistido que el resto. No agregar ningún campo, cálculo, ni referencia a un valor monetario en ningún lado del modelo — ni siquiera como campo opcional "por si después hace falta". Si en algún momento futuro el usuario pide sumar equivalencia en pesos o liquidación real, es un spec nuevo y aparte, no una extensión de este.
