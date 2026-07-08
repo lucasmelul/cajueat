@@ -39,10 +39,17 @@ Este spec no inventa un motor de extracción nuevo — extiende el mismo princip
 1. El operador, desde una sección nueva en Admin ("Cargar eventos desde imagen"), sube una captura real (historia de Instagram, flyer, cronograma tipeado).
 2. El Brain la analiza con visión (mismo cliente de Claude, prompt nuevo pero mismo principio de grounding: **nunca inventar un evento, una fecha, o un handle que la imagen no muestre claramente**). Por cada evento que la imagen realmente contiene, devuelve:
    - `name`: el nombre del evento tal cual aparece.
-   - `whenRaw`: el texto de fecha/hora tal cual está escrito (ej. "Sábado 12/7, 19hs") — **nunca se resuelve a una fecha ISO automáticamente**, porque una imagen que solo dice "este sábado" es ambigua sin saber el año/mes real de cuándo se sacó la captura; forzar una fecha exacta ahí sería inventar.
+   - `whenRaw`: el texto de fecha/hora tal cual está escrito (ej. "Sábado 12/7, 19hs", o "Este finde", o "Mañana a la noche").
    - `instagramHandle`: el `@usuario` de la cuenta fuente, si aparece en la imagen.
    - `claim`: cualquier texto adicional relevante (lugar mencionado, tipo de evento), igual que el `claim` que ya usan otras extracciones.
-3. Se muestra al operador una lista de **eventos sugeridos** de esa imagen — mismo patrón visual que "Lugares nuevos sugeridos" (SPEC-019/020): cada uno con campos editables (nombre, fecha/hora exacta vía `datetime-local`, posición lat/lng), prellenados con lo que se pudo extraer, nunca bloqueando si algo quedó vacío.
+
+## Resolver fechas relativas contra un dato real, no contra una suposición
+
+Cuando `whenRaw` es una referencia relativa ("este sábado", "este finde", "mañana"), el Brain la resuelve a una fecha exacta con aritmética de fechas determinística — **nunca con el modelo de lenguaje adivinando** — anclada contra un dato real: el momento en que el operador subió la imagen a Admin (timestamp de servidor, mismo principio de "nunca confiar en la hora del cliente" que ya rige los check-ins de SPEC-020). Mismo tipo de lógica ya existente en el proyecto (`isOpenNow()`, sin LLM, solo cálculo real de fechas) — no una función nueva de un tipo distinto.
+
+Como el timestamp de subida no siempre coincide con el momento real en que se posteó la historia (el operador puede sacar la captura hoy de algo publicado hace dos días), el campo de referencia queda **editable antes de resolver**: por default es "ahora", pero el operador puede corregirlo a la fecha real de la historia si la sabe — la resolución a fecha exacta se recalcula al vuelo contra esa referencia, nunca se congela mal por una referencia equivocada.
+
+3. Se muestra al operador una lista de **eventos sugeridos** de esa imagen — mismo patrón visual que "Lugares nuevos sugeridos" (SPEC-019/020): cada uno con campos editables (nombre, fecha/hora exacta ya prellenada por la resolución determinística de arriba, vía `datetime-local`, posición lat/lng), nunca bloqueando si algo quedó vacío o si el operador prefiere corregir la fecha sugerida a mano.
 4. Si `instagramHandle` coincide con un restaurante ya conectado en el catálogo (vía SPEC-024, cuando exista), se autocompleta la posición con la del restaurante — solo como sugerencia editable, nunca fijo.
 5. El operador confirma **evento por evento**, nunca todos de una — mismo principio de "nunca se aplica solo" que rige el resto del proyecto. Confirmar reusa `createEvent` tal cual existe hoy, sin lógica paralela.
 6. Rechazar un evento sugerido de la imagen no afecta a los demás de la misma captura.
@@ -51,7 +58,7 @@ Este spec no inventa un motor de extracción nuevo — extiende el mismo princip
 
 # Qué NO hace este spec
 
-No resuelve fechas relativas ("el sábado que viene") a una fecha exacta de forma automática — siempre lo hace el operador a partir del texto extraído. No crea restaurantes nuevos a partir de un `@handle` desconocido — si el handle no matchea nada del catálogo, el evento se puede confirmar igual con posición manual, pero no dispara la creación de un restaurante (eso es un flujo aparte, SPEC-019/020, si en algún momento se quiere conectar). No lee directamente la cuenta de Instagram de origen — el operador sigue subiendo la captura que ya vio, mismo principio de "nunca se scrapea Instagram directamente" que ya rige "Analizar contenido de curador".
+No usa el modelo de lenguaje para adivinar una fecha exacta — la resolución de "este sábado" a una fecha real es aritmética determinística contra un timestamp real, nunca una inferencia del LLM. No crea restaurantes nuevos a partir de un `@handle` desconocido — si el handle no matchea nada del catálogo, el evento se puede confirmar igual con posición manual, pero no dispara la creación de un restaurante (eso es un flujo aparte, SPEC-019/020, si en algún momento se quiere conectar). No lee directamente la cuenta de Instagram de origen — el operador sigue subiendo la captura que ya vio, mismo principio de "nunca se scrapea Instagram directamente" que ya rige "Analizar contenido de curador".
 
 ---
 
@@ -59,7 +66,9 @@ No resuelve fechas relativas ("el sábado que viene") a una fecha exacta de form
 
 ✓ Ningún evento se crea directo desde la imagen sin que el operador lo confirme individualmente.
 
-✓ La extracción nunca inventa una fecha exacta que la imagen no muestre con claridad — el texto crudo queda visible para que el operador lo resuelva.
+✓ Una fecha relativa ("este sábado") siempre se resuelve por cálculo real de fechas contra un timestamp real (el momento de subida, o el que el operador corrija) — nunca por el modelo de lenguaje adivinando qué sábado es.
+
+✓ El texto crudo de fecha extraído de la imagen queda siempre visible junto a la fecha resuelta, para que el operador pueda verificar que la resolución fue correcta antes de confirmar.
 
 ✓ Una imagen con varios eventos genera varias sugerencias independientes, cada una confirmable o rechazable por separado.
 
@@ -79,4 +88,4 @@ No resuelve fechas relativas ("el sábado que viene") a una fecha exacta de form
 
 # Notas para Claude Code
 
-Extender `claudeClient.ts` con una función nueva (ej. `extractEventsFromImage`), mismo patrón de content block de imagen que `extractPhotoKnowledge` ya usa — no crear un cliente de visión aparte. El resultado es una lista, no un solo objeto, a diferencia de las extracciones existentes — el schema de `output_config.format` tiene que reflejar un array. La cola de sugerencias puede vivir en el mismo `pendingContributionsStore.ts` (un cuarto array, junto a `contributions` y `newPlaces`) o en un store nuevo si el modelo de datos de un evento se aleja demasiado del de un restaurante — a decidir en implementación, lo que sea menos forzado.
+Extender `claudeClient.ts` con una función nueva (ej. `extractEventsFromImage`), mismo patrón de content block de imagen que `extractPhotoKnowledge` ya usa — no crear un cliente de visión aparte. El resultado es una lista, no un solo objeto, a diferencia de las extracciones existentes — el schema de `output_config.format` tiene que reflejar un array. La resolución de `whenRaw` a fecha exacta es una función determinística aparte (ej. `resolveRelativeDate(whenRaw, referenceDate)` en `brain/src/geo/geo.ts` o un módulo nuevo de fechas), nunca parte del prompt de Claude — mismo tipo de separación que ya existe entre `isOpenNow()` (cálculo real) y lo que sí pasa por el LLM. La cola de sugerencias puede vivir en el mismo `pendingContributionsStore.ts` (un cuarto array, junto a `contributions` y `newPlaces`) o en un store nuevo si el modelo de datos de un evento se aleja demasiado del de un restaurante — a decidir en implementación, lo que sea menos forzado.
