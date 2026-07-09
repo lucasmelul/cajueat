@@ -167,6 +167,21 @@ export function Restaurant() {
                 </span>
               </div>
             )}
+            {/* Distinción real de la Guía Michelin — señal editorial externa, igual de separada de la confianza propia que el rating de Google. */}
+            {(restaurant.michelinStars || restaurant.michelinGreenStar || restaurant.michelinBibGourmand) && (
+              <div className="cj-hero__michelin">
+                <Star size={13} fill="currentColor" />
+                <span>
+                  {[
+                    restaurant.michelinStars ? `${restaurant.michelinStars} ${restaurant.michelinStars === 1 ? 'estrella' : 'estrellas'} Michelin` : null,
+                    restaurant.michelinGreenStar ? 'Estrella Verde' : null,
+                    restaurant.michelinBibGourmand ? 'Bib Gourmand' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

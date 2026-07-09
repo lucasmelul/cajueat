@@ -78,6 +78,10 @@ export interface Restaurant {
   /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never fed into computeTrust or turned into a Source. */
   googleRating?: number;
   googleRatingCount?: number;
+  /** Distinción real de la Guía Michelin — independiente entre sí (un lugar puede tener estrella Y estrella verde a la vez), nunca inferida, siempre cargada por un operador con una fuente real citada. */
+  michelinStars?: number;
+  michelinGreenStar?: boolean;
+  michelinBibGourmand?: boolean;
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */

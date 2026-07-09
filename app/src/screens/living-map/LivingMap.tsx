@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search } from 'lucide-react';
+import { Bookmark, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search, Star } from 'lucide-react';
 import { LivingMapCanvas, type LivingMapCanvasHandle } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
@@ -38,6 +38,7 @@ export function LivingMap() {
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [activeChip, setActiveChip] = useState<ContextChip>('open');
   const [cuisineFilter, setCuisineFilter] = useState<string | null>(null);
+  const [michelinOnly, setMichelinOnly] = useState(false);
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
   const mapRef = useRef<LivingMapCanvasHandle>(null);
@@ -102,7 +103,11 @@ export function LivingMap() {
   // Falls back to no filter if the active chip's results no longer include the selected cuisine.
   const cuisines = Array.from(new Set(restaurants.map((r) => r.cuisine))).sort();
   const activeCuisineFilter = cuisineFilter && cuisines.includes(cuisineFilter) ? cuisineFilter : null;
-  const visibleRestaurants = activeCuisineFilter ? restaurants.filter((r) => r.cuisine === activeCuisineFilter) : restaurants;
+  const isMichelin = (r: Restaurant) => !!(r.michelinStars || r.michelinGreenStar || r.michelinBibGourmand);
+  const hasMichelinResults = restaurants.some(isMichelin);
+  const visibleRestaurants = restaurants
+    .filter((r) => (activeCuisineFilter ? r.cuisine === activeCuisineFilter : true))
+    .filter((r) => (michelinOnly ? isMichelin(r) : true));
 
   const selected = visibleRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 
@@ -192,11 +197,16 @@ export function LivingMap() {
         </Chip>
       </div>
 
-      {cuisines.length > 1 && (
+      {(cuisines.length > 1 || hasMichelinResults) && (
         <div className="cj-chips cj-chips--cuisine">
-          <Chip selected={!activeCuisineFilter} onClick={() => setCuisineFilter(null)}>
+          <Chip selected={!activeCuisineFilter && !michelinOnly} onClick={() => { setCuisineFilter(null); setMichelinOnly(false); }}>
             Todos
           </Chip>
+          {hasMichelinResults && (
+            <Chip selected={michelinOnly} icon={<Star size={13} />} onClick={() => setMichelinOnly((v) => !v)}>
+              Michelin
+            </Chip>
+          )}
           {cuisines.map((c) => (
             <Chip key={c} selected={activeCuisineFilter === c} onClick={() => setCuisineFilter(c)}>
               {c}

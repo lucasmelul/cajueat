@@ -95,6 +95,7 @@ export function Catalog() {
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {r.isDemo && <Badge tone="danger">Demo</Badge>}
+                {(r.michelinStars || r.michelinGreenStar || r.michelinBibGourmand) && <Badge tone="over">Michelin</Badge>}
                 <Badge tone={TRUST_TONE[r.trust]}>{r.trust}</Badge>
               </div>
             </div>

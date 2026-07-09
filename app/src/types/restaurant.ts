@@ -70,6 +70,10 @@ export interface Restaurant {
   /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never part of it. */
   googleRating?: number;
   googleRatingCount?: number;
+  /** Distinción real de la Guía Michelin, independiente entre sí (puede tener estrella Y estrella verde a la vez). */
+  michelinStars?: number;
+  michelinGreenStar?: boolean;
+  michelinBibGourmand?: boolean;
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';
