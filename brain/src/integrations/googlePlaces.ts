@@ -51,6 +51,8 @@ export interface PlaceDetails {
   /** SPEC-026: an external, uncurated aggregate — never a Source, never fed into computeTrust. */
   rating?: number;
   userRatingCount?: number;
+  /** Google's own category for the place (ej. "Cafetería", "Restaurante de sushi") — only ever used as an initial cuisine guess for a bulk import, never overwrites a cuisine an operator already set. */
+  primaryType?: string;
 }
 
 interface GoogleTimePoint {
@@ -78,7 +80,7 @@ function toOpenHours(periods: { open?: GoogleTimePoint; close?: GoogleTimePoint 
 
 /** One Details fetch — used both when first linking a restaurant and on a manual "Refrescar desde Google". */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const fieldMask = 'id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount';
+  const fieldMask = 'id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount,primaryTypeDisplayName';
   const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
     headers: { 'X-Goog-Api-Key': requireApiKey(), 'X-Goog-FieldMask': fieldMask },
   });
@@ -92,6 +94,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
     businessStatus?: GoogleBusinessStatus;
     rating?: number;
     userRatingCount?: number;
+    primaryTypeDisplayName?: { text: string };
   };
   return {
     placeId: data.id,
@@ -102,5 +105,6 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
     businessStatus: data.businessStatus ?? 'BUSINESS_STATUS_UNSPECIFIED',
     rating: data.rating,
     userRatingCount: data.userRatingCount,
+    primaryType: data.primaryTypeDisplayName?.text,
   };
 }

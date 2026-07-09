@@ -440,7 +440,7 @@ adminRouter.get('/admin/google-places/details', async (req, res, next) => {
       return;
     }
     const details = await getPlaceDetails(placeId);
-    res.json({ placeId: details.placeId, name: details.name, address: details.address, position: details.position });
+    res.json({ placeId: details.placeId, name: details.name, address: details.address, position: details.position, primaryType: details.primaryType });
   } catch (err) {
     if (err instanceof Error && err.message === 'google_places_not_configured') {
       res.status(503).json({ error: 'google_places_not_configured' });

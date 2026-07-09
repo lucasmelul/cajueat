@@ -159,6 +159,7 @@ export interface GooglePlaceCandidate {
 /** Not bound to a restaurant — position + address for any real venue an operator picks, e.g. an event's venue. */
 export interface GooglePlaceDetails extends GooglePlaceCandidate {
   position: { lat: number; lng: number };
+  primaryType?: string;
 }
 
 export type GoogleBusinessStatus = 'OPERATIONAL' | 'CLOSED_TEMPORARILY' | 'CLOSED_PERMANENTLY' | 'BUSINESS_STATUS_UNSPECIFIED';
