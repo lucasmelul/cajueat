@@ -81,7 +81,7 @@ function toOpenHours(periods: { open?: GoogleTimePoint; close?: GoogleTimePoint 
 /** One Details fetch — used both when first linking a restaurant and on a manual "Refrescar desde Google". */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
   const fieldMask = 'id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount,primaryTypeDisplayName';
-  const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+  const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=es`, {
     headers: { 'X-Goog-Api-Key': requireApiKey(), 'X-Goog-FieldMask': fieldMask },
   });
   if (!res.ok) throw new Error(`google_places_details_failed:${res.status}`);
