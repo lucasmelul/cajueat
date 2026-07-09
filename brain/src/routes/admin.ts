@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { generateCheckinToken } from '../checkin/checkinTokens.js';
 import { getConsumptionSummary } from '../checkin/consumptionStore.js';
-import { getAllCurators } from '../curators/curatorStore.js';
+import { getAllCurators, renameCurator } from '../curators/curatorStore.js';
 import { createPromotion, getPromotionsForRestaurant, type PromotionType } from '../promotions/promotionsStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
 import { addSourceToDish, createDish, findDishByRestaurantAndName, getDishes } from '../data/dishStore.js';
@@ -43,6 +43,33 @@ adminRouter.get('/admin/restaurants', (_req, res) => {
 /** SPEC-017: curator reputation per domain — internal to the operator view only, per the spec's own open question on end-user visibility (kept unresolved, so kept unexposed). */
 adminRouter.get('/admin/curators', (_req, res) => {
   res.json(getAllCurators());
+});
+
+/**
+ * Corrige un handle mal cargado (ej. faltaba un carácter) sin perder la reputación real ya
+ * acumulada bajo ese curador — renombra la fila de `curatorStore` y, en el mismo request,
+ * actualiza cada `Source.name` que citaba el handle viejo en cualquier restaurante, para que
+ * ambos lugares queden consistentes. Nunca crea un curador nuevo desde cero.
+ */
+adminRouter.post('/admin/curators/rename', (req, res) => {
+  const { oldHandle, newHandle } = req.body ?? {};
+  if (typeof oldHandle !== 'string' || !oldHandle.trim() || typeof newHandle !== 'string' || !newHandle.trim()) {
+    res.status(400).json({ error: 'oldHandle_newHandle_required' });
+    return;
+  }
+  const renamed = renameCurator(oldHandle, newHandle);
+  if (!renamed) {
+    res.status(404).json({ error: 'curator_not_found' });
+    return;
+  }
+  let restaurantsUpdated = 0;
+  for (const restaurant of getCatalog({ includeDemo: true })) {
+    if (!restaurant.sources.some((s) => s.name === oldHandle)) continue;
+    const sources = restaurant.sources.map((s) => (s.name === oldHandle ? { ...s, name: newHandle } : s));
+    updateRestaurant(restaurant.id, { sources });
+    restaurantsUpdated++;
+  }
+  res.json({ curator: renamed, restaurantsUpdated });
 });
 
 /** Days since a restaurant's freshest source — same definition the Radar de desactualizados uses client-side, kept in sync here for the Dashboard's aggregate count. */

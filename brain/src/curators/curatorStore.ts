@@ -89,6 +89,22 @@ export function getAllCurators(): CuratorRecord[] {
   return Object.values(store.curators);
 }
 
+/**
+ * Corrige un handle mal cargado (ej. faltaba un guion bajo) sin perder la reputación real ya
+ * acumulada — un rename, nunca un curador nuevo desde cero. El caller es responsable de
+ * actualizar `Source.name` en los restaurantes que citan el handle viejo (esta función solo
+ * mueve la fila de `curatorStore`, que vive separada de `sources[]` por diseño de SPEC-017).
+ */
+export function renameCurator(oldHandle: string, newHandle: string): CuratorRecord | undefined {
+  const record = store.curators[oldHandle];
+  if (!record) return undefined;
+  delete store.curators[oldHandle];
+  const renamed: CuratorRecord = { ...record, handle: newHandle };
+  store.curators[newHandle] = renamed;
+  persist();
+  return renamed;
+}
+
 export function curatorsFileExists(): boolean {
   return existsSync(DATA_FILE);
 }
