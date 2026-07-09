@@ -48,10 +48,24 @@ export function getEvents(): MapEvent[] {
   return events;
 }
 
-export type EventInput = { name: string; whenAt: string; position: { lat: number; lng: number } };
+export type EventInput = {
+  name: string;
+  whenAt: string;
+  position: { lat: number; lng: number };
+  address?: string;
+  googlePlaceId?: string;
+};
 
 export function createEvent(input: EventInput): MapEvent {
-  const event: MapEvent = { id: randomUUID(), name: input.name, whenAt: input.whenAt, when: shortWeekdayLabel(input.whenAt), position: input.position };
+  const event: MapEvent = {
+    id: randomUUID(),
+    name: input.name,
+    whenAt: input.whenAt,
+    when: shortWeekdayLabel(input.whenAt),
+    position: input.position,
+    ...(input.address ? { address: input.address } : {}),
+    ...(input.googlePlaceId ? { googlePlaceId: input.googlePlaceId } : {}),
+  };
   events = [...events, event];
   persist();
   return event;

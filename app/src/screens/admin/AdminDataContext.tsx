@@ -1,6 +1,6 @@
 import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
-import type { CuratorRecord, NewPlaceSuggestion, PendingContribution } from '../../lib/admin/adminClient';
-import type { MapEvent, Restaurant } from '../../types';
+import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention } from '../../lib/admin/adminClient';
+import type { Dish, MapEvent, Restaurant } from '../../types';
 
 /**
  * Shared data for every /admin/* page — fetched once by AdminLayout, not
@@ -14,10 +14,14 @@ export interface AdminData {
   curators: CuratorRecord[];
   pendingContributions: PendingContribution[];
   pendingNewPlaces: NewPlaceSuggestion[];
+  dishes: Dish[];
+  pendingDishMentions: PendingDishMention[];
   events: MapEvent[];
   loadAll: () => Promise<void>;
   setPendingContributions: Dispatch<SetStateAction<PendingContribution[]>>;
   setPendingNewPlaces: Dispatch<SetStateAction<NewPlaceSuggestion[]>>;
+  setDishes: Dispatch<SetStateAction<Dish[]>>;
+  setPendingDishMentions: Dispatch<SetStateAction<PendingDishMention[]>>;
   setEvents: Dispatch<SetStateAction<MapEvent[]>>;
 }
 

@@ -1,4 +1,4 @@
-import type { MapEvent, Promotion, PromotionType, Restaurant } from '../../types';
+import type { Dish, MapEvent, Promotion, PromotionType, Restaurant } from '../../types';
 
 /**
  * SPEC-018 Admin CMS: a genuinely different client of the Brain, not a
@@ -62,9 +62,20 @@ export interface NewRestaurantMention {
   claim: string;
 }
 
+/** SPEC-025: a specific dish the pasted text names for a matched restaurant — only ever attached to a restaurant already confirmed real in `matches`. */
+export interface CuratorDishMatch {
+  restaurantId: string;
+  restaurantName: string;
+  dishName: string;
+  category: string;
+  claim: string;
+  suggestedWeight: 'strong' | 'medium' | 'weak';
+}
+
 export interface CuratorAnalysis {
   matches: CuratorMatch[];
   newRestaurants: NewRestaurantMention[];
+  dishMatches: CuratorDishMatch[];
 }
 
 export type CreateRestaurantInput = Pick<Restaurant, 'name' | 'cuisine' | 'neighborhood'> & Partial<Restaurant>;
@@ -85,7 +96,13 @@ export interface PendingContribution {
   status: 'pending' | 'confirmed' | 'rejected';
 }
 
-export type CreateEventInput = { name: string; whenAt: string; position: { lat: number; lng: number } };
+export type CreateEventInput = {
+  name: string;
+  whenAt: string;
+  position: { lat: number; lng: number };
+  address?: string;
+  googlePlaceId?: string;
+};
 
 /** SPEC-019 extension: a place a user described that wasn't in the catalog yet — name/cuisine/neighborhood/address may be blank where the source text didn't say, an operator fills gaps before confirming. */
 export interface NewPlaceSuggestion {
@@ -102,6 +119,26 @@ export interface NewPlaceSuggestion {
 
 export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborhood?: string; address?: string; position?: { lat: number; lng: number } };
 
+/** SPEC-025 extension of SPEC-019: a specific dish a user's Nota/Foto/Voz named for an already-real restaurant. */
+export interface PendingDishMention {
+  id: string;
+  restaurantId: string;
+  restaurantName: string;
+  dishName: string;
+  category: string;
+  claim: string;
+  source: 'note' | 'photo' | 'voice' | 'conversation';
+  createdAt: number;
+  status: 'pending' | 'confirmed' | 'rejected';
+}
+
+export type CreateDishInput = {
+  name: string;
+  category: string;
+  restaurantId: string;
+  source: { name: string; kind: string; weight: string; claim?: string };
+};
+
 export type CreatePromotionInput = { text: string; type: PromotionType; from: string; until: string };
 
 /** SPEC-027: ephemeral — never persisted server-side, the operator confirms each one via the plain createEvent below. */
@@ -117,6 +154,11 @@ export interface GooglePlaceCandidate {
   placeId: string;
   name: string;
   address: string;
+}
+
+/** Not bound to a restaurant — position + address for any real venue an operator picks, e.g. an event's venue. */
+export interface GooglePlaceDetails extends GooglePlaceCandidate {
+  position: { lat: number; lng: number };
 }
 
 export type GoogleBusinessStatus = 'OPERATIONAL' | 'CLOSED_TEMPORARILY' | 'CLOSED_PERMANENTLY' | 'BUSINESS_STATUS_UNSPECIFIED';
@@ -195,6 +237,9 @@ export const adminClient = {
 
   searchGooglePlaces: (query: string) => request<GooglePlaceCandidate[]>(`/admin/google-places/search?q=${encodeURIComponent(query)}`),
 
+  /** Generic Details fetch, not bound to a restaurant — used to pick any real venue (e.g. an event's location). */
+  getGooglePlaceDetails: (placeId: string) => request<GooglePlaceDetails>(`/admin/google-places/details?placeId=${encodeURIComponent(placeId)}`),
+
   linkGooglePlace: (restaurantId: string, placeId: string) =>
     request<GoogleLinkResult>(`/admin/restaurants/${restaurantId}/link-google`, { method: 'POST', body: JSON.stringify({ placeId }) }),
 
@@ -215,4 +260,23 @@ export const adminClient = {
   /** SPEC-027: extraction + deterministic date resolution together — re-call with a corrected `referenceDate` to re-resolve, never the LLM guessing the date. */
   extractEventsFromImage: (image: string, mediaType: string, referenceDate?: string) =>
     request<{ suggestions: EventImageSuggestion[] }>('/admin/events/from-image', { method: 'POST', body: JSON.stringify({ image, mediaType, referenceDate }) }),
+
+  /** SPEC-025: every dish, trust computed fresh from its own sources — same discipline as the restaurant catalog. */
+  getDishes: () => request<Dish[]>('/admin/dishes'),
+
+  /** Direct operator creation — same convention as createRestaurant: an operator's own action, never queued. */
+  createDish: (input: CreateDishInput) => request<Dish>('/admin/dishes', { method: 'POST', body: JSON.stringify(input) }),
+
+  addDishSource: (dishId: string, source: { name: string; kind: string; weight: string; claim?: string }) =>
+    request<Dish>(`/admin/dishes/${dishId}/sources`, { method: 'POST', body: JSON.stringify(source) }),
+
+  /** Confirming a curator's dishMatch — find-or-create by (restaurantId, dishName), same discipline as confirming a restaurant match. */
+  confirmDishMatch: (input: { restaurantId: string; dishName: string; category: string; name: string; kind: string; weight: string; claim?: string }) =>
+    request<Dish>('/admin/dishes/confirm-match', { method: 'POST', body: JSON.stringify(input) }),
+
+  getPendingDishMentions: () => request<PendingDishMention[]>('/admin/pending-dish-mentions'),
+
+  confirmPendingDishMention: (id: string) => request<Dish>(`/admin/pending-dish-mentions/${id}/confirm`, { method: 'POST' }),
+
+  rejectPendingDishMention: (id: string) => request<PendingDishMention>(`/admin/pending-dish-mentions/${id}/reject`, { method: 'POST' }),
 };

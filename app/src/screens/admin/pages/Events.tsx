@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../../../components/core';
 import { adminClient, type EventImageSuggestion } from '../../../lib/admin/adminClient';
 import { useAdminData } from '../AdminDataContext';
+import { GooglePlacePicker, type PickedPlace } from '../GooglePlacePicker';
 
 /** For a `datetime-local` input's value attribute — local time, no timezone suffix. */
 function toLocalInputValue(iso: string): string {
@@ -13,16 +14,14 @@ function toLocalInputValue(iso: string): string {
 interface EditableSuggestion extends EventImageSuggestion {
   editedWhenAt: string;
   editedName: string;
-  lat: string;
-  lng: string;
+  place: PickedPlace | null;
 }
 
 export function Events() {
   const { events, setEvents } = useAdminData();
   const [newEventName, setNewEventName] = useState('');
   const [newEventWhenAt, setNewEventWhenAt] = useState('');
-  const [newEventLat, setNewEventLat] = useState('');
-  const [newEventLng, setNewEventLng] = useState('');
+  const [newEventPlace, setNewEventPlace] = useState<PickedPlace | null>(null);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
@@ -60,8 +59,7 @@ export function Events() {
           ...s,
           editedName: s.name,
           editedWhenAt: s.whenAt ? toLocalInputValue(s.whenAt) : '',
-          lat: '',
-          lng: '',
+          place: null,
         })),
       );
     } catch (err) {
@@ -77,14 +75,17 @@ export function Events() {
 
   const confirmSuggestion = async (index: number) => {
     const s = suggestions?.[index];
-    if (!s) return;
-    const lat = Number(s.lat);
-    const lng = Number(s.lng);
-    if (!s.editedName.trim() || !s.editedWhenAt || Number.isNaN(lat) || Number.isNaN(lng)) return;
+    if (!s || !s.place) return;
     setConfirmingIndex(index);
     try {
       // Confirming reuses createEvent exactly as it already exists — a confirmed suggestion is indistinguishable from one typed by hand.
-      await adminClient.createEvent({ name: s.editedName.trim(), whenAt: new Date(s.editedWhenAt).toISOString(), position: { lat, lng } });
+      await adminClient.createEvent({
+        name: s.editedName.trim(),
+        whenAt: new Date(s.editedWhenAt).toISOString(),
+        position: s.place.position,
+        address: s.place.address,
+        googlePlaceId: s.place.placeId,
+      });
       setEvents(await adminClient.getEvents());
       setSuggestions((prev) => prev?.filter((_, i) => i !== index) ?? null);
     } finally {
@@ -97,16 +98,19 @@ export function Events() {
   };
 
   const createEvent = async () => {
-    const lat = Number(newEventLat);
-    const lng = Number(newEventLng);
-    if (!newEventName.trim() || !newEventWhenAt || Number.isNaN(lat) || Number.isNaN(lng)) return;
+    if (!newEventName.trim() || !newEventWhenAt || !newEventPlace) return;
     setCreatingEvent(true);
     try {
-      await adminClient.createEvent({ name: newEventName.trim(), whenAt: new Date(newEventWhenAt).toISOString(), position: { lat, lng } });
+      await adminClient.createEvent({
+        name: newEventName.trim(),
+        whenAt: new Date(newEventWhenAt).toISOString(),
+        position: newEventPlace.position,
+        address: newEventPlace.address,
+        googlePlaceId: newEventPlace.placeId,
+      });
       setNewEventName('');
       setNewEventWhenAt('');
-      setNewEventLat('');
-      setNewEventLng('');
+      setNewEventPlace(null);
       setEvents(await adminClient.getEvents());
     } finally {
       setCreatingEvent(false);
@@ -137,7 +141,10 @@ export function Events() {
             <div className="cj-admin-row__head">
               <div className="cj-admin-row__main">
                 <b>{e.name}</b>
-                <span>{new Date(e.whenAt).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                <span>
+                  {new Date(e.whenAt).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {e.address ? ` · ${e.address}` : ''}
+                </span>
               </div>
               <Button size="sm" variant="secondary" disabled={deletingEventId === e.id} onClick={() => removeEvent(e.id)}>
                 Borrar
@@ -149,14 +156,8 @@ export function Events() {
       <div className="cj-admin-form">
         <input value={newEventName} onChange={(ev) => setNewEventName(ev.target.value)} placeholder="Nombre del evento" />
         <input type="datetime-local" value={newEventWhenAt} onChange={(ev) => setNewEventWhenAt(ev.target.value)} />
-        <input value={newEventLat} onChange={(ev) => setNewEventLat(ev.target.value)} placeholder="Latitud (ej: -34.6)" />
-        <input value={newEventLng} onChange={(ev) => setNewEventLng(ev.target.value)} placeholder="Longitud (ej: -58.43)" />
-        <Button
-          variant="primary"
-          onClick={createEvent}
-          loading={creatingEvent}
-          disabled={!newEventName.trim() || !newEventWhenAt || !newEventLat.trim() || !newEventLng.trim()}
-        >
+        <GooglePlacePicker value={newEventPlace} onChange={setNewEventPlace} />
+        <Button variant="primary" onClick={createEvent} loading={creatingEvent} disabled={!newEventName.trim() || !newEventWhenAt || !newEventPlace}>
           Crear evento
         </Button>
       </div>
@@ -193,10 +194,9 @@ export function Events() {
               </div>
               <input type="datetime-local" value={s.editedWhenAt} onChange={(ev) => updateSuggestion(i, { editedWhenAt: ev.target.value })} />
               {!s.editedWhenAt && <span className="cj-admin-gate__error">No se pudo resolver la fecha — completala a mano.</span>}
-              <input value={s.lat} onChange={(ev) => updateSuggestion(i, { lat: ev.target.value })} placeholder="Latitud" />
-              <input value={s.lng} onChange={(ev) => updateSuggestion(i, { lng: ev.target.value })} placeholder="Longitud" />
+              <GooglePlacePicker value={s.place} onChange={(place) => updateSuggestion(i, { place })} initialQuery={s.editedName} />
               <div style={{ display: 'flex', gap: 8 }}>
-                <Button size="sm" variant="primary" loading={confirmingIndex === i} onClick={() => confirmSuggestion(i)}>
+                <Button size="sm" variant="primary" loading={confirmingIndex === i} disabled={!s.place} onClick={() => confirmSuggestion(i)}>
                   Confirmar y crear
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => rejectSuggestion(i)}>

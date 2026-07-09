@@ -41,6 +41,18 @@ export interface Source {
   claim?: string;
 }
 
+/** SPEC-025: a plate is its own sourceable entity, scoped to the one restaurant a given Source's claim is actually about. */
+export interface Dish {
+  id: string;
+  name: string;
+  /** Groups dishes across restaurants for "¿dónde está el mejor X?" comparisons. */
+  category: string;
+  restaurantId: string;
+  sources: Source[];
+  trust: 'high' | 'mid' | 'low';
+  trustRationale: string;
+}
+
 /**
  * A restaurant as the Brain understands it: not a directory row, a decision.
  * Shape mirrors design/ui_kits/pwa/data.js, typed and with real geo instead

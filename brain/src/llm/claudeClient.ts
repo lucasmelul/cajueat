@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { ConversationTurn, Restaurant } from '../types.js';
+import type { ConversationTurn, Dish, Restaurant } from '../types.js';
 import { createStringFieldExtractor } from './streamingJsonField.js';
 
 /**
@@ -49,6 +49,11 @@ function catalogForPrompt(catalog: Restaurant[]) {
   }));
 }
 
+/** SPEC-025: only the fields Conversation actually needs to answer a dish/category question grounded in real evidence — never the raw sources array. */
+function dishesForPrompt(dishes: Dish[]) {
+  return dishes.map((d) => ({ name: d.name, category: d.category, restaurantId: d.restaurantId, trust: d.trust }));
+}
+
 export interface InterpretedQuery {
   restaurantIds: string[];
   reply: string;
@@ -57,9 +62,17 @@ export interface InterpretedQuery {
 
 const QUERY_SYSTEM_PROMPT = `Sos el Brain de CajuEat, un concierge gastronómico. Interpretás lo que pide el usuario y elegís,
 ÚNICAMENTE de la lista de restaurantes reales que te paso, cuáles recomendar. Nunca inventes un restaurante que no
-esté en la lista. Si nada calza bien, elegí la opción más cercana y decilo con honestidad en la respuesta. Respondé
-en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips de
-seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;
+esté en la lista. Si nada calza bien, elegí la opción más cercana y decilo con honestidad en la respuesta.
+
+También te paso una lista de platos reales cargados (SPEC-025), cada uno con el restaurante real al que pertenece y
+su nivel de confianza. Si la pregunta es sobre un plato o categoría puntual (ej. "¿dónde como el mejor chirashi?",
+"la mejor torta vasca"), respondé usando ÚNICAMENTE esa lista de platos — nunca asumas que un restaurante sirve algo
+por su tipo de cocina o nombre si no está cargado como plato real. Si ningún plato cargado coincide con lo que pide,
+decilo con honestidad explícita en la respuesta (ej. "todavía no tengo información sobre eso") en vez de recomendar
+un restaurante genérico como si fuera una respuesta real a esa pregunta.
+
+Respondé en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips
+de seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;
 
 /**
  * Streams the model's raw JSON as it's generated (SPEC-002: "el usuario debe
@@ -74,6 +87,7 @@ export async function interpretQuery(
     text: string;
     history: ConversationTurn[];
     catalog: Restaurant[];
+    dishes?: Dish[];
   },
   onDelta?: (chunk: string) => void,
 ): Promise<InterpretedQuery> {
@@ -89,7 +103,7 @@ export async function interpretQuery(
     messages: [
       {
         role: 'user',
-        content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nConversación previa:\n${historyText || '(sin historial)'}\n\nNuevo mensaje del usuario: "${input.text}"`,
+        content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nPlatos cargados (JSON):\n${JSON.stringify(dishesForPrompt(input.dishes ?? []))}\n\nConversación previa:\n${historyText || '(sin historial)'}\n\nNuevo mensaje del usuario: "${input.text}"`,
       },
     ],
     output_config: {
@@ -162,11 +176,36 @@ const NEW_PLACE_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/** SPEC-025: a specific plate the text/photo names — only meaningful attached to a real, already-matched restaurant, never a brand-new place (nothing to attach a dish claim to yet). */
+export interface DishMention {
+  name: string;
+  category: string;
+  claim: string;
+}
+
+const DISH_MENTION_SCHEMA = {
+  type: ['object', 'null'],
+  properties: {
+    name: { type: 'string' },
+    category: { type: 'string' },
+    claim: { type: 'string' },
+  },
+  required: ['name', 'category', 'claim'],
+  additionalProperties: false,
+} as const;
+
+const DISH_MENTION_INSTRUCTIONS = `Si además el texto nombra un plato específico de ese restaurante (ej. "el tiradito
+de toro de Osaka", "la torta vasca estaba espectacular"), completá dish con name (el plato tal cual se nombra),
+category (el tipo de plato, ej. "torta vasca", "sushi", "brunch") y claim (qué se dice de ese plato) — nunca lo
+completes si el texto no nombra un plato concreto, y nunca lo completes si no identificaste un restaurante real de
+la lista (dish solo tiene sentido atado a un restaurante real ya confirmado).`;
+
 export interface NoteExtraction {
   restaurantId: string | null;
   learned: string;
   /** Set only when the note is clearly about a real place that ISN'T in the catalog — the previous behavior silently dropped this case entirely. */
   newPlace: NewPlaceInfo | null;
+  dish: DishMention | null;
 }
 
 const NOTE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te escribió una nota libre contando algo que
@@ -176,9 +215,9 @@ claramente habla de un lugar real que NO está en esa lista (un lugar nuevo que 
 devolvé restaurantId null y completá newPlace con lo que el texto realmente diga: name siempre que lo mencione,
 cuisine y neighborhood solo si el texto los deja claro (si no los dice, dejalos como string vacío — nunca
 inventes un barrio o tipo de cocina que la nota no mencionó). Si la nota no habla de ningún lugar concreto
-(ninguno de la lista ni uno nuevo), devolvé restaurantId null y newPlace null. Resumí siempre en UNA oración
-corta qué aprendiste, basándote solo en lo que el usuario escribió — nunca inventes datos que no estén en la
-nota. Español, tono cercano.`;
+(ninguno de la lista ni uno nuevo), devolvé restaurantId null y newPlace null. ${DISH_MENTION_INSTRUCTIONS} Resumí
+siempre en UNA oración corta qué aprendiste, basándote solo en lo que el usuario escribió — nunca inventes datos
+que no estén en la nota. Español, tono cercano.`;
 
 export async function extractNoteKnowledge(input: { text: string; catalog: Restaurant[] }): Promise<NoteExtraction> {
   const response = await getClient().messages.create({
@@ -200,8 +239,9 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
             restaurantId: { type: ['string', 'null'] },
             learned: { type: 'string' },
             newPlace: NEW_PLACE_SCHEMA,
+            dish: DISH_MENTION_SCHEMA,
           },
-          required: ['restaurantId', 'learned', 'newPlace'],
+          required: ['restaurantId', 'learned', 'newPlace', 'dish'],
           additionalProperties: false,
         },
       },
@@ -213,8 +253,8 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
   const restaurantId = parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null;
-  // Mutually exclusive by construction — a matched restaurant never also carries a newPlace suggestion.
-  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace };
+  // Mutually exclusive by construction — a matched restaurant never also carries a newPlace suggestion, and a dish never survives without a matched restaurant.
+  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace, dish: restaurantId ? parsed.dish : null };
 }
 
 const CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en medio de una conversación normal — la
@@ -323,6 +363,7 @@ export interface PhotoExtraction {
   learned: string;
   /** Set only when the photo (e.g. a storefront sign or a menu header) clearly names a real place that ISN'T in the catalog. */
   newPlace: NewPlaceInfo | null;
+  dish: DishMention | null;
 }
 
 const PHOTO_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te mandó una foto (menú, plato, ticket, carta de
@@ -331,9 +372,9 @@ de la lista de restaurantes reales que te paso — si es así, devolvé su resta
 deja ver claramente el nombre de un lugar real que NO está en esa lista (ej. un cartel, el encabezado de un menú),
 devolvé restaurantId null y completá newPlace con name (y cuisine/neighborhood solo si son evidentes en la imagen,
 string vacío si no) — nunca inventes un dato que la foto no muestre. Si no podés identificar ningún lugar, devolvé
-restaurantId null y newPlace null. Resumí siempre en UNA oración corta qué aprendiste — basado únicamente en lo
-que la imagen realmente muestra, nunca inventando un plato o precio que no sea legible. Si la imagen es ilegible
-o ambigua, decilo explícitamente en vez de adivinar. Español, tono cercano.`;
+restaurantId null y newPlace null. ${DISH_MENTION_INSTRUCTIONS} Resumí siempre en UNA oración corta qué
+aprendiste — basado únicamente en lo que la imagen realmente muestra, nunca inventando un plato o precio que no
+sea legible. Si la imagen es ilegible o ambigua, decilo explícitamente en vez de adivinar. Español, tono cercano.`;
 
 export async function extractPhotoKnowledge(input: {
   imageBase64: string;
@@ -365,8 +406,9 @@ export async function extractPhotoKnowledge(input: {
             restaurantId: { type: ['string', 'null'] },
             learned: { type: 'string' },
             newPlace: NEW_PLACE_SCHEMA,
+            dish: DISH_MENTION_SCHEMA,
           },
-          required: ['restaurantId', 'learned', 'newPlace'],
+          required: ['restaurantId', 'learned', 'newPlace', 'dish'],
           additionalProperties: false,
         },
       },
@@ -378,7 +420,7 @@ export async function extractPhotoKnowledge(input: {
   // Never trust the model's ID blindly — only a real, known restaurant leaves this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
   const restaurantId = parsed.restaurantId && knownIds.has(parsed.restaurantId) ? parsed.restaurantId : null;
-  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace };
+  return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace, dish: restaurantId ? parsed.dish : null };
 }
 
 export interface CuratorMatch {
@@ -396,9 +438,20 @@ export interface NewRestaurantMention {
   claim: string;
 }
 
+/** SPEC-025: a specific dish the pasted text names for one of the matched restaurants — same grounding as CuratorMatch, only ever attached to a restaurant already confirmed real. */
+export interface CuratorDishMatch {
+  restaurantId: string;
+  restaurantName: string;
+  dishName: string;
+  category: string;
+  claim: string;
+  suggestedWeight: 'strong' | 'medium' | 'weak';
+}
+
 export interface CuratorAnalysis {
   matches: CuratorMatch[];
   newRestaurants: NewRestaurantMention[];
+  dishMatches: CuratorDishMatch[];
 }
 
 /** SPEC-018 Admin CMS: an operator pastes real curator/Reel text they already read — this never reads the platform itself. */
@@ -409,7 +462,11 @@ lista de restaurantes reales que te paso — si es así, va en matches, con la a
 hace sobre él y qué peso (strong/medium/weak) te parece razonable según cuán específico y respaldado suena ese
 fragmento. Si el texto menciona un lugar real que NO está en esa lista, va en newRestaurants con su name, y
 cuisine/neighborhood solo si el texto los deja claro (string vacío si no) y el claim que el texto hace sobre él —
-nunca inventes un dato que el texto no diga, y nunca descartes en silencio un lugar mencionado. Español.`;
+nunca inventes un dato que el texto no diga, y nunca descartes en silencio un lugar mencionado. Si además el texto
+nombra un plato específico de un restaurante que SÍ está en la lista (ej. "el tiradito de toro de Osaka es
+espectacular"), agregalo a dishMatches con restaurantId, dishName, category (tipo de plato, ej. "sushi", "torta
+vasca"), el claim real y un peso sugerido — nunca inventes un plato para un restaurante que no esté confirmado en
+matches. Español.`;
 
 export async function analyzeCuratorContent(input: { text: string; catalog: Restaurant[] }): Promise<CuratorAnalysis> {
   const response = await getClient().messages.create({
@@ -455,8 +512,23 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
                 additionalProperties: false,
               },
             },
+            dishMatches: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  restaurantId: { type: 'string' },
+                  dishName: { type: 'string' },
+                  category: { type: 'string' },
+                  claim: { type: 'string' },
+                  suggestedWeight: { type: 'string', enum: ['strong', 'medium', 'weak'] },
+                },
+                required: ['restaurantId', 'dishName', 'category', 'claim', 'suggestedWeight'],
+                additionalProperties: false,
+              },
+            },
           },
-          required: ['matches', 'newRestaurants'],
+          required: ['matches', 'newRestaurants', 'dishMatches'],
           additionalProperties: false,
         },
       },
@@ -466,6 +538,7 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
   const parsed = JSON.parse(requireTextBlock(response.content).text) as {
     matches: { restaurantId: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
     newRestaurants: NewRestaurantMention[];
+    dishMatches: { restaurantId: string; dishName: string; category: string; claim: string; suggestedWeight: 'strong' | 'medium' | 'weak' }[];
   };
 
   // Grounding check: only a real, known restaurant can leave this function as a match.
@@ -478,8 +551,18 @@ export async function analyzeCuratorContent(input: { text: string; catalog: Rest
       claim: m.claim,
       suggestedWeight: m.suggestedWeight,
     }));
+  const dishMatches: CuratorDishMatch[] = (parsed.dishMatches ?? [])
+    .filter((d) => byId.has(d.restaurantId))
+    .map((d) => ({
+      restaurantId: d.restaurantId,
+      restaurantName: byId.get(d.restaurantId)!.name,
+      dishName: d.dishName,
+      category: d.category,
+      claim: d.claim,
+      suggestedWeight: d.suggestedWeight,
+    }));
 
-  return { matches, newRestaurants: parsed.newRestaurants ?? [] };
+  return { matches, newRestaurants: parsed.newRestaurants ?? [], dishMatches };
 }
 
 /** SPEC-027: one event exactly as an image shows it — `whenRaw` is resolved to a real date deterministically (resolveRelativeDate), never guessed by the model. */

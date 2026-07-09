@@ -48,20 +48,33 @@ export interface NewPlaceSuggestion {
   status: ContributionStatus;
 }
 
+/** SPEC-025: a specific dish a user's Nota/Foto/Voz named for an already-real restaurant — same "never applied on its own" discipline as the other two queues above. */
+export interface PendingDishMention {
+  id: string;
+  restaurantId: string;
+  dishName: string;
+  category: string;
+  claim: string;
+  source: ContributionSource;
+  createdAt: number;
+  status: ContributionStatus;
+}
+
 interface Store {
   contributions: PendingContribution[];
   newPlaces: NewPlaceSuggestion[];
+  dishMentions: PendingDishMention[];
 }
 
 const DATA_FILE = join(DATA_DIR, 'pending-contributions.json');
 
 function load(): Store {
-  if (!existsSync(DATA_FILE)) return { contributions: [], newPlaces: [] };
+  if (!existsSync(DATA_FILE)) return { contributions: [], newPlaces: [], dishMentions: [] };
   try {
     const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<Store>;
-    return { contributions: parsed.contributions ?? [], newPlaces: parsed.newPlaces ?? [] };
+    return { contributions: parsed.contributions ?? [], newPlaces: parsed.newPlaces ?? [], dishMentions: parsed.dishMentions ?? [] };
   } catch {
-    return { contributions: [], newPlaces: [] };
+    return { contributions: [], newPlaces: [], dishMentions: [] };
   }
 }
 
@@ -134,6 +147,44 @@ export function getNewPlaceSuggestionById(id: string): NewPlaceSuggestion | unde
 
 export function markNewPlaceStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): NewPlaceSuggestion | undefined {
   const entry = store.newPlaces.find((p) => p.id === id);
+  if (!entry) return undefined;
+  entry.status = status;
+  persist();
+  return entry;
+}
+
+export function enqueuePendingDishMention(input: {
+  restaurantId: string;
+  dishName: string;
+  category: string;
+  claim: string;
+  source: ContributionSource;
+}): PendingDishMention {
+  const entry: PendingDishMention = {
+    id: randomUUID(),
+    restaurantId: input.restaurantId,
+    dishName: input.dishName,
+    category: input.category,
+    claim: input.claim,
+    source: input.source,
+    createdAt: Date.now(),
+    status: 'pending',
+  };
+  store.dishMentions.unshift(entry);
+  persist();
+  return entry;
+}
+
+export function getPendingDishMentions(): PendingDishMention[] {
+  return store.dishMentions.filter((d) => d.status === 'pending');
+}
+
+export function getPendingDishMentionById(id: string): PendingDishMention | undefined {
+  return store.dishMentions.find((d) => d.id === id);
+}
+
+export function markDishMentionStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): PendingDishMention | undefined {
+  const entry = store.dishMentions.find((d) => d.id === id);
   if (!entry) return undefined;
   entry.status = status;
   persist();

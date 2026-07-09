@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { getCatalog } from '../data/restaurants.js';
+import { getDishes } from '../data/dishStore.js';
 import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
@@ -37,7 +38,8 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     // after it's done. `delta` lines carry plain text; the final `done` line carries the
     // full, grounding-checked turn, identical in shape to the old non-streaming response.
     res.setHeader('Content-Type', 'application/x-ndjson');
-    const interpreted = await interpretQuery({ text, history, catalog }, (chunk) => {
+    const dishes = getDishes();
+    const interpreted = await interpretQuery({ text, history, catalog, dishes }, (chunk) => {
       res.write(`${JSON.stringify({ type: 'delta', text: chunk })}\n`);
     });
     const restaurants = interpreted.restaurantIds.map((id) => catalog.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => !!r);

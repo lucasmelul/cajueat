@@ -8,11 +8,20 @@ const SOURCE_LABEL: Record<PendingContribution['source'], string> = { note: 'Not
 
 /** SPEC-019 + su extensión: dos colas de moderación distintas (agregar fuente a un lugar existente vs. crear uno nuevo), mismo "el operador confirma, nunca se aplica solo". */
 export function Moderation() {
-  const { pendingContributions, setPendingContributions, pendingNewPlaces, setPendingNewPlaces, loadAll } = useAdminData();
+  const {
+    pendingContributions,
+    setPendingContributions,
+    pendingNewPlaces,
+    setPendingNewPlaces,
+    pendingDishMentions,
+    setPendingDishMentions,
+    loadAll,
+  } = useAdminData();
 
   const [pendingBusyId, setPendingBusyId] = useState<string | null>(null);
   const [newPlaceBusyId, setNewPlaceBusyId] = useState<string | null>(null);
   const [newPlaceDrafts, setNewPlaceDrafts] = useState<Record<string, { name: string; cuisine: string; neighborhood: string; address: string }>>({});
+  const [dishMentionBusyId, setDishMentionBusyId] = useState<string | null>(null);
 
   // Backfills a draft for any suggestion this page hasn't seen yet — covers both the initial
   // load and a later loadAll() picking up a suggestion that arrived after this page mounted.
@@ -76,6 +85,27 @@ export function Moderation() {
       setPendingNewPlaces((prev) => prev.filter((p) => p.id !== id));
     } finally {
       setNewPlaceBusyId(null);
+    }
+  };
+
+  const confirmDishMention = async (id: string) => {
+    setDishMentionBusyId(id);
+    try {
+      await adminClient.confirmPendingDishMention(id);
+      setPendingDishMentions((prev) => prev.filter((d) => d.id !== id));
+      loadAll();
+    } finally {
+      setDishMentionBusyId(null);
+    }
+  };
+
+  const rejectDishMention = async (id: string) => {
+    setDishMentionBusyId(id);
+    try {
+      await adminClient.rejectPendingDishMention(id);
+      setPendingDishMentions((prev) => prev.filter((d) => d.id !== id));
+    } finally {
+      setDishMentionBusyId(null);
     }
   };
 
@@ -154,6 +184,38 @@ export function Moderation() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="cj-admin-sec">
+        <Badge tone="over">Platos mencionados · pendientes</Badge>
+        <p className="cj-admin-lead">
+          Un plato específico que un usuario nombró para un restaurante real (SPEC-025) — se confirma como fuente
+          "Un usuario" · community · weak, igual que un aporte a nivel de restaurante.
+        </p>
+        {pendingDishMentions.length === 0 && <p className="cj-admin-lead">No hay platos pendientes de revisión.</p>}
+        <div className="cj-admin-analysis">
+          {pendingDishMentions.map((d) => (
+            <div className="cj-admin-match" key={d.id}>
+              <div className="cj-admin-match__head">
+                <b>
+                  {d.dishName} — {d.restaurantName}
+                </b>
+                <Badge tone="brand">{SOURCE_LABEL[d.source]}</Badge>
+              </div>
+              <p>
+                {d.category} · {d.claim}
+              </p>
+              <div className="cj-admin-pending__actions">
+                <Button size="sm" variant="primary" disabled={dishMentionBusyId === d.id} onClick={() => confirmDishMention(d.id)}>
+                  Confirmar y agregar como plato
+                </Button>
+                <Button size="sm" variant="secondary" disabled={dishMentionBusyId === d.id} onClick={() => rejectDishMention(d.id)}>
+                  Rechazar
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

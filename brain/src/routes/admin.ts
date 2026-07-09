@@ -4,6 +4,7 @@ import { getConsumptionSummary } from '../checkin/consumptionStore.js';
 import { getAllCurators } from '../curators/curatorStore.js';
 import { createPromotion, getPromotionsForRestaurant, type PromotionType } from '../promotions/promotionsStore.js';
 import { addSourceToRestaurant, createRestaurant, getCatalog, getRestaurantById, updateRestaurant, type RestaurantInput } from '../data/restaurants.js';
+import { addSourceToDish, createDish, findDishByRestaurantAndName, getDishes } from '../data/dishStore.js';
 import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { resolveRelativeDate } from '../dates/resolveRelativeDate.js';
 import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
@@ -15,7 +16,10 @@ import {
   getNewPlaceSuggestions,
   getPendingContributionById,
   getPendingContributions,
+  getPendingDishMentionById,
+  getPendingDishMentions,
   markContributionStatus,
+  markDishMentionStatus,
   markNewPlaceStatus,
 } from '../moderation/pendingContributionsStore.js';
 import { notifyNewPlaceIfMatches, notifyTrustChangeIfSaved } from '../notifications/triggers.js';
@@ -142,6 +146,131 @@ adminRouter.post('/admin/restaurants/:id/sources', (req, res) => {
   res.json(updated);
   // SPEC-016 "Cambios importantes" — only fires if the trust level actually moved for someone who already saved this place.
   if (before) notifyTrustChangeIfSaved(updated, before.trust).catch((err) => console.error('notify_trust_change_failed', err));
+});
+
+/** SPEC-025: every dish, trust computed fresh from its own sources — same discipline as the restaurant catalog. */
+adminRouter.get('/admin/dishes', (_req, res) => {
+  res.json(getDishes());
+});
+
+/** Direct operator creation — same convention as POST /admin/restaurants: an operator's own action, never queued. Requires one real source so a dish is never sourceless. */
+adminRouter.post('/admin/dishes', (req, res) => {
+  const { name, category, restaurantId, source } = req.body ?? {};
+  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId) : undefined;
+  if (
+    typeof name !== 'string' ||
+    !name.trim() ||
+    typeof category !== 'string' ||
+    !category.trim() ||
+    !restaurant ||
+    !source ||
+    typeof source.name !== 'string' ||
+    !source.name.trim() ||
+    !VALID_KINDS.has(source.kind) ||
+    !VALID_WEIGHTS.has(source.weight)
+  ) {
+    res.status(400).json({ error: 'name_category_restaurantId_source_required' });
+    return;
+  }
+  const created = createDish({
+    name: name.trim(),
+    category: category.trim(),
+    restaurantId,
+    source: {
+      name: source.name.trim(),
+      kind: source.kind,
+      weight: source.weight,
+      capturedAt: new Date().toISOString(),
+      ...(source.claim ? { claim: String(source.claim) } : {}),
+    },
+  });
+  res.status(201).json(created);
+});
+
+/** Same "Confirmación Inteligente" pattern as restaurant sources — appends, never auto-applied. */
+adminRouter.post('/admin/dishes/:id/sources', (req, res) => {
+  const { name, kind, weight, claim } = req.body ?? {};
+  if (typeof name !== 'string' || !name.trim() || !VALID_KINDS.has(kind) || !VALID_WEIGHTS.has(weight)) {
+    res.status(400).json({ error: 'name_kind_weight_required' });
+    return;
+  }
+  const source: Source = { name: name.trim(), kind, weight, capturedAt: new Date().toISOString(), ...(claim ? { claim: String(claim) } : {}) };
+  const updated = addSourceToDish(req.params.id, source);
+  if (!updated) {
+    res.status(404).json({ error: 'dish_not_found' });
+    return;
+  }
+  res.json(updated);
+});
+
+/**
+ * SPEC-025: confirming a curator's dish match from /admin/analyze (ephemeral, never persisted
+ * server-side) — finds the existing (restaurant, dish name) row to append a source to, or
+ * creates it if this is the first evidence for that dish. Same find-or-create discipline as
+ * SPEC-019's contribution confirmations, just for dishes instead of restaurants.
+ */
+adminRouter.post('/admin/dishes/confirm-match', (req, res) => {
+  const { restaurantId, dishName, category, name, kind, weight, claim } = req.body ?? {};
+  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId) : undefined;
+  if (
+    !restaurant ||
+    typeof dishName !== 'string' ||
+    !dishName.trim() ||
+    typeof category !== 'string' ||
+    !category.trim() ||
+    typeof name !== 'string' ||
+    !name.trim() ||
+    !VALID_KINDS.has(kind) ||
+    !VALID_WEIGHTS.has(weight)
+  ) {
+    res.status(400).json({ error: 'restaurantId_dishName_category_name_kind_weight_required' });
+    return;
+  }
+  const source: Source = { name: name.trim(), kind, weight, capturedAt: new Date().toISOString(), ...(claim ? { claim: String(claim) } : {}) };
+  const existing = findDishByRestaurantAndName(restaurant.id, dishName.trim());
+  const dish = existing ? addSourceToDish(existing.id, source)! : createDish({ name: dishName.trim(), category: category.trim(), restaurantId: restaurant.id, source });
+  res.status(existing ? 200 : 201).json(dish);
+});
+
+/** SPEC-025 extension of SPEC-019: what a regular user's Nota/Foto/Voz named as a specific dish, awaiting operator review. */
+adminRouter.get('/admin/pending-dish-mentions', (_req, res) => {
+  const catalog = getCatalog();
+  const pending = getPendingDishMentions()
+    .map((d) => {
+      const restaurant = catalog.find((r) => r.id === d.restaurantId);
+      return restaurant ? { ...d, restaurantName: restaurant.name } : null;
+    })
+    .filter((d): d is NonNullable<typeof d> => d !== null);
+  res.json(pending);
+});
+
+/** Confirm: same "Un usuario" / community / weak convention as SPEC-019's restaurant-level contribution confirm — never a higher weight just because an operator approved fast. */
+adminRouter.post('/admin/pending-dish-mentions/:id/confirm', (req, res) => {
+  const pending = getPendingDishMentionById(req.params.id);
+  if (!pending || pending.status !== 'pending') {
+    res.status(404).json({ error: 'pending_dish_mention_not_found' });
+    return;
+  }
+  const source: Source = { name: 'Un usuario', kind: 'community', weight: 'weak', capturedAt: new Date().toISOString(), claim: pending.claim };
+  const existing = findDishByRestaurantAndName(pending.restaurantId, pending.dishName);
+  const dish = existing
+    ? addSourceToDish(existing.id, source)
+    : createDish({ name: pending.dishName, category: pending.category, restaurantId: pending.restaurantId, source });
+  if (!dish) {
+    res.status(404).json({ error: 'restaurant_not_found' });
+    return;
+  }
+  markDishMentionStatus(pending.id, 'confirmed');
+  res.json(dish);
+});
+
+adminRouter.post('/admin/pending-dish-mentions/:id/reject', (req, res) => {
+  const updated = markDishMentionStatus(req.params.id, 'rejected');
+  if (!updated) {
+    res.status(404).json({ error: 'pending_dish_mention_not_found' });
+    return;
+  }
+  res.json(updated);
 });
 
 /**
@@ -297,6 +426,30 @@ adminRouter.get('/admin/google-places/search', async (req, res, next) => {
   }
 });
 
+/**
+ * Generic Details fetch, not bound to a restaurant — same underlying call as link-google, just
+ * returning the raw place instead of patching a restaurant. Used wherever an operator picks a
+ * real venue and needs its position/address directly (e.g. an event's venue) rather than linking
+ * a restaurant record to it.
+ */
+adminRouter.get('/admin/google-places/details', async (req, res, next) => {
+  try {
+    const placeId = typeof req.query.placeId === 'string' ? req.query.placeId.trim() : '';
+    if (!placeId) {
+      res.status(400).json({ error: 'placeId_required' });
+      return;
+    }
+    const details = await getPlaceDetails(placeId);
+    res.json({ placeId: details.placeId, name: details.name, address: details.address, position: details.position });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'google_places_not_configured') {
+      res.status(503).json({ error: 'google_places_not_configured' });
+      return;
+    }
+    next(err);
+  }
+});
+
 /** Operator picked a real candidate from search — one Details fetch prefills address/position/openHours and stores the id for future refreshes. */
 adminRouter.post('/admin/restaurants/:id/link-google', async (req, res, next) => {
   try {
@@ -370,13 +523,19 @@ adminRouter.get('/admin/events', (_req, res) => {
 });
 
 adminRouter.post('/admin/events', (req, res) => {
-  const { name, whenAt, position } = req.body ?? {};
+  const { name, whenAt, position, address, googlePlaceId } = req.body ?? {};
   const validPosition = position && typeof position.lat === 'number' && typeof position.lng === 'number';
   if (typeof name !== 'string' || !name.trim() || typeof whenAt !== 'string' || Number.isNaN(Date.parse(whenAt)) || !validPosition) {
     res.status(400).json({ error: 'name_whenAt_position_required' });
     return;
   }
-  const created = createEvent({ name: name.trim(), whenAt, position });
+  const created = createEvent({
+    name: name.trim(),
+    whenAt,
+    position,
+    ...(typeof address === 'string' && address.trim() ? { address: address.trim() } : {}),
+    ...(typeof googlePlaceId === 'string' && googlePlaceId.trim() ? { googlePlaceId: googlePlaceId.trim() } : {}),
+  });
   res.status(201).json(created);
 });
 

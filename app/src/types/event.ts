@@ -9,4 +9,7 @@ export interface MapEvent {
   /** Real ISO datetime the event happens (SPEC-016 "Eventos" scheduling). */
   whenAt: string;
   position: GeoPoint;
+  /** Real street address from Google Places, captured once when the operator picked the venue. */
+  address?: string;
+  googlePlaceId?: string;
 }

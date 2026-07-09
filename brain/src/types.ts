@@ -54,6 +54,18 @@ export interface Source {
   claim?: string;
 }
 
+/** SPEC-025: a plate is its own sourceable entity, scoped to the one restaurant a given Source's claim is actually about — never a string loose inside `Restaurant.order`. */
+export interface Dish {
+  id: string;
+  name: string;
+  /** Groups dishes across restaurants for "¿dónde está el mejor X?" comparisons (e.g. "torta vasca", "chirashi"). */
+  category: string;
+  restaurantId: string;
+  sources: Source[];
+  trust: TrustLevel;
+  trustRationale: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -99,6 +111,10 @@ export interface MapEvent {
   /** Real ISO datetime the event happens — the actual signal the SPEC-016 "Eventos" push trigger schedules against. */
   whenAt: string;
   position: GeoPoint;
+  /** Real street address from Google Places, captured once when the operator picks the venue — never typed by hand. */
+  address?: string;
+  /** The Google Place the event's venue resolved to — kept only as provenance, never re-fetched on a schedule. */
+  googlePlaceId?: string;
 }
 
 export interface User {

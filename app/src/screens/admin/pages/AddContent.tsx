@@ -12,6 +12,7 @@ export function AddContent() {
   const [analysis, setAnalysis] = useState<CuratorAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [confirmedIdx, setConfirmedIdx] = useState<Set<number>>(new Set());
+  const [confirmedDishIdx, setConfirmedDishIdx] = useState<Set<number>>(new Set());
 
   const [newName, setNewName] = useState('');
   const [newCuisine, setNewCuisine] = useState('');
@@ -26,6 +27,7 @@ export function AddContent() {
     setAnalyzing(true);
     setAnalysis(null);
     setConfirmedIdx(new Set());
+    setConfirmedDishIdx(new Set());
     try {
       setAnalysis(await adminClient.analyze(curatorText.trim()));
     } finally {
@@ -46,6 +48,23 @@ export function AddContent() {
       claim: match.claim,
     });
     setConfirmedIdx((prev) => new Set(prev).add(index));
+    loadAll();
+  };
+
+  // SPEC-025: same find-or-create discipline — confirming a dish the curator text named for a real, matched restaurant.
+  const confirmDishMatch = async (index: number) => {
+    if (!analysis || !curatorHandle.trim()) return;
+    const match = analysis.dishMatches[index];
+    await adminClient.confirmDishMatch({
+      restaurantId: match.restaurantId,
+      dishName: match.dishName,
+      category: match.category,
+      name: curatorHandle.trim(),
+      kind: 'curator',
+      weight: match.suggestedWeight,
+      claim: match.claim,
+    });
+    setConfirmedDishIdx((prev) => new Set(prev).add(index));
     loadAll();
   };
 
@@ -127,6 +146,27 @@ export function AddContent() {
                 </Button>
               </div>
             ))}
+            {analysis.dishMatches.map((m, i) => (
+              <div className={`cj-admin-match ${confirmedDishIdx.has(i) ? 'is-confirmed' : ''}`} key={`dish-${m.restaurantId}-${m.dishName}-${i}`}>
+                <div className="cj-admin-match__head">
+                  <b>
+                    {m.dishName} — {m.restaurantName}
+                  </b>
+                  <Badge tone="brand">{m.suggestedWeight}</Badge>
+                </div>
+                <p>
+                  {m.category} · {m.claim}
+                </p>
+                <Button
+                  size="sm"
+                  variant={confirmedDishIdx.has(i) ? 'secondary' : 'primary'}
+                  disabled={confirmedDishIdx.has(i) || !curatorHandle.trim()}
+                  onClick={() => confirmDishMatch(i)}
+                >
+                  {confirmedDishIdx.has(i) ? 'Agregado' : 'Confirmar y agregar como plato'}
+                </Button>
+              </div>
+            ))}
             {analysis.newRestaurants.map((nr, i) => (
               <div className="cj-admin-match" key={`new-${nr.name}-${i}`}>
                 <div className="cj-admin-match__head">
@@ -139,7 +179,7 @@ export function AddContent() {
                 </Button>
               </div>
             ))}
-            {analysis.matches.length === 0 && analysis.newRestaurants.length === 0 && (
+            {analysis.matches.length === 0 && analysis.newRestaurants.length === 0 && analysis.dishMatches.length === 0 && (
               <p className="cj-admin-lead">No se identificó ningún restaurante real en el texto.</p>
             )}
           </div>

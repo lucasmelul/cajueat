@@ -3,7 +3,7 @@ import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
-import { enqueueNewPlaceSuggestion, enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
+import { enqueueNewPlaceSuggestion, enqueuePendingContribution, enqueuePendingDishMention } from '../moderation/pendingContributionsStore.js';
 
 export const captureRouter = Router();
 
@@ -49,6 +49,10 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
       // admin trace, generic points only. Now it queues as a reviewable new-place suggestion.
       enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: contributionSource });
     }
+    // SPEC-025: a specific dish mention, always tied to an already-real restaurant — queued the same way.
+    if (restaurant && extraction.dish?.name) {
+      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: contributionSource });
+    }
     res.json({ learned, pointsAwarded: POINTS });
     return;
   }
@@ -67,6 +71,9 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
       enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'photo' });
     } else if (extraction.newPlace?.name) {
       enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'photo' });
+    }
+    if (restaurant && extraction.dish?.name) {
+      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'photo' });
     }
     res.json({ learned, pointsAwarded: POINTS });
     return;

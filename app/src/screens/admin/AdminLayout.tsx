@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, Inbox, LayoutDashboard, LogOut, MapPin, Megaphone, PlusCircle, QrCode, Radar, ShieldCheck } from 'lucide-react';
+import { CalendarDays, ChevronLeft, Inbox, LayoutDashboard, LogOut, MapPin, Megaphone, PlusCircle, QrCode, Radar, ShieldCheck, UtensilsCrossed } from 'lucide-react';
 import { Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorRecord, NewPlaceSuggestion, PendingContribution } from '../../lib/admin/adminClient';
-import type { MapEvent, Restaurant } from '../../types';
+import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention } from '../../lib/admin/adminClient';
+import type { Dish, MapEvent, Restaurant } from '../../types';
 import { AdminDataContext } from './AdminDataContext';
 import './AdminLayout.css';
 import './Admin.css';
@@ -12,6 +12,7 @@ import './Admin.css';
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/catalogo', label: 'Catálogo', icon: MapPin, end: false },
+  { to: '/admin/platos', label: 'Platos', icon: UtensilsCrossed, end: false },
   { to: '/admin/radar', label: 'Radar', icon: Radar, end: false },
   { to: '/admin/moderacion', label: 'Moderación', icon: Inbox, end: false },
   { to: '/admin/curadores', label: 'Curadores', icon: ShieldCheck, end: false },
@@ -37,22 +38,28 @@ export function AdminLayout() {
   const [curators, setCurators] = useState<CuratorRecord[]>([]);
   const [pendingContributions, setPendingContributions] = useState<PendingContribution[]>([]);
   const [pendingNewPlaces, setPendingNewPlaces] = useState<NewPlaceSuggestion[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [pendingDishMentions, setPendingDishMentions] = useState<PendingDishMention[]>([]);
   const [events, setEvents] = useState<MapEvent[]>([]);
 
   const loadAll = async () => {
     setGateLoading(true);
     try {
-      const [data, curatorData, pending, newPlaces, evts] = await Promise.all([
+      const [data, curatorData, pending, newPlaces, dishData, pendingDishes, evts] = await Promise.all([
         adminClient.getCatalog(),
         adminClient.getCurators(),
         adminClient.getPendingContributions(),
         adminClient.getPendingNewPlaces(),
+        adminClient.getDishes(),
+        adminClient.getPendingDishMentions(),
         adminClient.getEvents(),
       ]);
       setCatalog(data);
       setCurators(curatorData);
       setPendingContributions(pending);
       setPendingNewPlaces(newPlaces);
+      setDishes(dishData);
+      setPendingDishMentions(pendingDishes);
       setEvents(evts);
       setAuthed(true);
       setGateError('');
@@ -107,7 +114,21 @@ export function AdminLayout() {
 
   return (
     <AdminDataContext.Provider
-      value={{ catalog, curators, pendingContributions, pendingNewPlaces, events, loadAll, setPendingContributions, setPendingNewPlaces, setEvents }}
+      value={{
+        catalog,
+        curators,
+        pendingContributions,
+        pendingNewPlaces,
+        dishes,
+        pendingDishMentions,
+        events,
+        loadAll,
+        setPendingContributions,
+        setPendingNewPlaces,
+        setDishes,
+        setPendingDishMentions,
+        setEvents,
+      }}
     >
       <div className="cj-admin-app">
         <nav className="cj-admin-nav">

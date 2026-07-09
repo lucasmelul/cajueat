@@ -8,6 +8,7 @@ import { Onboarding } from './screens/onboarding/Onboarding';
 import { AdminLayout } from './screens/admin/AdminLayout';
 import { Dashboard } from './screens/admin/pages/Dashboard';
 import { Catalog } from './screens/admin/pages/Catalog';
+import { Dishes } from './screens/admin/pages/Dishes';
 import { StaleRadar } from './screens/admin/pages/StaleRadar';
 import { Moderation } from './screens/admin/pages/Moderation';
 import { Curators } from './screens/admin/pages/Curators';
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Dashboard /> },
           { path: 'catalogo', element: <Catalog /> },
+          { path: 'platos', element: <Dishes /> },
           { path: 'radar', element: <StaleRadar /> },
           { path: 'moderacion', element: <Moderation /> },
           { path: 'curadores', element: <Curators /> },
