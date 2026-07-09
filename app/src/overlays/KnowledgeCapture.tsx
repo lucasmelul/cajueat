@@ -91,7 +91,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
         setErrorMessage(
           err instanceof BrainSyncRequiredError
-            ? 'Llegaste al límite de aportes de hoy sin un Brain guardado. Sincronizalo desde tu perfil para seguir sin límite.'
+            ? 'Llegaste al límite de aportes de hoy sin un perfil guardado. Sincronizalo desde tu perfil para seguir sin límite.'
             : 'Algo falló de este lado. Probá de nuevo en un momento.',
         );
         setStage('error');
@@ -147,7 +147,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
           <>
             <div className="cj-ov-head">
               <h2>Aportar conocimiento</h2>
-              <p>Compartí lo que sepas y el Brain aprende. Menos de 30 segundos.</p>
+              <p>Compartí lo que sepas y Lugarcito aprende. Menos de 30 segundos.</p>
             </div>
             <div className="cj-cap-grid">
               <button className="cj-cap" onClick={() => setStage('voiceInput')}>
@@ -192,8 +192,8 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         {stage === 'noteInput' && (
           <div className="cj-cap-note">
             <div className="cj-ov-head">
-              <h2>Contale al Brain</h2>
-              <p>Escribí lo que sepas de un lugar — el Brain lo entiende y lo suma.</p>
+              <h2>Contale a Lugarcito</h2>
+              <p>Escribí lo que sepas de un lugar — Lugarcito lo entiende y lo suma.</p>
             </div>
             <textarea
               autoFocus
@@ -210,8 +210,8 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         {stage === 'photoInput' && (
           <div className="cj-cap-photo">
             <div className="cj-ov-head">
-              <h2>Mostrale al Brain</h2>
-              <p>Un menú, un plato, un ticket — el Brain lee lo que realmente se ve.</p>
+              <h2>Mostrale a Lugarcito</h2>
+              <p>Un menú, un plato, un ticket — Lugarcito lee lo que realmente se ve.</p>
             </div>
             {photoPreview ? (
               <img className="cj-cap-photo__preview" src={photoPreview} alt="Foto a analizar" />
@@ -245,7 +245,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         {stage === 'voiceInput' && (
           <div className="cj-cap-voice">
             <div className="cj-ov-head">
-              <h2>Contale al Brain</h2>
+              <h2>Contale a Lugarcito</h2>
               <p>{speechSupported ? 'Grabá y corregí antes de enviar — la transcripción no es perfecta.' : 'Tu navegador no transcribe automático — escribilo directo.'}</p>
             </div>
             {speechSupported && (
@@ -267,7 +267,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         {stage === 'analyzing' && (
           <div className="cj-cap-analyze">
             <BrainMark size={52} radius={16} thinking />
-            <h2>El Brain está analizando…</h2>
+            <h2>Lugarcito está analizando…</h2>
             <p>Extrayendo restaurantes, platos y señales.</p>
             <div className="cj-cap-steps">
               {ANALYSIS_STEPS.map((s, i) => {
@@ -287,7 +287,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             <div className="cj-cap-done__seed">
               <BrainMark size={52} radius={16} />
             </div>
-            <h2>¡Gracias! El Brain aprendió algo nuevo.</h2>
+            <h2>¡Gracias! Lugarcito aprendió algo nuevo.</h2>
             <div className="cj-cap-learn">
               <Badge tone="over">Lo que guardé</Badge>
               <p>{learned}</p>

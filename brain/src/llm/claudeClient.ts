@@ -60,7 +60,7 @@ export interface InterpretedQuery {
   chips: string[];
 }
 
-const QUERY_SYSTEM_PROMPT = `Sos el Brain de CajuEat, un concierge gastronómico. Interpretás lo que pide el usuario y elegís,
+const QUERY_SYSTEM_PROMPT = `Sos Lugarcito, un concierge gastronómico. Interpretás lo que pide el usuario y elegís,
 ÚNICAMENTE de la lista de restaurantes reales que te paso, cuáles recomendar. Nunca inventes un restaurante que no
 esté en la lista. Si nada calza bien, elegí la opción más cercana y decilo con honestidad en la respuesta.
 
@@ -139,7 +139,7 @@ export async function interpretQuery(
   return { ...parsed, restaurantIds: parsed.restaurantIds.filter((id) => knownIds.has(id)) };
 }
 
-const EXPLAIN_SYSTEM_PROMPT = `Sos el Brain de CajuEat. Te doy una recomendación y las señales reales que la sostienen.
+const EXPLAIN_SYSTEM_PROMPT = `Sos Lugarcito. Te doy una recomendación y las señales reales que la sostienen.
 Escribí UNA sola oración corta y natural explicando por qué la elegiste, usando solo esas señales — nunca inventes
 datos que no te di. Español, tono cercano, sin adornos de marketing.`;
 
@@ -208,7 +208,7 @@ export interface NoteExtraction {
   dish: DishMention | null;
 }
 
-const NOTE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te escribió una nota libre contando algo que
+const NOTE_SYSTEM_PROMPT = `Sos Lugarcito. El usuario te escribió una nota libre contando algo que
 vivió o sabe sobre un lugar. Tu trabajo: identificar a cuál restaurante se refiere. Primero buscá si es alguno de
 la lista de restaurantes reales que te paso — si es así, devolvé su restaurantId y newPlace null. Si la nota
 claramente habla de un lugar real que NO está en esa lista (un lugar nuevo que el usuario está recomendando),
@@ -257,7 +257,7 @@ export async function extractNoteKnowledge(input: { text: string; catalog: Resta
   return { ...parsed, restaurantId, newPlace: restaurantId ? null : parsed.newPlace, dish: restaurantId ? parsed.dish : null };
 }
 
-const CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en medio de una conversación normal — la
+const CONVERSATION_KNOWLEDGE_SYSTEM_PROMPT = `Sos Lugarcito, en medio de una conversación normal — la
 mayoría de los mensajes son preguntas o pedidos de recomendación, NO aportes de conocimiento nuevo. Tu única tarea
 acá es detectar el caso excepcional: que el usuario, de paso, te haya contado algo real que vivió o sabe sobre un
 lugar (una opinión, una experiencia, una corrección, un dato concreto, o una recomendación de un lugar nuevo) —
@@ -311,7 +311,7 @@ export interface CompareResult {
   whenToChooseOther: string | null;
 }
 
-const COMPARE_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario ya redujo sus opciones a 2 o 3 restaurantes reales
+const COMPARE_SYSTEM_PROMPT = `Sos Lugarcito. El usuario ya redujo sus opciones a 2 o 3 restaurantes reales
 y necesita ayuda para elegir — no queremos una tabla comparativa, queremos criterio. Siempre das una conclusión.
 Si hay una opción claramente mejor para lo que pide (o para el contexto más probable si no especifica), elegila
 como recomendedId y explicá por qué usando solo comida/ambiente/precio/personalidad/confianza reales — nunca
@@ -366,7 +366,7 @@ export interface PhotoExtraction {
   dish: DishMention | null;
 }
 
-const PHOTO_SYSTEM_PROMPT = `Sos el Brain de CajuEat. El usuario te mandó una foto (menú, plato, ticket, carta de
+const PHOTO_SYSTEM_PROMPT = `Sos Lugarcito. El usuario te mandó una foto (menú, plato, ticket, carta de
 vinos, fachada) sobre un lugar. Tu trabajo: identificar a cuál restaurante se refiere. Primero buscá si es alguno
 de la lista de restaurantes reales que te paso — si es así, devolvé su restaurantId y newPlace null. Si la foto
 deja ver claramente el nombre de un lugar real que NO está en esa lista (ej. un cartel, el encabezado de un menú),
@@ -455,7 +455,7 @@ export interface CuratorAnalysis {
 }
 
 /** SPEC-018 Admin CMS: an operator pastes real curator/Reel text they already read — this never reads the platform itself. */
-const CURATOR_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en modo operador (Admin CMS). Un miembro del equipo pegó texto
+const CURATOR_SYSTEM_PROMPT = `Sos el Brain de Lugarcito, en modo operador (Admin CMS). Un miembro del equipo pegó texto
 real de un curador o post (caption, comentario, lista) que ya leyó — vos nunca leés la fuente original, solo este texto.
 Tu trabajo: identificar todos los lugares reales que el texto menciona. Para cada uno, primero buscá si está en la
 lista de restaurantes reales que te paso — si es así, va en matches, con la afirmación concreta (claim) que el texto
@@ -573,7 +573,7 @@ export interface EventExtraction {
   claim: string;
 }
 
-const EVENTS_SYSTEM_PROMPT = `Sos el Brain de CajuEat, en modo operador (Admin CMS). Un miembro del equipo subió una
+const EVENTS_SYSTEM_PROMPT = `Sos el Brain de Lugarcito, en modo operador (Admin CMS). Un miembro del equipo subió una
 captura real (historia de Instagram, flyer, cronograma) que puede contener uno o más eventos gastronómicos. Tu
 trabajo: por cada evento que la imagen REALMENTE muestra, devolver name (el nombre tal cual aparece), whenRaw (el
 texto de fecha/hora tal cual está escrito, ej. "Sábado 12/7, 19hs" o "Este finde" — nunca lo conviertas vos a una

@@ -1,38 +1,45 @@
 import React from 'react';
 
-const STYLE_ID = 'caju-wordmark-styles';
+const STYLE_ID = 'lugarcito-wordmark-styles';
 function ensureStyles() {
   if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
   const el = document.createElement('style');
   el.id = STYLE_ID;
   el.textContent = `
-  .caju-wm {
+  .lg-wm {
     display: inline-flex; align-items: baseline; gap: 0;
     font-family: var(--font-display);
-    font-weight: 700; letter-spacing: -0.035em; line-height: 1;
+    font-weight: 700; letter-spacing: -0.03em; line-height: 1;
     font-feature-settings: "ss01" 1; white-space: nowrap; user-select: none;
   }
-  .caju-wm__a { color: var(--ink-900); }
-  .caju-wm__b { color: var(--caju-500); }
-  .caju-wm__seed { align-self: flex-start; width: .42em; height: .42em; margin-left: .12em;
-    margin-top: .04em; flex-shrink: 0; }
-  .caju-wm__seed path { fill: var(--caju-500); }
+  .lg-wm__a { color: var(--ink-900); }
+  .lg-wm__b { color: var(--caju-500); }
+  .lg-wm__mark { align-self: flex-start; width: .5em; height: .5em; margin-left: .1em;
+    margin-top: .03em; flex-shrink: 0; overflow: visible; }
+  .lg-wm__mark .lg-pin { stroke: var(--ink-900); }
+  .lg-wm__mark .lg-cup { fill: var(--caju-500); }
+  .lg-wm__mark .lg-handle { stroke: var(--caju-500); }
 
-  .caju-wm--inverse .caju-wm__a { color: #fff; }
-  .caju-wm--inverse .caju-wm__b { color: var(--caju-300); }
-  .caju-wm--inverse .caju-wm__seed path { fill: var(--caju-300); }
+  .lg-wm--inverse .lg-wm__a { color: #fff; }
+  .lg-wm--inverse .lg-wm__b { color: var(--caju-300); }
+  .lg-wm--inverse .lg-wm__mark .lg-pin { stroke: #fff; }
+  .lg-wm--inverse .lg-wm__mark .lg-cup { fill: var(--caju-300); }
+  .lg-wm--inverse .lg-wm__mark .lg-handle { stroke: var(--caju-300); }
 
-  .caju-wm--mono .caju-wm__a,
-  .caju-wm--mono .caju-wm__b { color: currentColor; }
-  .caju-wm--mono .caju-wm__seed path { fill: currentColor; }
+  .lg-wm--mono .lg-wm__a,
+  .lg-wm--mono .lg-wm__b { color: currentColor; }
+  .lg-wm--mono .lg-wm__mark .lg-pin { stroke: currentColor; }
+  .lg-wm--mono .lg-wm__mark .lg-cup { fill: currentColor; }
+  .lg-wm--mono .lg-wm__mark .lg-handle { stroke: currentColor; }
   `;
   document.head.appendChild(el);
 }
 
 /**
- * CajuEat wordmark — the typographic brand lockup (no logo mark).
- * Set in Bricolage Grotesque: "Caju" in ink, "Eat" in caju, with a
- * small caju seed accent. This IS the identity until a real mark exists.
+ * Lugarcito wordmark — the typographic brand lockup (no logo mark).
+ * Set in Bricolage Grotesque: "Lugar" in ink, "cito" in caju, with a
+ * map-pin + coffee-cup glyph — the gastronomic "little place" mark.
+ * This IS the identity until a real mark exists.
  */
 export function Wordmark({
   size = 28,
@@ -44,15 +51,19 @@ export function Wordmark({
 }) {
   ensureStyles();
   const Tag = as;
-  const cls = ['caju-wm', tone !== 'ink' ? `caju-wm--${tone}` : '', className]
+  const cls = ['lg-wm', tone !== 'ink' ? `lg-wm--${tone}` : '', className]
     .filter(Boolean).join(' ');
   return (
-    <Tag className={cls} style={{ fontSize: size }} aria-label="CajuEat" role="img" {...rest}>
-      <span className="caju-wm__a">Caju</span>
-      <span className="caju-wm__b">Eat</span>
+    <Tag className={cls} style={{ fontSize: size }} aria-label="Lugarcito" role="img" {...rest}>
+      <span className="lg-wm__a">Lugar</span>
+      <span className="lg-wm__b">cito</span>
       {accent && (
-        <svg className="caju-wm__seed" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2.5c.5 3.7 2.3 5.5 6 6-3.7.5-5.5 2.3-6 6-.5-3.7-2.3-5.5-6-6 3.7-.5 5.5-2.3 6-6Z"/>
+        <svg className="lg-wm__mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path className="lg-pin" d="M12 21S5 14.8 5 9.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"
+                fill="none" strokeWidth="1.6" strokeLinejoin="round" />
+          <rect className="lg-cup" x="8.3" y="7.6" width="6.4" height="4.6" rx="1.3" />
+          <path className="lg-handle" d="M14.9 8.6c1.1 0 1.9.8 1.9 1.8s-.8 1.8-1.9 1.8"
+                fill="none" strokeWidth="1.1" />
         </svg>
       )}
     </Tag>

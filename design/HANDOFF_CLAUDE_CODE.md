@@ -1,7 +1,7 @@
-# Handoff → Claude Code · CajuEat PWA
+# Handoff → Claude Code · Lugarcito PWA
 
 ## Overview
-This bundle is the **CajuEat design system + an interactive PWA prototype** for CajuEat — an AI-native gastronomic discovery product for Buenos Aires. The product thesis: **"CajuEat no muestra listas. Ayuda a decidir."** The PWA is the first client of the **Brain** (a separate gastronomic intelligence service). Everything here implements the product defined in the source docs (`docs/` in the `lucasmelul/cajueat` repo — Context Packs, PRDs, SPECs).
+This bundle is the **Lugarcito design system + an interactive PWA prototype** — an AI-native gastronomic discovery product for Buenos Aires (source repo/codename: `cajueat`). The product thesis: **"Lugarcito no muestra listas. Ayuda a decidir."** The PWA is the first client of the **Brain** (a separate gastronomic intelligence service). Everything here implements the product defined in the source docs (`docs/` in the `lucasmelul/cajueat` repo — Context Packs, PRDs, SPECs).
 
 Build target: a **mobile-first PWA** (installable, offline-capable, feels native, 60fps) whose Home is a full-screen **Living Map**.
 
@@ -72,8 +72,8 @@ Weights: Geist 400/500/600; Newsreader 400/500; Bricolage 700. Sentence case eve
 ## Screens / Views
 Detailed layout & component specs live in `COMPONENT_LIBRARY.md`, `INFORMATION_ARCHITECTURE.md` and `docs/specs/`. Summary:
 
-1. **Living Map (Home)** — `ui_kits/pwa/LivingMap.jsx` · SPEC-001. Full-screen map; top: CajuEat wordmark + Caju Points + avatar; location pill + horizontally-scrolling context chips; typed pins (only the Brain's main pick is labelled, the rest are dots; recommended pin has a live pulse); floating layer/locate buttons; bottom: one Brain Card (or a peek RestaurantCard when a pin is selected) above the always-present Prompt Bar; tab bar. **The map is never empty and always shows a recommendation.**
-2. **Conversation** — `Conversation.jsx` · SPEC-002. Chat as navigation. Header = Brain identity ("Caju · Concierge gastronómico"). Empty-state greeting (serif) + starter chips. Brain replies **on-canvas** (no bubble) with text + rich RestaurantCards + follow-up chips; user speaks in a compact ink bubble; animated thinking indicator. Short, actionable, with criterio — never blog-length.
+1. **Living Map (Home)** — `ui_kits/pwa/LivingMap.jsx` · SPEC-001. Full-screen map; top: Lugarcito wordmark + points + avatar; location pill + a single **Filtros** button (opens a multi-select AND filter sheet — replaces the old row of always-visible pills); typed pins (only the Brain's main pick is labelled, the rest are dots; recommended pin has a live pulse); floating layer/locate buttons; bottom: one Brain Card (or a peek RestaurantCard when a pin is selected) above the always-present Prompt Bar; tab bar. **The map is never empty and always shows a recommendation.**
+2. **Conversation** — `Conversation.jsx` · SPEC-002. Chat as navigation. Header = Brain identity ("Lugarcito · Concierge gastronómico"). Empty-state greeting (serif) + starter chips. Brain replies **on-canvas** (no bubble) with text + rich RestaurantCards + follow-up chips; user speaks in a compact ink bubble; animated thinking indicator. Short, actionable, with criterio — never blog-length.
 3. **Restaurant Experience** — `Restaurant.jsx` · SPEC-003. Editorial ficha (not a directory). Order: hero (½ screen: image, name in serif, cuisine, TrustMeter, price) → Brain Summary (serif, ≤3 párrafos) → single primary CTA (Cómo llegar) → Quick Facts (≤6) → Qué pedir (por perfil) → Personality → Brain Tips → ¿Por qué? (weighted SourceChips) → Ideal / No ideal → Cerca de acá (nearby) → Ask Caju. Sticky CTA bar. **All decisive info before the first scroll. No stars/review counts.**
 4. **Knowledge Capture** — `KnowledgeCapture.jsx` · PRD-004. Overlay sheet: voz/foto/reel-link/nota → Brain analyzes step-by-step → shows what it learned (serif) + Caju Points. < 30s, no forms.
 5. **Post-visit Feedback** — `Feedback.jsx` · CP-009. Overlay: 3–4 chip-answer questions with progress + per-answer confirmation → what the Brain learned about you + Caju Points. Not a review.

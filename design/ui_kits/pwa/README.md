@@ -1,6 +1,6 @@
-# CajuEat PWA — UI Kit
+# Lugarcito PWA — UI Kit
 
-Interactive, click-through recreation of the CajuEat mobile PWA, built entirely from the design-system components. It is a *recreation of the intended product* (grounded in `/docs` SPECs), not a new design.
+Interactive, click-through recreation of the Lugarcito mobile PWA, built entirely from the design-system components. It is a *recreation of the intended product* (grounded in `/docs` SPECs), not a new design.
 
 Open **`index.html`** for the full prototype: an iPhone frame you can actually use.
 

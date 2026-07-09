@@ -1,6 +1,6 @@
 # USER_FLOWS.md
 
-> Flujos clave de la PWA de CajuEat. Cada flujo respeta las decisiones de producto de `/docs`.
+> Flujos clave de la PWA de Lugarcito. Cada flujo respeta las decisiones de producto de `/docs`.
 
 ---
 

@@ -55,7 +55,7 @@ export function Conversation() {
       // SPEC-013 abuse gate: anonymous daily limit reached — nudge to sync instead of a silent failure.
       const message =
         err instanceof BrainSyncRequiredError
-          ? 'Llegaste al límite de conversaciones de hoy sin un Brain guardado. Sincronizalo desde tu perfil para seguir sin límite.'
+          ? 'Llegaste al límite de conversaciones de hoy sin un perfil guardado. Sincronizalo desde tu perfil para seguir sin límite.'
           : 'Algo falló de este lado. Probá de nuevo en un momento.';
       setTurns((t) =>
         streaming
@@ -105,7 +105,7 @@ export function Conversation() {
         <div className="cj-convo__title">
           <BrainMark size={22} radius={7} />
           <div className="cj-convo__titletext">
-            <b>Caju</b>
+            <b>Lugarcito</b>
             <span>Concierge gastronómico</span>
           </div>
         </div>
@@ -119,7 +119,7 @@ export function Conversation() {
           <div className="cj-convo__empty">
             <BrainMark size={44} radius={14} />
             <p className="cj-convo__hi">
-              Soy Caju.
+              Soy Lugarcito.
               <br />
               Contame qué se te antoja y te ayudo a decidir.
             </p>
@@ -160,7 +160,7 @@ export function Conversation() {
             {t.learnedAbout && (
               <div className="cj-turn__learned">
                 <Badge tone="brand" dot>
-                  Le enseñaste algo a Caju sobre {t.learnedAbout}
+                  Le enseñaste algo a Lugarcito sobre {t.learnedAbout}
                 </Badge>
               </div>
             )}

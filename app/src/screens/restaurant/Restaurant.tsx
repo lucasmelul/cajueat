@@ -249,7 +249,7 @@ export function Restaurant() {
 
           {/* Brain tips */}
           <section className="cj-sec">
-            <Badge tone="over">Brain Tips</Badge>
+            <Badge tone="over">Tips de Lugarcito</Badge>
             <div className="cj-tips">
               {restaurant.tips.map((t) => (
                 <div className="cj-tip" key={t}>
@@ -322,7 +322,7 @@ export function Restaurant() {
           <section className="cj-sec">
             <button className="cj-ask" onClick={askCaju}>
               <BrainMark size={26} radius={8} />
-              <span>Preguntale a Caju sobre este lugar</span>
+              <span>Preguntale a Lugarcito sobre este lugar</span>
               <ArrowRight size={18} />
             </button>
           </section>

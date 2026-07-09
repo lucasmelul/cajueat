@@ -2,7 +2,7 @@
 
 ```jsx
 <BrainCard
-  eyebrow="CAJU · RECOMENDACIÓN"
+  eyebrow="LUGARCITO · RECOMENDACIÓN"
   message={<>A dos cuadras hay una <b>barra de sushi</b> que encaja con lo que te gustó anoche.</>}
   sub="Basado en tu última visita a Osaka."
   actions={<><Button size="sm" variant="primary">Ver</Button><Button size="sm" variant="ghost">No ahora</Button></>}

@@ -55,6 +55,6 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 
 const port = Number(process.env.PORT) || 8787;
 app.listen(port, () => {
-  console.log(`CajuEat Brain listening on http://localhost:${port}`);
+  console.log(`Lugarcito Brain listening on http://localhost:${port}`);
   startNotificationScheduler();
 });

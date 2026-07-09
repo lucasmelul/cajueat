@@ -1,4 +1,5 @@
 @import '../../styles/skeleton.css';
+@import '../../styles/overlay.css';
 
 .cj-screen {
   position: absolute;
@@ -37,7 +38,7 @@
   cursor: pointer;
 }
 
-.cj-chips {
+.cj-filterbar {
   position: absolute;
   top: 96px;
   left: 0;
@@ -45,15 +46,7 @@
   z-index: 20;
   display: flex;
   gap: 8px;
-  padding: 4px 14px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.cj-chips::-webkit-scrollbar {
-  display: none;
-}
-.cj-chips--cuisine {
-  top: 140px;
+  padding: 0 14px;
 }
 .cj-loc {
   display: inline-flex;
@@ -73,13 +66,79 @@
   cursor: pointer;
   flex-shrink: 0;
 }
-.cj-chips__div {
-  width: 1px;
-  height: 20px;
-  background: var(--line-strong);
-  align-self: center;
-  flex-shrink: 0;
-  margin: 0 2px;
+.cj-filterbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px 0 13px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 0;
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-800);
+  cursor: pointer;
+  transition: background var(--motion-control), color var(--motion-control);
+}
+.cj-filterbtn.on {
+  background: var(--ink-900);
+  color: #fff;
+}
+.cj-filterbtn__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--r-full);
+  background: var(--caju-500);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Filters sheet — multi-group, draft→apply on "Ver lugares" */
+.cj-fov__sheet {
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+}
+.cj-fov__body {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.cj-fov__body::-webkit-scrollbar {
+  display: none;
+}
+.cj-fov__group {
+  margin-bottom: 18px;
+}
+.cj-fov__glabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 10px;
+}
+.cj-fov__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cj-fov__foot {
+  display: flex;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .cj-map-fabs {

@@ -6,7 +6,7 @@ export interface BrainMarkProps {
   thinking?: boolean;
 }
 
-/** CajuEat's identity motif — a sparkle/seed mark for the Brain. No logo exists; this IS it. */
+/** Lugarcito's identity motif — a sparkle/seed mark for the Brain. No logo exists; this IS it. */
 export function BrainMark({ size = 38, thinking = false, radius = 12 }: BrainMarkProps) {
   return (
     <div className={`caju-mark${thinking ? ' caju-mark--thinking' : ''}`} style={{ width: size, height: size, borderRadius: radius }}>

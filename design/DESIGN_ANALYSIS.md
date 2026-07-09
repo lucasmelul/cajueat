@@ -1,13 +1,13 @@
 # DESIGN_ANALYSIS.md
 
-> Auditoría de diseño de CajuEat. Antes de diseñar pantallas.
+> Auditoría de diseño de Lugarcito (source repo/codename: cajueat). Antes de diseñar pantallas.
 > Basado en la lectura completa de `/docs` (Context Pack, CP-001+, PRD-001+, SPEC-001+).
 
 ---
 
 ## 1. Resumen del producto
 
-CajuEat es un **Brain gastronómico AI-native** cuya primera interfaz es una **PWA mobile-first**. No es una app de listados: **no muestra listas, ayuda a decidir**. Se compone de tres productos separados a propósito — **Brain** (la inteligencia, el protagonista), **Platform** (auth, puntos, CMS, analytics) y **PWA** (el primer cliente).
+Lugarcito es un **Brain gastronómico AI-native** cuya primera interfaz es una **PWA mobile-first**. No es una app de listados: **no muestra listas, ayuda a decidir**. Se compone de tres productos separados a propósito — **Brain** (la inteligencia, el protagonista), **Platform** (auth, puntos, CMS, analytics) y **PWA** (el primer cliente).
 
 Cinco principios rectores: **Brain First · Map First · Conversation First · Trust First · Knowledge Compounds.**
 

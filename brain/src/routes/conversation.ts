@@ -58,7 +58,7 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
       const knowledge = await extractConversationKnowledge({ text, catalog });
       const restaurant = knowledge.restaurantId ? catalog.find((r) => r.id === knowledge.restaurantId) : undefined;
       if (restaurant && knowledge.learned) {
-        recordContribution(req.userId!, `Le enseñaste algo a Caju sobre ${restaurant.name}`, CONVERSATION_LEARN_POINTS);
+        recordContribution(req.userId!, `Le enseñaste algo a Lugarcito sobre ${restaurant.name}`, CONVERSATION_LEARN_POINTS);
         // SPEC-019: same moderation queue as Nota/Foto/Voz — never straight to the shared catalog.
         enqueuePendingContribution({ restaurantId: restaurant.id, claim: knowledge.learned, source: 'conversation' });
         learnedAbout = restaurant.name;
@@ -66,7 +66,7 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
       } else if (knowledge.newPlace?.name) {
         // Previously: this vanished completely (no known-name match was even possible). Now it
         // still gives the user credit immediately and queues a reviewable new-place suggestion.
-        recordContribution(req.userId!, `Le contaste a Caju sobre ${knowledge.newPlace.name}`, CONVERSATION_LEARN_POINTS);
+        recordContribution(req.userId!, `Le contaste a Lugarcito sobre ${knowledge.newPlace.name}`, CONVERSATION_LEARN_POINTS);
         enqueueNewPlaceSuggestion({ ...knowledge.newPlace, claim: knowledge.learned, source: 'conversation' });
         learnedAbout = knowledge.newPlace.name;
         learnedPoints = CONVERSATION_LEARN_POINTS;

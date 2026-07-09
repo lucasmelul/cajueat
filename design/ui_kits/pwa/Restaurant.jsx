@@ -153,7 +153,7 @@ function Restaurant({ id, onBack, onOpenChat, onOpenRestaurant, onCheckIn, onRed
           <section className="cj-sec">
             <button className="cj-ask" onClick={() => onOpenChat(`¿Vale la pena ${r.name} para una cita?`)}>
               <NS.BrainMark size={26} radius={8} />
-              <span>Preguntale a Caju sobre este lugar</span>
+              <span>Preguntale a Lugarcito sobre este lugar</span>
               <window.Icon name="arrow-right" size={18} />
             </button>
           </section>

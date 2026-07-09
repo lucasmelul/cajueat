@@ -15,7 +15,7 @@ function Profile({ saved, onOpenRestaurant, onFeedback, onCapture, onPassport })
         <div className="cj-prof-head">
           <div className="cj-prof-av">{D.user.initials}</div>
           <h1>{D.user.name}</h1>
-          <CajuPoints value={D.user.points} size="lg" unit="Caju Points" />
+          <CajuPoints value={D.user.points} size="lg" unit="puntos Lugarcito" />
         </div>
 
         {/* Passport preview (SPEC-021) */}

@@ -72,7 +72,7 @@ export function Feedback({ restaurantId, onClose }: FeedbackProps) {
             </div>
             <div className="cj-fb-head">
               <BrainMark size={30} radius={9} />
-              <span>Contame en 20 segundos. Ayudás al Brain, no completás una encuesta.</span>
+              <span>Contame en 20 segundos. Ayudás a Lugarcito, no completás una encuesta.</span>
             </div>
             <div className="cj-fb-q" key={step}>
               <h2>{questions[step].q}</h2>
@@ -91,7 +91,7 @@ export function Feedback({ restaurantId, onClose }: FeedbackProps) {
               <BrainMark size={52} radius={16} />
             </div>
             <h2>¡Gracias{user?.name ? `, ${user.name}` : ''}!</h2>
-            <p className="cj-fb-sub">El Brain va a recomendar mejor gracias a esto.</p>
+            <p className="cj-fb-sub">Lugarcito va a recomendar mejor gracias a esto.</p>
             {result && (
               <>
                 <div className="cj-cap-learn">

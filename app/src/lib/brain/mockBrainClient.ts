@@ -196,7 +196,7 @@ export const mockBrainClient: BrainClient = {
     }
     const knowledge = detectConversationKnowledge(text);
     if (knowledge) {
-      memory.contributions.unshift({ label: `Le enseñaste algo a Caju sobre ${knowledge.restaurantName}`, points: CONVERSATION_LEARN_POINTS, when: Date.now() });
+      memory.contributions.unshift({ label: `Le enseñaste algo a Lugarcito sobre ${knowledge.restaurantName}`, points: CONVERSATION_LEARN_POINTS, when: Date.now() });
       memory.user.cajuPoints += CONVERSATION_LEARN_POINTS;
     }
     const turn: ConversationTurn = {

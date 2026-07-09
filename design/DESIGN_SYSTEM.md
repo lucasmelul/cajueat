@@ -1,6 +1,6 @@
 # DESIGN_SYSTEM.md
 
-> Reglas del sistema visual de CajuEat. Los valores exactos viven en `tokens/*.css`; este documento explica el porqué y el cómo de uso.
+> Reglas del sistema visual de Lugarcito. Los valores exactos viven en `tokens/*.css`; este documento explica el porqué y el cómo de uso.
 
 ---
 
@@ -86,4 +86,4 @@ Contraste AA en texto; targets 44px; texto escalable; gestos con alternativa sie
 
 ## Marca
 
-Sin logo provisto → **no se inventa**. Wordmark **cajueat** en Geist (caju "eat") + BrainMark como presencia. Reemplazar por assets reales cuando existan.
+Sin logo provisto → **no se inventa**. Wordmark **Lugarcito** en Bricolage Grotesque ("Lugar" ink + "cito" caju) + glifo pin/taza + BrainMark como presencia. Reemplazar por assets reales cuando existan.

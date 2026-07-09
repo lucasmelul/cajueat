@@ -12,20 +12,29 @@ export interface WordmarkProps {
 }
 
 /**
- * CajuEat wordmark — the typographic brand lockup (no logo mark). "Caju" in
- * ink, "Eat" in caju, with a small caju seed accent. This IS the identity
- * until a real mark exists (design/HANDOFF_CLAUDE_CODE.md: "No logo").
+ * Lugarcito wordmark — the typographic brand lockup (no logo mark). "Lugar" in
+ * ink, "cito" in caju, with a map-pin + coffee-cup glyph — the gastronomic
+ * "little place" mark. This IS the identity until a real mark exists
+ * (design/HANDOFF_CLAUDE_CODE.md: "No logo").
  */
 export function Wordmark({ size = 28, tone = 'ink', accent = true, as = 'span', className = '' }: WordmarkProps) {
   const Tag = as as ElementType;
-  const cls = ['caju-wm', tone !== 'ink' ? `caju-wm--${tone}` : '', className].filter(Boolean).join(' ');
+  const cls = ['lg-wm', tone !== 'ink' ? `lg-wm--${tone}` : '', className].filter(Boolean).join(' ');
   return (
-    <Tag className={cls} style={{ fontSize: size }} aria-label="CajuEat" role="img">
-      <span className="caju-wm__a">Caju</span>
-      <span className="caju-wm__b">Eat</span>
+    <Tag className={cls} style={{ fontSize: size }} aria-label="Lugarcito" role="img">
+      <span className="lg-wm__a">Lugar</span>
+      <span className="lg-wm__b">cito</span>
       {accent && (
-        <svg className="caju-wm__seed" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2.5c.5 3.7 2.3 5.5 6 6-3.7.5-5.5 2.3-6 6-.5-3.7-2.3-5.5-6-6 3.7-.5 5.5-2.3 6-6Z" />
+        <svg className="lg-wm__mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            className="lg-pin"
+            d="M12 21S5 14.8 5 9.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"
+            fill="none"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+          <rect className="lg-cup" x="8.3" y="7.6" width="6.4" height="4.6" rx="1.3" />
+          <path className="lg-handle" d="M14.9 8.6c1.1 0 1.9.8 1.9 1.8s-.8 1.8-1.9 1.8" fill="none" strokeWidth="1.1" />
         </svg>
       )}
     </Tag>

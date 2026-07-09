@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, CalendarDays, Clock, Coffee, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search, Star, UtensilsCrossed } from 'lucide-react';
+import {
+  Bookmark,
+  CalendarDays,
+  Clock,
+  Coffee,
+  Heart,
+  Laptop,
+  Layers,
+  LocateFixed,
+  MapPin as MapPinIcon,
+  Search,
+  SlidersHorizontal,
+  Star,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { LivingMapCanvas, type LivingMapCanvasHandle } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
@@ -44,6 +58,12 @@ export function LivingMap() {
   const [brainCardDismissed, setBrainCardDismissed] = useState(false);
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [draftChip, setDraftChip] = useState<ContextChip>('open');
+  const [draftCuisine, setDraftCuisine] = useState<string | null>(null);
+  const [draftMichelin, setDraftMichelin] = useState(false);
+  const [draftVenueType, setDraftVenueType] = useState<'restaurant' | 'cafe' | null>(null);
+  const [draftShowEvents, setDraftShowEvents] = useState(true);
   const mapRef = useRef<LivingMapCanvasHandle>(null);
 
   // Never an empty map: fetch recommendations as soon as the screen mounts (SPEC-001).
@@ -96,9 +116,35 @@ export function LivingMap() {
     mapRef.current?.recenter(point);
   };
 
-  const selectNear = () => {
-    setActiveChip('near');
-    if (!userLocation) requestLocation();
+  // SPEC-001 pills-in-modal: every context/cuisine/venue-type/Michelin/events control lives
+  // behind one "Filtros" button instead of always-visible pill rows over the map (they got in
+  // the way of the map itself). The sheet edits a draft copy and only commits on "Ver lugares" —
+  // same draft→apply pattern as the design v3 handoff's CJ_FILTER_GROUPS sheet.
+  const openFilters = () => {
+    setDraftChip(activeChip);
+    setDraftCuisine(activeCuisineFilter);
+    setDraftMichelin(michelinOnly);
+    setDraftVenueType(venueTypeFilter);
+    setDraftShowEvents(showEvents);
+    setFilterOpen(true);
+  };
+
+  const applyFilters = () => {
+    setActiveChip(draftChip);
+    setCuisineFilter(draftCuisine);
+    setMichelinOnly(draftMichelin);
+    setVenueTypeFilter(draftVenueType);
+    setShowEvents(draftShowEvents);
+    if (draftChip === 'near' && !userLocation) requestLocation();
+    setFilterOpen(false);
+  };
+
+  const clearFilters = () => {
+    setDraftChip('open');
+    setDraftCuisine(null);
+    setDraftMichelin(false);
+    setDraftVenueType(null);
+    setDraftShowEvents(true);
   };
 
   // The map's pins come from the full catalog (`allRestaurants`, fetched once via
@@ -117,6 +163,15 @@ export function LivingMap() {
     .filter((r) => (activeCuisineFilter ? r.cuisine === activeCuisineFilter : true))
     .filter((r) => (michelinOnly ? isMichelin(r) : true))
     .filter((r) => (venueTypeFilter ? r.venueType === venueTypeFilter : true));
+
+  const activeFilterCount =
+    (activeChip !== 'open' ? 1 : 0) +
+    (activeCuisineFilter ? 1 : 0) +
+    (michelinOnly ? 1 : 0) +
+    (venueTypeFilter ? 1 : 0) +
+    (!showEvents ? 1 : 0);
+  const draftFilterCount =
+    (draftChip !== 'open' ? 1 : 0) + (draftCuisine ? 1 : 0) + (draftMichelin ? 1 : 0) + (draftVenueType ? 1 : 0) + (!draftShowEvents ? 1 : 0);
 
   const selected = allRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 
@@ -180,80 +235,16 @@ export function LivingMap() {
         </div>
       </div>
 
-      <div className="cj-chips">
+      <div className="cj-filterbar">
         <span className="cj-loc">
           <MapPinIcon size={14} /> {nearestNeighborhood ?? 'Buenos Aires'}
         </span>
-        <span className="cj-chips__div" />
-        {!userLocation && (
-          <Chip icon={<LocateFixed size={15} />} onClick={requestLocation}>
-            Usar mi ubicación
-          </Chip>
-        )}
-        <Chip selected={activeChip === 'near'} icon={<MapPinIcon size={15} />} onClick={selectNear}>
-          Cerca
-        </Chip>
-        <Chip selected={activeChip === 'open'} icon={<Clock size={15} />} onClick={() => setActiveChip('open')}>
-          Abierto ahora
-        </Chip>
-        <Chip selected={activeChip === 'date'} icon={<Heart size={15} />} onClick={() => setActiveChip('date')}>
-          Para una cita
-        </Chip>
-        <Chip selected={activeChip === 'work'} icon={<Laptop size={15} />} onClick={() => setActiveChip('work')}>
-          Trabajar
-        </Chip>
-        <Chip selected={activeChip === 'saved'} brand icon={<Bookmark size={15} />} onClick={() => setActiveChip('saved')}>
-          Guardados
-        </Chip>
+        <button className={`cj-filterbtn ${activeFilterCount ? 'on' : ''}`} onClick={openFilters}>
+          <SlidersHorizontal size={15} />
+          Filtros
+          {activeFilterCount > 0 && <span className="cj-filterbtn__count">{activeFilterCount}</span>}
+        </button>
       </div>
-
-      {(cuisines.length > 1 || hasMichelinResults || hasCafeResults || events.length > 0) && (
-        <div className="cj-chips cj-chips--cuisine">
-          <Chip
-            selected={!activeCuisineFilter && !michelinOnly && !venueTypeFilter}
-            onClick={() => {
-              setCuisineFilter(null);
-              setMichelinOnly(false);
-              setVenueTypeFilter(null);
-            }}
-          >
-            Todos
-          </Chip>
-          {hasRestaurantTypeResults && hasCafeResults && (
-            <>
-              <Chip
-                selected={venueTypeFilter === 'restaurant'}
-                icon={<UtensilsCrossed size={13} />}
-                onClick={() => setVenueTypeFilter((v) => (v === 'restaurant' ? null : 'restaurant'))}
-              >
-                Restaurantes
-              </Chip>
-              <Chip
-                selected={venueTypeFilter === 'cafe'}
-                icon={<Coffee size={13} />}
-                onClick={() => setVenueTypeFilter((v) => (v === 'cafe' ? null : 'cafe'))}
-              >
-                Cafés
-              </Chip>
-            </>
-          )}
-          {hasMichelinResults && (
-            <Chip selected={michelinOnly} icon={<Star size={13} />} onClick={() => setMichelinOnly((v) => !v)}>
-              Michelin
-            </Chip>
-          )}
-          {events.length > 0 && (
-            <Chip selected={showEvents} brand icon={<CalendarDays size={13} />} onClick={() => setShowEvents((v) => !v)}>
-              Eventos
-            </Chip>
-          )}
-          {cuisines.map((c) => (
-            <Chip key={c} selected={activeCuisineFilter === c} onClick={() => setCuisineFilter(c)}>
-              {c}
-            </Chip>
-          ))}
-        </div>
-      )}
 
       <div className="cj-map-fabs">
         <IconButton icon={<Search size={20} />} label="Buscar" variant="float" size="md" onClick={() => openOverlay('search')} />
@@ -313,7 +304,7 @@ export function LivingMap() {
             </div>
           ) : (
             <BrainCard
-              eyebrow="CAJU · PARA VOS"
+              eyebrow="LUGARCITO · PARA VOS"
               message={highlightText(brainCard.message)}
               sub={brainCard.sub ? highlightText(brainCard.sub) : undefined}
               onClose={() => setBrainCardDismissed(true)}
@@ -334,6 +325,107 @@ export function LivingMap() {
 
         <PromptBar value={query} onChange={setQuery} onSend={handleSend} onVoice={handleVoice} />
       </div>
+
+      {filterOpen && (
+        <div className="cj-overlay">
+          <div className="cj-ov-scrim" onClick={() => setFilterOpen(false)} />
+          <div className="cj-ov-sheet cj-fov__sheet">
+            <div className="cj-ov-grip" />
+            <div className="cj-ov-head">
+              <h2>Filtros</h2>
+              <p>Combiná los que quieras — se aplican todos juntos.</p>
+            </div>
+            <div className="cj-fov__body">
+              <div className="cj-fov__group">
+                <span className="cj-fov__glabel">Ocasión</span>
+                <div className="cj-fov__row">
+                  {!userLocation && (
+                    <Chip icon={<LocateFixed size={15} />} onClick={requestLocation}>
+                      Usar mi ubicación
+                    </Chip>
+                  )}
+                  <Chip selected={draftChip === 'near'} icon={<MapPinIcon size={15} />} onClick={() => setDraftChip('near')}>
+                    Cerca
+                  </Chip>
+                  <Chip selected={draftChip === 'open'} icon={<Clock size={15} />} onClick={() => setDraftChip('open')}>
+                    Abierto ahora
+                  </Chip>
+                  <Chip selected={draftChip === 'date'} icon={<Heart size={15} />} onClick={() => setDraftChip('date')}>
+                    Para una cita
+                  </Chip>
+                  <Chip selected={draftChip === 'work'} icon={<Laptop size={15} />} onClick={() => setDraftChip('work')}>
+                    Trabajar
+                  </Chip>
+                  <Chip selected={draftChip === 'saved'} brand icon={<Bookmark size={15} />} onClick={() => setDraftChip('saved')}>
+                    Guardados
+                  </Chip>
+                </div>
+              </div>
+
+              {hasRestaurantTypeResults && hasCafeResults && (
+                <div className="cj-fov__group">
+                  <span className="cj-fov__glabel">Tipo de lugar</span>
+                  <div className="cj-fov__row">
+                    <Chip
+                      selected={draftVenueType === 'restaurant'}
+                      icon={<UtensilsCrossed size={13} />}
+                      onClick={() => setDraftVenueType((v) => (v === 'restaurant' ? null : 'restaurant'))}
+                    >
+                      Restaurantes
+                    </Chip>
+                    <Chip
+                      selected={draftVenueType === 'cafe'}
+                      icon={<Coffee size={13} />}
+                      onClick={() => setDraftVenueType((v) => (v === 'cafe' ? null : 'cafe'))}
+                    >
+                      Cafés
+                    </Chip>
+                  </div>
+                </div>
+              )}
+
+              {(hasMichelinResults || events.length > 0) && (
+                <div className="cj-fov__group">
+                  <span className="cj-fov__glabel">Extras</span>
+                  <div className="cj-fov__row">
+                    {hasMichelinResults && (
+                      <Chip selected={draftMichelin} icon={<Star size={13} />} onClick={() => setDraftMichelin((v) => !v)}>
+                        Michelin
+                      </Chip>
+                    )}
+                    {events.length > 0 && (
+                      <Chip selected={draftShowEvents} brand icon={<CalendarDays size={13} />} onClick={() => setDraftShowEvents((v) => !v)}>
+                        Eventos
+                      </Chip>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {cuisines.length > 1 && (
+                <div className="cj-fov__group">
+                  <span className="cj-fov__glabel">Cocina</span>
+                  <div className="cj-fov__row">
+                    {cuisines.map((c) => (
+                      <Chip key={c} selected={draftCuisine === c} onClick={() => setDraftCuisine((v) => (v === c ? null : c))}>
+                        {c}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="cj-fov__foot">
+              <Button variant="ghost" size="lg" onClick={clearFilters} disabled={draftFilterCount === 0}>
+                Limpiar
+              </Button>
+              <Button variant="primary" size="lg" block onClick={applyFilters}>
+                Ver lugares{draftFilterCount > 0 ? ` (${draftFilterCount})` : ''}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # INFORMATION_ARCHITECTURE.md
 
-> Modelo de navegación de la PWA de CajuEat. Mobile-first, map-first.
+> Modelo de navegación de la PWA de Lugarcito. Mobile-first, map-first.
 
 ---
 

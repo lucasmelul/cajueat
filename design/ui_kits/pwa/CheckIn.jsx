@@ -130,7 +130,7 @@ function CheckIn({ mode = 'checkin', restaurantId, onClose, onDone }) {
             <div className="cj-res cj-res--choose">
               <div className="cj-res__mark cj-res__mark--brand"><window.Icon name="wallet" size={26} /></div>
               <h2>Usar tus puntos acá</h2>
-              <p className="cj-res__sub">Tenés <b>{D.user.points.toLocaleString('es-AR')}</b> Caju Points · 100 pts = $500</p>
+              <p className="cj-res__sub">Tenés <b>{D.user.points.toLocaleString('es-AR')}</b> puntos Lugarcito · 100 pts = $500</p>
 
               <div className="cj-stepper">
                 <button onClick={() => setPts(p => Math.max(1, p - 1))} aria-label="Menos" disabled={pts <= 1}>

@@ -1,6 +1,6 @@
 ---
-name: cajueat-design
-description: Use this skill to generate well-branded interfaces and assets for CajuEat, either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping.
+name: lugarcito-design
+description: Use this skill to generate well-branded interfaces and assets for Lugarcito, either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping.
 user-invocable: true
 ---
 
@@ -20,7 +20,7 @@ If the user invokes this skill without any other guidance, ask them what they wa
 - `ui_kits/pwa/` — the interactive PWA prototype (Living Map, Conversation, Restaurant, Knowledge Capture, Feedback, Profile). Great reference for composing screens.
 - `DESIGN_ANALYSIS.md`, `DESIGN_SYSTEM.md`, `INFORMATION_ARCHITECTURE.md`, `USER_FLOWS.md`, `COMPONENT_LIBRARY.md` — the product-team design docs.
 
-## Non-negotiables when designing for CajuEat
+## Non-negotiables when designing for Lugarcito
 
 - **Menos interfaz, más producto.** Respirar: mucho espacio, poca densidad, jerarquía clara.
 - **Color contenido:** warm neutrals + the single caju accent. Never a rainbow; the information leads, not the color.

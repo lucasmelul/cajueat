@@ -24,9 +24,9 @@ export default defineConfig({
         type: 'module',
       },
       manifest: {
-        name: 'CajuEat',
-        short_name: 'CajuEat',
-        description: 'CajuEat no muestra listas. Ayuda a decidir.',
+        name: 'Lugarcito',
+        short_name: 'Lugarcito',
+        description: 'Lugarcito no muestra listas. Ayuda a decidir.',
         theme_color: '#EF5A22',
         background_color: '#FCFBF8',
         display: 'standalone',
@@ -34,8 +34,8 @@ export default defineConfig({
         // TODO: replace with real maskable/any icon set (192/512 png)
         // generated from the Wordmark/BrainMark once the brand assets exist.
         icons: [],
-        // SPEC-004 "Share Sheet (Principal)": registers CajuEat as a native OS share target
-        // (Instagram → Compartir → CajuEat). GET-based so it's a plain navigation the SPA
+        // SPEC-004 "Share Sheet (Principal)": registers Lugarcito as a native OS share target
+        // (Instagram → Compartir → Lugarcito). GET-based so it's a plain navigation the SPA
         // router can handle — no service worker POST handling needed for text/url shares.
         share_target: {
           action: '/share',

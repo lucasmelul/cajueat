@@ -37,7 +37,7 @@ function Conversation({ initialQuery, onBack, onOpenRestaurant }) {
         </button>
         <div className="cj-convo__title">
           <window.BrainMarkMini />
-          <div className="cj-convo__titletext"><b>Caju</b><span>Concierge gastronómico</span></div>
+          <div className="cj-convo__titletext"><b>Lugarcito</b><span>Concierge gastronómico</span></div>
         </div>
         <button className="cj-iconback" aria-label="Mapa" onClick={onBack}>
           <window.Icon name="map" size={20} />
@@ -48,7 +48,7 @@ function Conversation({ initialQuery, onBack, onOpenRestaurant }) {
         {turns.length === 0 && !thinking && (
           <div className="cj-convo__empty">
             <NS.BrainMark size={44} radius={14} />
-            <p className="cj-convo__hi">Soy Caju.<br />Contame qué se te antoja y te ayudo a decidir.</p>
+            <p className="cj-convo__hi">Soy Lugarcito.<br />Contame qué se te antoja y te ayudo a decidir.</p>
             <div className="cj-convo__starters">
               {['Cerca y tranquilo para hablar', 'Buena barra para ir solo', 'Para una cita, sin ruido'].map((s, i) => (
                 <Chip key={i} onClick={() => respond(s)}>{s}</Chip>

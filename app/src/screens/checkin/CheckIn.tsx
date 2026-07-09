@@ -21,7 +21,7 @@ const ERROR_COPY: Record<string, { title: string; sub: string }> = {
   restaurant_not_found: { title: 'No encontramos ese lugar', sub: 'Probá escanear de nuevo o pedile al local que revise su código.' },
   cooldown_active: { title: 'Ya usaste tus puntos acá hace poco', sub: 'Podés volver a usar puntos en este local dentro de 15 días de tu último canje.' },
   no_location: { title: 'No pudimos ver tu ubicación', sub: 'Activá la ubicación del navegador e intentá de nuevo — es lo que confirma que estás ahí de verdad.' },
-  no_camera: { title: 'No pudimos abrir la cámara', sub: 'Dale permiso de cámara a CajuEat, o ingresá el código manualmente.' },
+  no_camera: { title: 'No pudimos abrir la cámara', sub: 'Dale permiso de cámara a Lugarcito, o ingresá el código manualmente.' },
 };
 
 export function CheckIn() {

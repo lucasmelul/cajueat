@@ -37,7 +37,7 @@ export function PromptBar({
           if (e.key === 'Enter') submit();
         }}
         placeholder={placeholder}
-        aria-label="Hablar con el Brain"
+        aria-label="Hablar con Lugarcito"
       />
       {!hasText && (
         <button className="caju-prompt__btn" onClick={onVoice} aria-label="Aportar por voz" type="button">

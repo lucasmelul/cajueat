@@ -72,7 +72,7 @@ function App() {
         </div>
         <div className="cj-homebar" />
       </div>
-      <p class="cj-hint">Prototipo interactivo · tocá pines, chips, el mapa y la barra de conversación</p>
+      <p className="cj-hint">Prototipo interactivo · tocá pines, chips, el mapa y la barra de conversación</p>
     </div>
   );
 }

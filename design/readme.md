@@ -1,16 +1,16 @@
-# CajuEat — Design System
+# Lugarcito — Design System
 
 > **Menos interfaz. Más producto.** — SPEC-012
 >
-> The design language for CajuEat, an AI-native gastronomic discovery product for Buenos Aires. This system is the visual and interaction proposal for the product defined in the CajuEat docs — premium, calm, futuristic, map-first, conversation-first, trust-first.
+> The design language for **Lugarcito** (product name; codebase/source repo is `cajueat`), an AI-native gastronomic discovery product for Buenos Aires. This system is the visual and interaction proposal for the product defined in the source docs — premium, calm, futuristic, map-first, conversation-first, trust-first.
 
-This is a **from-scratch visual system**. The source repository defines the product exhaustively but deliberately left the visual language to design (SPEC-012: *"Sistema de diseño, tipografía y lenguaje visual definitivo — no está definido… es responsabilidad de diseño proponerlo"*). Everything here is a proposal grounded in that brief, not a recreation of an existing UI.
+This is a **from-scratch visual system**. The source repository defines the product exhaustively but deliberately left the visual language to design (SPEC-012: *"Sistema de diseño, tipografía y lenguaje visual definitivo — no está definido… es responsabilidad de diseño proponerlo"*). Everything here is a proposal grounded in that brief, not a recreation of an existing UI. **The product was renamed from "CajuEat" to "Lugarcito"** after this system was first built; the source repo/docs still use the old name — see Caveats.
 
 ---
 
 ## Sources
 
-- **GitHub — `lucasmelul/cajueat`** (https://github.com/lucasmelul/cajueat) — a documentation-only product repo: `docs/` holds the Context Pack, Context Packs (CP-001+), PRDs (PRD-001+) and functional Specs (SPEC-001+). No code, colors, fonts, or logo exist in the repo. Explore it further to build more faithful CajuEat designs; the key docs are `docs/CAJUEAT_CONTEXT_PACK.md`, `docs/design-brief.md`, `docs/experience-principles.md`, `docs/specs/SPEC-001-living-map.md`, `docs/specs/SPEC-003-restaurant-experience.md`, `docs/specs/SPEC-012-design-system-foundations.md`, and `docs/trust-engine.md`.
+- **GitHub — `lucasmelul/cajueat`** (https://github.com/lucasmelul/cajueat) — a documentation-only product repo (still under its original codename `cajueat`): `docs/` holds the Context Pack, Context Packs (CP-001+), PRDs (PRD-001+) and functional Specs (SPEC-001+). No code, colors, fonts, or logo exist in the repo. Explore it further to build more faithful Lugarcito designs; the key docs are `docs/CAJUEAT_CONTEXT_PACK.md`, `docs/design-brief.md`, `docs/experience-principles.md`, `docs/specs/SPEC-001-living-map.md`, `docs/specs/SPEC-003-restaurant-experience.md`, `docs/specs/SPEC-012-design-system-foundations.md`, and `docs/trust-engine.md`.
 
 The product is documented in **Spanish (rioplatense)**; all product-facing copy in this system follows suit.
 
@@ -18,7 +18,7 @@ The product is documented in **Spanish (rioplatense)**; all product-facing copy 
 
 ## The product in one screen
 
-CajuEat is **three products**: the **Brain** (the gastronomic intelligence — the real protagonist), the **Platform** (auth, points, CMS…), and the **PWA** (the first, mobile-first client). The thesis: **"CajuEat no muestra listas. CajuEat ayuda a decidir."** Not Google Maps, not TripAdvisor, not a food social network.
+CajuEat is **three products**: the **Brain** (the gastronomic intelligence — the real protagonist), the **Platform** (auth, points, CMS…), and the **PWA** (the first, mobile-first client). The PWA now ships under the product name **Lugarcito** ("little place/spot") — CajuEat/cajueat remains the internal codebase name only.sis: **"CajuEat no muestra listas. CajuEat ayuda a decidir."** Not Google Maps, not TripAdvisor, not a food social network.
 
 Five principles drive every screen: **Brain First · Map First · Conversation First · Trust First · Knowledge Compounds.**
 
@@ -57,7 +57,7 @@ Five principles drive every screen: **Brain First · Map First · Conversation F
 - **Pin palette:** a small, deliberate set to type map markers (recommended/new/saved/visited/event/collection) — never a rainbow.
 
 **Typography.** Excellent legibility, few variants.
-- **Bricolage Grotesque** — the brand display face: the **CajuEat wordmark** and large brand moments. Distinctive, warm, modern — it carries the identity in lieu of a logo.
+- **Bricolage Grotesque** — the brand display face: the **Lugarcito wordmark** and large brand moments. Distinctive, warm, modern — it carries the identity in lieu of a logo.
 - **Geist** — all UI and body (geometric-humanist grotesque; Linear/Vercel-grade neutrality).
 - **Newsreader** — the Brain's editorial voice: narrative restaurant summaries, big questions, feedback prompts. Made for on-screen reading. Used sparingly, at large sizes.
 - **Geist Mono** — data, coordinates, Caju Points, trust readouts, overlines.
@@ -91,7 +91,7 @@ Five principles drive every screen: **Brain First · Map First · Conversation F
 - **The sparkle/seed mark** (`BrainMark`) is the one bespoke glyph — the Brain's presence motif, drawn in caju. It is *not* a company logo (see Brand → "No logo" below).
 - **No emoji** as icons. **No unicode-glyph icons.** **No hand-rolled decorative SVG** beyond the brand mark.
 
-**No logo.** The source provided none. Per policy we did **not** invent one: the brand identity is the **`CajuEat` wordmark** set in Bricolage Grotesque ("Caju" ink, "Eat" caju, with a caju seed accent — see the `Wordmark` component), and the sparkle `BrainMark` stands in for the Brain's presence. Both are placeholders — replace with real brand assets when available.
+**No logo.** The source provided none. Per policy we did **not** invent one: the brand identity is the **`Lugarcito` wordmark** set in Bricolage Grotesque ("Lugar" ink, "cito" caju, with a map-pin + coffee-cup glyph — see the `Wordmark` component), and the sparkle `BrainMark` stands in for the Brain's presence. Both are placeholders — replace with real brand assets when available.
 
 ---
 
@@ -106,7 +106,7 @@ Reusable React primitives (namespace `window.CajuEatDesignSystem_dbeea0`). Group
 - **Badge** — status label / mono overline; tones follow the trust palette.
 
 **Brand** (`components/brand/`)
-- **Wordmark** — the CajuEat typographic identity lockup (Bricolage Grotesque, no logo mark).
+- **Wordmark** — the Lugarcito typographic identity lockup (Bricolage Grotesque, no logo mark).
 
 **Brain** (`components/brain/`)
 - **BrainCard** — the single floating card over the map; serif voice.
@@ -145,6 +145,7 @@ Each component ships a `.jsx`, a `.d.ts` (props contract), a `.prompt.md` (usage
 
 ## Caveats
 
+- **Renamed mid-project:** the product was renamed from "CajuEat" to **"Lugarcito"**. The wordmark, in-app persona copy ("Soy Lugarcito…") and page titles were updated; the source GitHub repo, its docs, the design-system namespace (`CajuEatDesignSystem_dbeea0`), and the `--caju-*` color-token names (a reference to the cashew/caju fruit, not the brand) were intentionally left as-is — renaming those is a mechanical follow-up with no design impact.
 - **No logo / brand mark** was provided; the wordmark + sparkle motif are placeholders.
 - **Fonts** (Bricolage Grotesque, Geist, Newsreader, Geist Mono) were chosen by design — none were specified in the source — and load from Google Fonts. See `tokens/fonts.css`.
 - **Icons** are Lucide (substitution — no set defined in source).

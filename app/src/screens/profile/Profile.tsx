@@ -75,7 +75,7 @@ export function Profile() {
   const restaurantById = (id: string) => allRestaurants.find((r) => r.id === id);
 
   const addTag = () => {
-    const label = window.prompt('¿Qué más le enseñamos al Brain sobre vos?')?.trim();
+    const label = window.prompt('¿Qué más le enseñamos a Lugarcito sobre vos?')?.trim();
     if (label) addDnaTag(label);
   };
 
@@ -96,7 +96,7 @@ export function Profile() {
     setPushState('idle');
   };
 
-  // SPEC-013 "Guardá tu Brain": adjunta un teléfono a la fila anónima existente — nunca migra, nunca fusiona en silencio.
+  // SPEC-013 "Guardá tu perfil": adjunta un teléfono a la fila anónima existente — nunca migra, nunca fusiona en silencio.
   const sendCode = async () => {
     if (!phone.trim()) return;
     setSyncError('');
@@ -176,7 +176,7 @@ export function Profile() {
               {editing ? 'Listo' : 'Editar'}
             </button>
           </div>
-          <p className="cj-prof-lead">Así te entiende el Brain hoy. Editá lo que no cuadre.</p>
+          <p className="cj-prof-lead">Así te entiende Lugarcito hoy. Editá lo que no cuadre.</p>
           <div className="cj-dna">
             {dna.map((d) => (
               <Chip key={d.id} as={editing ? 'button' : 'span'} icon={editing ? <X size={13} /> : null} onClick={editing ? () => removeDnaTag(d.id) : undefined}>
@@ -300,11 +300,11 @@ export function Profile() {
         </section>
 
         <section className="cj-prof-sec">
-          <Badge tone="over">Guardá tu Brain</Badge>
+          <Badge tone="over">Guardá tu perfil</Badge>
           {user?.phone ? (
             <div className="cj-sync-linked">
               <ShieldCheck size={18} />
-              <span>Tu Brain está protegido — sincronizado con {user.phone}.</span>
+              <span>Tu perfil está protegido — sincronizado con {user.phone}.</span>
             </div>
           ) : (
             <>
@@ -314,7 +314,7 @@ export function Profile() {
               </p>
               {syncStage === 'conflict' ? (
                 <p className="cj-sync-error">
-                  Ese número ya tiene un Brain guardado en otro dispositivo. Por ahora no fusionamos automáticamente —
+                  Ese número ya tiene un perfil guardado en otro dispositivo. Por ahora no fusionamos automáticamente —
                   iniciá sesión desde ese dispositivo en vez de crear uno nuevo acá.
                 </p>
               ) : syncStage === 'codeSent' ? (

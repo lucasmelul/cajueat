@@ -60,7 +60,7 @@ export function Onboarding() {
       {stage === 'welcome' && (
         <div className="cj-onboard__welcome">
           <BrainMark size={64} radius={20} />
-          <h1>Soy Caju.</h1>
+          <h1>Soy Lugarcito.</h1>
           <p>Te ayudo a decidir dónde comer — nunca te tiro una lista.</p>
           <Button variant="primary" size="lg" block iconRight={<ArrowRight size={18} />} onClick={() => setStage('quiz')}>
             Empezar
