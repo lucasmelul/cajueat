@@ -22,6 +22,8 @@ export interface LivingMapCanvasProps {
   onSelectRestaurant: (id: string) => void;
   /** Fired when the map itself (not a pin) is tapped — closes any open selection (SPEC-001). */
   onMapClick?: () => void;
+  /** Real geolocation, once resolved — renders a "you are here" marker, never a guessed position. */
+  userLocation?: GeoPoint | null;
 }
 
 interface MarkerEntry {
@@ -35,7 +37,7 @@ export interface LivingMapCanvasHandle {
 }
 
 export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvasProps>(function LivingMapCanvas(
-  { center, restaurants, events, selectedId, onSelectRestaurant, onMapClick },
+  { center, restaurants, events, selectedId, onSelectRestaurant, onMapClick, userLocation },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -117,6 +119,10 @@ export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvas
       upsertMarker(`event-${e.id}`, e.position, <MapPin type="event" label={`${e.name.split(' ')[0]} · ${e.when}`} dotOnly={false} />);
     });
 
+    if (userLocation) {
+      upsertMarker('user-location', userLocation, <div className="cj-user-location-dot" aria-label="Tu ubicación" />);
+    }
+
     // Remove markers no longer present.
     markersRef.current.forEach((entry, id) => {
       if (!nextIds.has(id)) {
@@ -138,7 +144,7 @@ export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvas
       );
       map.fitBounds(bounds, { padding: { top: 140, bottom: 260, left: 60, right: 60 }, maxZoom: 15, duration: 0 });
     }
-  }, [restaurants, events, selectedId, onSelectRestaurant]);
+  }, [restaurants, events, selectedId, onSelectRestaurant, userLocation]);
 
   return <div ref={containerRef} className="cj-maplibre" aria-label="Mapa de restaurantes recomendados" />;
 });

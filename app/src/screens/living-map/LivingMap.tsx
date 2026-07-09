@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, Clock, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search, Star } from 'lucide-react';
+import { Bookmark, CalendarDays, Clock, Coffee, Heart, Laptop, Layers, LocateFixed, MapPin as MapPinIcon, Search, Star, UtensilsCrossed } from 'lucide-react';
 import { LivingMapCanvas, type LivingMapCanvasHandle } from '../../map/LivingMapCanvas';
 import { Wordmark } from '../../components/brand';
 import { Chip, IconButton, Button } from '../../components/core';
@@ -33,12 +33,15 @@ export function LivingMap() {
   } = useAppStore();
 
   const [loading, setLoading] = useState(true);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [brainCard, setBrainCard] = useState<BrainCardData | null>(null);
   const [events, setEvents] = useState<MapEvent[]>([]);
   const [activeChip, setActiveChip] = useState<ContextChip>('open');
   const [cuisineFilter, setCuisineFilter] = useState<string | null>(null);
   const [michelinOnly, setMichelinOnly] = useState(false);
+  const [venueTypeFilter, setVenueTypeFilter] = useState<'restaurant' | 'cafe' | null>(null);
+  const [showEvents, setShowEvents] = useState(true);
+  const [brainCardDismissed, setBrainCardDismissed] = useState(false);
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
   const mapRef = useRef<LivingMapCanvasHandle>(null);
@@ -49,9 +52,10 @@ export function LivingMap() {
   useEffect(() => {
     let alive = true;
     hydrateMemory();
-    Promise.all([brain.getEvents(), user ? null : brain.getUser()]).then(([evts, u]) => {
+    Promise.all([brain.getEvents(), brain.getAllRestaurants(), user ? null : brain.getUser()]).then(([evts, all, u]) => {
       if (!alive) return;
       setEvents(evts);
+      setAllRestaurants(all);
       if (u) setUser(u);
     });
     return () => {
@@ -72,8 +76,8 @@ export function LivingMap() {
     const context = nearDep ? { filter: activeChip, near: nearDep } : { filter: activeChip };
     brain.getRecommendations(context).then((recs) => {
       if (!alive) return;
-      setRestaurants(recs.restaurants);
       setBrainCard(recs.brainCard);
+      setBrainCardDismissed(false);
       setLoading(false);
     });
     return () => {
@@ -97,19 +101,24 @@ export function LivingMap() {
     if (!userLocation) requestLocation();
   };
 
-  // Cuisine pills: purely client-side over whatever the Recommendation Engine already returned
-  // for the active context chip — never a second backend round-trip for what's just a narrower
-  // view of the same set. Derived, never hardcoded, so it always matches what's actually on the map.
-  // Falls back to no filter if the active chip's results no longer include the selected cuisine.
-  const cuisines = Array.from(new Set(restaurants.map((r) => r.cuisine))).sort();
+  // The map's pins come from the full catalog (`allRestaurants`, fetched once via
+  // getAllRestaurants), never from the Recommendation Engine's top-N — that pipeline is
+  // deliberately capped (MAX_RESULTS) for the Brain Card's "today's pick" framing, and with a
+  // real multi-hundred-restaurant catalog a capped result set meant the map only ever showed a
+  // handful of pins. Cuisine/Michelin/venueType pills filter this full set client-side; the
+  // context chips (Cerca/Abierto ahora/etc.) still only drive the Brain Card recommendation.
+  const cuisines = Array.from(new Set(allRestaurants.map((r) => r.cuisine))).sort();
   const activeCuisineFilter = cuisineFilter && cuisines.includes(cuisineFilter) ? cuisineFilter : null;
   const isMichelin = (r: Restaurant) => !!(r.michelinStars || r.michelinGreenStar || r.michelinBibGourmand);
-  const hasMichelinResults = restaurants.some(isMichelin);
-  const visibleRestaurants = restaurants
+  const hasMichelinResults = allRestaurants.some(isMichelin);
+  const hasCafeResults = allRestaurants.some((r) => r.venueType === 'cafe');
+  const hasRestaurantTypeResults = allRestaurants.some((r) => r.venueType === 'restaurant');
+  const visibleRestaurants = allRestaurants
     .filter((r) => (activeCuisineFilter ? r.cuisine === activeCuisineFilter : true))
-    .filter((r) => (michelinOnly ? isMichelin(r) : true));
+    .filter((r) => (michelinOnly ? isMichelin(r) : true))
+    .filter((r) => (venueTypeFilter ? r.venueType === venueTypeFilter : true));
 
-  const selected = visibleRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
+  const selected = allRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
 
   const handleSelectPin = (id: string) => {
     setSelectedRestaurantId(id);
@@ -144,8 +153,8 @@ export function LivingMap() {
   // neighborhood once we have a real position, honest city-level fallback otherwise —
   // there's no reverse-geocoding here, so a specific barrio is never guessed without one.
   const nearestNeighborhood =
-    userLocation && restaurants.length > 0
-      ? restaurants.reduce((closest, r) => (haversineKm(userLocation, r.position) < haversineKm(userLocation, closest.position) ? r : closest)).neighborhood
+    userLocation && allRestaurants.length > 0
+      ? allRestaurants.reduce((closest, r) => (haversineKm(userLocation, r.position) < haversineKm(userLocation, closest.position) ? r : closest)).neighborhood
       : null;
 
   return (
@@ -154,10 +163,11 @@ export function LivingMap() {
         ref={mapRef}
         center={DEFAULT_MAP_CENTER}
         restaurants={visibleRestaurants}
-        events={events}
+        events={showEvents ? events : []}
         selectedId={selectedRestaurantId}
         onSelectRestaurant={handleSelectPin}
         onMapClick={handleMapClick}
+        userLocation={userLocation}
       />
 
       <div className="cj-map-head">
@@ -197,14 +207,44 @@ export function LivingMap() {
         </Chip>
       </div>
 
-      {(cuisines.length > 1 || hasMichelinResults) && (
+      {(cuisines.length > 1 || hasMichelinResults || hasCafeResults || events.length > 0) && (
         <div className="cj-chips cj-chips--cuisine">
-          <Chip selected={!activeCuisineFilter && !michelinOnly} onClick={() => { setCuisineFilter(null); setMichelinOnly(false); }}>
+          <Chip
+            selected={!activeCuisineFilter && !michelinOnly && !venueTypeFilter}
+            onClick={() => {
+              setCuisineFilter(null);
+              setMichelinOnly(false);
+              setVenueTypeFilter(null);
+            }}
+          >
             Todos
           </Chip>
+          {hasRestaurantTypeResults && hasCafeResults && (
+            <>
+              <Chip
+                selected={venueTypeFilter === 'restaurant'}
+                icon={<UtensilsCrossed size={13} />}
+                onClick={() => setVenueTypeFilter((v) => (v === 'restaurant' ? null : 'restaurant'))}
+              >
+                Restaurantes
+              </Chip>
+              <Chip
+                selected={venueTypeFilter === 'cafe'}
+                icon={<Coffee size={13} />}
+                onClick={() => setVenueTypeFilter((v) => (v === 'cafe' ? null : 'cafe'))}
+              >
+                Cafés
+              </Chip>
+            </>
+          )}
           {hasMichelinResults && (
             <Chip selected={michelinOnly} icon={<Star size={13} />} onClick={() => setMichelinOnly((v) => !v)}>
               Michelin
+            </Chip>
+          )}
+          {events.length > 0 && (
+            <Chip selected={showEvents} brand icon={<CalendarDays size={13} />} onClick={() => setShowEvents((v) => !v)}>
+              Eventos
             </Chip>
           )}
           {cuisines.map((c) => (
@@ -261,6 +301,7 @@ export function LivingMap() {
 
       <div className="cj-bottom">
         {!selected &&
+          !brainCardDismissed &&
           (loading || !brainCard ? (
             <div className="cj-brain-skeleton">
               <div className="cj-skel" style={{ width: 38, height: 38, borderRadius: 12 }} />
@@ -275,6 +316,7 @@ export function LivingMap() {
               eyebrow="CAJU · PARA VOS"
               message={highlightText(brainCard.message)}
               sub={brainCard.sub ? highlightText(brainCard.sub) : undefined}
+              onClose={() => setBrainCardDismissed(true)}
               actions={
                 <>
                   {brainCard.restaurantId && (

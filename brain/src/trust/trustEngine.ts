@@ -73,6 +73,17 @@ export interface TrustResult {
   rationale: string;
 }
 
+/**
+ * A place with only 'weak' evidence (a single unproven curator, or nothing at all) doesn't get
+ * shown to real users yet — it stays visible in Admin, waiting for a second, independent source
+ * to corroborate it. Uses the same reputation-adjusted `weight` `getCatalog()` already computes
+ * for `computeTrust`, so a curator who earns real reputation over time can graduate a place into
+ * public visibility without an operator having to intervene by hand.
+ */
+export function hasEnoughEvidence(sources: Source[]): boolean {
+  return sources.some((s) => s.weight !== 'weak');
+}
+
 export function computeTrust(sources: Source[], now: number = Date.now()): TrustResult {
   if (sources.length === 0) {
     return { level: 'low', rationale: 'Todavía no tenemos evidencia suficiente sobre este lugar.' };

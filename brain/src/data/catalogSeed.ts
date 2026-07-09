@@ -1,7 +1,7 @@
 import type { Restaurant, Source } from '../types.js';
 
 /** Seed data materialized into brain/data/catalog.json the first time the service boots with no catalog file yet (SPEC-018 — the source of truth moves to that JSON, this only bootstraps it). */
-export type RawRestaurant = Omit<Restaurant, 'trust' | 'trustRationale'>;
+export type RawRestaurant = Omit<Restaurant, 'trust' | 'trustRationale' | 'hasEnoughEvidence'>;
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { curatorsFileExists, getEffectiveWeight, recordCuratorOutcome } from '../curators/curatorStore.js';
 import { isOpenNow } from '../geo/geo.js';
-import { computeTrust, detectContradiction } from '../trust/trustEngine.js';
+import { computeTrust, detectContradiction, hasEnoughEvidence } from '../trust/trustEngine.js';
 import { DATA_DIR } from '../paths.js';
 import type { QuickFact, Restaurant, Source } from '../types.js';
 import { CATALOG_SEED, DEMO_SEED_IDS, type RawRestaurant } from './catalogSeed.js';
@@ -93,7 +93,7 @@ if (!curatorsFileExists()) {
  * Only the Admin CMS's own catalog view passes includeDemo:true, since an operator still
  * needs to see/manage the hand-authored fixture places even though real users never do.
  */
-export function getCatalog(opts?: { includeDemo?: boolean }): Restaurant[] {
+export function getCatalog(opts?: { includeDemo?: boolean; includeUnverified?: boolean }): Restaurant[] {
   const withComputedFields = catalog.map((raw) => {
     const sourcesWithReputation = raw.sources.map((s) =>
       s.kind === 'curator' ? { ...s, weight: getEffectiveWeight(s.name, raw.cuisine, s.weight) } : s,
@@ -108,9 +108,14 @@ export function getCatalog(opts?: { includeDemo?: boolean }): Restaurant[] {
       quickFacts: openFact ? [openFact, ...raw.quickFacts] : raw.quickFacts,
       trust: level,
       trustRationale: rationale,
+      hasEnoughEvidence: hasEnoughEvidence(sourcesWithReputation),
     };
   });
-  return opts?.includeDemo ? withComputedFields : withComputedFields.filter((r) => !r.isDemo);
+  const demoFiltered = opts?.includeDemo ? withComputedFields : withComputedFields.filter((r) => !r.isDemo);
+  // Un lugar con evidencia insuficiente (todas sus fuentes "weak" — ej. un solo curador sin
+  // reputación probada todavía) no llega a un usuario real hasta que otra fuente independiente
+  // lo corrobore. El operador sigue viéndolo siempre (Admin pide includeUnverified explícito).
+  return opts?.includeUnverified ? demoFiltered : demoFiltered.filter((r) => r.hasEnoughEvidence);
 }
 
 /** Lookup by an explicit, already-known id — always demo-inclusive, since a listing decision (hide demo) doesn't apply once the caller already has the exact id (e.g. an operator confirming a source on a demo place). */

@@ -82,10 +82,14 @@ export interface Restaurant {
   michelinStars?: number;
   michelinGreenStar?: boolean;
   michelinBibGourmand?: boolean;
+  /** "restaurante" | "cafe" — inferido de la cocina/tipo de Google al cargar, editable por un operador. Alimenta el filtro de tipo de pin en el mapa. */
+  venueType?: 'restaurant' | 'cafe';
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */
   trustRationale: string;
+  /** Al menos una fuente no-"weak" (o evidencia insuficiente) — un lugar sin esto no llega a `getCatalog()` público hasta que otra fuente lo corrobore. Siempre presente en la respuesta, útil para el badge de Admin. */
+  hasEnoughEvidence: boolean;
   type: RestaurantSignal;
   why: string;
   tags: string[];

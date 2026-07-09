@@ -74,11 +74,15 @@ export interface Restaurant {
   michelinStars?: number;
   michelinGreenStar?: boolean;
   michelinBibGourmand?: boolean;
+  /** "restaurant" | "cafe" — inferred from cuisine/Google type when loaded, editable by an operator. Drives the pin-type filter on the map. */
+  venueType?: 'restaurant' | 'cafe';
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';
   /** Plain-language explanation behind `trust` (SPEC-007) — "el usuario nunca ve números, ve explicaciones". */
   trustRationale?: string;
+  /** At least one non-"weak" source (or not enough evidence yet) — only present on operator/Admin reads, since public reads never return an unverified place at all. */
+  hasEnoughEvidence?: boolean;
   type: RestaurantSignal;
   /** The Brain's one-line reason to go. */
   why: string;

@@ -37,7 +37,7 @@ adminRouter.use('/admin', requireOperator);
 
 /** Read-only overview — trust/trustRationale/sources for the whole catalog at once, which no end-user screen ever shows. includeDemo:true so the operator can still see/manage the hand-authored fixture places even though real users never do. */
 adminRouter.get('/admin/restaurants', (_req, res) => {
-  res.json(getCatalog({ includeDemo: true }));
+  res.json(getCatalog({ includeDemo: true, includeUnverified: true }));
 });
 
 /** SPEC-017: curator reputation per domain — internal to the operator view only, per the spec's own open question on end-user visibility (kept unresolved, so kept unexposed). */
@@ -63,7 +63,7 @@ adminRouter.post('/admin/curators/rename', (req, res) => {
     return;
   }
   let restaurantsUpdated = 0;
-  for (const restaurant of getCatalog({ includeDemo: true })) {
+  for (const restaurant of getCatalog({ includeDemo: true, includeUnverified: true })) {
     if (!restaurant.sources.some((s) => s.name === oldHandle)) continue;
     const sources = restaurant.sources.map((s) => (s.name === oldHandle ? { ...s, name: newHandle } : s));
     updateRestaurant(restaurant.id, { sources });
@@ -81,8 +81,8 @@ function daysSinceFreshestSource(sources: { capturedAt: string }[]): number | nu
 
 /** Dashboard overview: every number here is a direct read of real data (catalog, curator store, moderation queues, user stats) — never a placeholder metric. */
 adminRouter.get('/admin/stats', (_req, res) => {
-  const real = getCatalog({ includeDemo: true }).filter((r) => !r.isDemo);
-  const demoCount = getCatalog({ includeDemo: true }).length - real.length;
+  const real = getCatalog({ includeDemo: true, includeUnverified: true }).filter((r) => !r.isDemo);
+  const demoCount = getCatalog({ includeDemo: true, includeUnverified: true }).length - real.length;
   res.json({
     restaurants: {
       total: real.length,
@@ -616,7 +616,7 @@ adminRouter.get('/admin/restaurants/:id/checkin-token', (req, res) => {
 
 /** SPEC-023: real Caju Points consumed per restaurant — the system only reports, a human decides how to compensate the venue outside CajuEat. */
 adminRouter.get('/admin/consumption', (_req, res) => {
-  const catalog = getCatalog({ includeDemo: true });
+  const catalog = getCatalog({ includeDemo: true, includeUnverified: true });
   const summary = getConsumptionSummary()
     .map((row) => {
       const restaurant = catalog.find((r) => r.id === row.restaurantId);
