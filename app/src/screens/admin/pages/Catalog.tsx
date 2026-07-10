@@ -16,6 +16,7 @@ export function Catalog() {
   const [googleSearching, setGoogleSearching] = useState(false);
   const [googleBusyId, setGoogleBusyId] = useState<string | null>(null);
   const [googleStatusById, setGoogleStatusById] = useState<Record<string, string>>({});
+  const [cajuEatBusyId, setCajuEatBusyId] = useState<string | null>(null);
 
   const googleErrorMessage = (err: unknown) => (err instanceof GooglePlacesNotConfiguredError ? err.message : 'No se pudo conectar con Google Places.');
 
@@ -51,6 +52,18 @@ export function Catalog() {
       setGoogleStatusById((prev) => ({ ...prev, [id]: googleErrorMessage(err) }));
     } finally {
       setGoogleBusyId(null);
+    }
+  };
+
+  // @caju_eat es Lugarcito recomendando en primera persona — el equipo lo probó y lo respalda
+  // directamente, siempre con el peso más alto (ver curatorStore.ts getEffectiveWeight).
+  const markCajuEatRecommends = async (id: string) => {
+    setCajuEatBusyId(id);
+    try {
+      await adminClient.addSource(id, { name: '@caju_eat', kind: 'curator', weight: 'strong' });
+      loadAll();
+    } finally {
+      setCajuEatBusyId(null);
     }
   };
 
@@ -96,10 +109,16 @@ export function Catalog() {
               <div style={{ display: 'flex', gap: 6 }}>
                 {r.isDemo && <Badge tone="danger">Demo</Badge>}
                 {(r.michelinStars || r.michelinGreenStar || r.michelinBibGourmand) && <Badge tone="over">Michelin</Badge>}
+                {r.sources.some((s) => s.name === '@caju_eat') && <Badge tone="brand">Recomendado por Lugarcito</Badge>}
                 <Badge tone={TRUST_TONE[r.trust]}>{r.trust}</Badge>
               </div>
             </div>
             <p className="cj-admin-row__rationale">{r.trustRationale}</p>
+            {!r.isDemo && !r.sources.some((s) => s.name === '@caju_eat') && (
+              <Button size="sm" variant="ghost" loading={cajuEatBusyId === r.id} onClick={() => markCajuEatRecommends(r.id)}>
+                Marcar como recomendado por Lugarcito
+              </Button>
+            )}
             {!r.isDemo && (
               <div className="cj-admin-google">
                 {r.googlePlaceId ? (

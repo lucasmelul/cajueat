@@ -69,8 +69,12 @@ function weightFromNet(net: number): SignalWeight {
   return 'medium';
 }
 
+/** @caju_eat es Lugarcito curando en primera persona — un lugar que el equipo recomienda porque lo probó y lo respalda directamente, no un curador externo cuya reputación hay que ir ganando. Por eso nunca pasa por el mecanismo de sostenidas/contradichas de los demás: es siempre el peso más alto. */
+export const APP_CURATOR_HANDLE = '@caju_eat';
+
 /** El peso efectivo de la afirmación de un curador en un dominio puntual — si no hay historial todavía, se usa el `fallback` (el peso con el que se cargó la fuente). */
 export function getEffectiveWeight(handle: string, domain: string, fallback: SignalWeight): SignalWeight {
+  if (handle === APP_CURATOR_HANDLE) return 'strong';
   const domainRecord = store.curators[handle]?.domains[domain];
   if (!domainRecord || (domainRecord.sustained === 0 && domainRecord.contradicted === 0)) return fallback;
   return weightFromNet(domainRecord.sustained - domainRecord.contradicted);
