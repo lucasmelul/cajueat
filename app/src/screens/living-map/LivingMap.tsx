@@ -58,6 +58,7 @@ export function LivingMap() {
   const [brainCardDismissed, setBrainCardDismissed] = useState(false);
   const [query, setQuery] = useState('');
   const [sheetState, setSheetState] = useState<SheetState | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [draftChip, setDraftChip] = useState<ContextChip>('open');
   const [draftCuisine, setDraftCuisine] = useState<string | null>(null);
@@ -174,15 +175,24 @@ export function LivingMap() {
     (draftChip !== 'open' ? 1 : 0) + (draftCuisine ? 1 : 0) + (draftMichelin ? 1 : 0) + (draftVenueType ? 1 : 0) + (!draftShowEvents ? 1 : 0);
 
   const selected = allRestaurants.find((r) => r.id === selectedRestaurantId) ?? null;
+  const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
 
   const handleSelectPin = (id: string) => {
+    setSelectedEventId(null);
     setSelectedRestaurantId(id);
     setSheetState('peek');
+  };
+
+  const handleSelectEvent = (id: string) => {
+    setSelectedRestaurantId(null);
+    setSheetState(null);
+    setSelectedEventId(id);
   };
 
   const handleMapClick = () => {
     setSelectedRestaurantId(null);
     setSheetState(null);
+    setSelectedEventId(null);
   };
 
   const cycleSheet = () => {
@@ -220,7 +230,9 @@ export function LivingMap() {
         restaurants={visibleRestaurants}
         events={showEvents ? events : []}
         selectedId={selectedRestaurantId}
+        selectedEventId={selectedEventId}
         onSelectRestaurant={handleSelectPin}
+        onSelectEvent={handleSelectEvent}
         onMapClick={handleMapClick}
         userLocation={userLocation}
       />
@@ -290,8 +302,33 @@ export function LivingMap() {
         </div>
       )}
 
+      {selectedEvent && (
+        <div className="cj-sheet-anchor">
+          <BottomSheet state="peek" onGrip={() => setSelectedEventId(null)}>
+            <div className="cj-peek cj-event-peek">
+              <div className="cj-event-peek__head">
+                <span className="cj-event-peek__when">
+                  {new Date(selectedEvent.whenAt).toLocaleString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <b>{selectedEvent.name}</b>
+                {selectedEvent.address && <span>{selectedEvent.address}</span>}
+              </div>
+              <Button
+                variant="primary"
+                block
+                iconLeft={<MapPinIcon size={16} />}
+                onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedEvent.position.lat},${selectedEvent.position.lng}`, '_blank', 'noopener')}
+              >
+                Cómo llegar
+              </Button>
+            </div>
+          </BottomSheet>
+        </div>
+      )}
+
       <div className="cj-bottom">
         {!selected &&
+          !selectedEvent &&
           !brainCardDismissed &&
           (loading || !brainCard ? (
             <div className="cj-brain-skeleton">

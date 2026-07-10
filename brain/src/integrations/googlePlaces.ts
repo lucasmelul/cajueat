@@ -53,6 +53,10 @@ export interface PlaceDetails {
   userRatingCount?: number;
   /** Google's own category for the place (ej. "Cafetería", "Restaurante de sushi") — only ever used as an initial cuisine guess for a bulk import, never overwrites a cuisine an operator already set. */
   primaryType?: string;
+  /** Google's own short editorial blurb, when it has one — same external/uncurated status as rating, never a Source or fed into computeTrust. */
+  editorialSummary?: string;
+  /** Up to 5 real review excerpts Google returns — passed to the Brain as grounding context for Conversation, never turned into a Source (same boundary as rating/userRatingCount, SPEC-026). */
+  reviews?: { text: string; rating: number }[];
 }
 
 interface GoogleTimePoint {
@@ -80,7 +84,8 @@ function toOpenHours(periods: { open?: GoogleTimePoint; close?: GoogleTimePoint 
 
 /** One Details fetch — used both when first linking a restaurant and on a manual "Refrescar desde Google". */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const fieldMask = 'id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount,primaryTypeDisplayName';
+  const fieldMask =
+    'id,displayName,formattedAddress,location,regularOpeningHours,businessStatus,rating,userRatingCount,primaryTypeDisplayName,editorialSummary,reviews';
   const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=es`, {
     headers: { 'X-Goog-Api-Key': requireApiKey(), 'X-Goog-FieldMask': fieldMask },
   });
@@ -95,6 +100,8 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
     rating?: number;
     userRatingCount?: number;
     primaryTypeDisplayName?: { text: string };
+    editorialSummary?: { text: string };
+    reviews?: { text?: { text: string }; rating?: number }[];
   };
   return {
     placeId: data.id,
@@ -106,5 +113,9 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
     rating: data.rating,
     userRatingCount: data.userRatingCount,
     primaryType: data.primaryTypeDisplayName?.text,
+    editorialSummary: data.editorialSummary?.text,
+    reviews: (data.reviews ?? [])
+      .filter((r): r is { text: { text: string }; rating: number } => !!r.text?.text && r.rating != null)
+      .map((r) => ({ text: r.text.text, rating: r.rating })),
   };
 }

@@ -55,6 +55,14 @@ export function Catalog() {
     }
   };
 
+  const editInstagram = async (r: Restaurant) => {
+    const input = window.prompt('Handle de Instagram (sin @):', r.instagramHandle ?? '');
+    if (input === null) return;
+    const instagramHandle = input.trim().replace(/^@/, '');
+    await adminClient.updateRestaurant(r.id, { instagramHandle: instagramHandle || undefined });
+    loadAll();
+  };
+
   // @caju_eat es Lugarcito recomendando en primera persona — el equipo lo probó y lo respalda
   // directamente, siempre con el peso más alto (ver curatorStore.ts getEffectiveWeight).
   const markCajuEatRecommends = async (id: string) => {
@@ -114,6 +122,11 @@ export function Catalog() {
               </div>
             </div>
             <p className="cj-admin-row__rationale">{r.trustRationale}</p>
+            {!r.isDemo && (
+              <Button size="sm" variant="ghost" onClick={() => editInstagram(r)}>
+                {r.instagramHandle ? `Instagram: @${r.instagramHandle}` : 'Agregar Instagram'}
+              </Button>
+            )}
             {!r.isDemo && !r.sources.some((s) => s.name === '@caju_eat') && (
               <Button size="sm" variant="ghost" loading={cajuEatBusyId === r.id} onClick={() => markCajuEatRecommends(r.id)}>
                 Marcar como recomendado por Lugarcito

@@ -181,6 +181,11 @@ export const mockBrainClient: BrainClient = {
     );
   },
 
+  async getDishesForRestaurant() {
+    // The mock catalog never had real sourced dishes — an empty list is honest here, not a gap.
+    return delay([], 200);
+  },
+
   async sendMessage({ text }, onDelta) {
     const matches = pickRestaurantsForQuery(text);
     const replyText = replyTextForQuery(text, matches);

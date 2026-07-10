@@ -493,6 +493,8 @@ adminRouter.post('/admin/restaurants/:id/link-google', async (req, res, next) =>
       ...(details.openHours ? { openHours: details.openHours } : {}),
       googleRating: details.rating,
       googleRatingCount: details.userRatingCount,
+      googleEditorialSummary: details.editorialSummary,
+      googleReviews: details.reviews,
     });
     if (!updated) {
       res.status(404).json({ error: 'restaurant_not_found' });
@@ -527,6 +529,8 @@ adminRouter.post('/admin/restaurants/:id/refresh-google', async (req, res, next)
       ...(details.openHours ? { openHours: details.openHours } : {}),
       googleRating: details.rating,
       googleRatingCount: details.userRatingCount,
+      googleEditorialSummary: details.editorialSummary,
+      googleReviews: details.reviews,
     });
     res.json({ restaurant: updated, businessStatus: details.businessStatus });
   } catch (err) {

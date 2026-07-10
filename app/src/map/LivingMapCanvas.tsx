@@ -19,7 +19,9 @@ export interface LivingMapCanvasProps {
   restaurants: Restaurant[];
   events: MapEvent[];
   selectedId: string | null;
+  selectedEventId?: string | null;
   onSelectRestaurant: (id: string) => void;
+  onSelectEvent?: (id: string) => void;
   /** Fired when the map itself (not a pin) is tapped — closes any open selection (SPEC-001). */
   onMapClick?: () => void;
   /** Real geolocation, once resolved — renders a "you are here" marker, never a guessed position. */
@@ -37,7 +39,7 @@ export interface LivingMapCanvasHandle {
 }
 
 export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvasProps>(function LivingMapCanvas(
-  { center, restaurants, events, selectedId, onSelectRestaurant, onMapClick, userLocation },
+  { center, restaurants, events, selectedId, selectedEventId, onSelectRestaurant, onSelectEvent, onMapClick, userLocation },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,16 @@ export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvas
     });
 
     events.forEach((e) => {
-      upsertMarker(`event-${e.id}`, e.position, <MapPin type="event" label={`${e.name.split(' ')[0]} · ${e.when}`} dotOnly={false} />);
+      upsertMarker(
+        `event-${e.id}`,
+        e.position,
+        <MapPin
+          type="event"
+          label={`${e.name.split(' ')[0]} · ${e.when}`}
+          selected={e.id === selectedEventId}
+          onClick={() => onSelectEvent?.(e.id)}
+        />,
+      );
     });
 
     if (userLocation) {
@@ -144,7 +155,7 @@ export const LivingMapCanvas = forwardRef<LivingMapCanvasHandle, LivingMapCanvas
       );
       map.fitBounds(bounds, { padding: { top: 140, bottom: 260, left: 60, right: 60 }, maxZoom: 15, duration: 0 });
     }
-  }, [restaurants, events, selectedId, onSelectRestaurant, userLocation]);
+  }, [restaurants, events, selectedId, selectedEventId, onSelectRestaurant, onSelectEvent, userLocation]);
 
   return <div ref={containerRef} className="cj-maplibre" aria-label="Mapa de restaurantes recomendados" />;
 });

@@ -54,6 +54,8 @@ export const httpBrainClient: BrainClient = {
 
   getSimilarRestaurants: (id, limit = 3) => request(`/restaurants/${id}/similar?limit=${limit}`),
 
+  getDishesForRestaurant: (id) => request(`/restaurants/${id}/dishes`),
+
   // SPEC-002: the Brain sends the reply as a chunked ND-JSON body, not a single JSON
   // object — read it as a stream so `onDelta` can fire as text is actually generated,
   // rather than buffering the whole response before showing anything.

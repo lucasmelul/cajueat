@@ -70,12 +70,17 @@ export interface Restaurant {
   /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never part of it. */
   googleRating?: number;
   googleRatingCount?: number;
+  /** Google's own editorial blurb and up to 5 real review excerpts — same external boundary as googleRating, used by the Brain as chat grounding context. */
+  googleEditorialSummary?: string;
+  googleReviews?: { text: string; rating: number }[];
   /** Distinción real de la Guía Michelin, independiente entre sí (puede tener estrella Y estrella verde a la vez). */
   michelinStars?: number;
   michelinGreenStar?: boolean;
   michelinBibGourmand?: boolean;
   /** "restaurant" | "cafe" — inferred from cuisine/Google type when loaded, editable by an operator. Drives the pin-type filter on the map. */
   venueType?: 'restaurant' | 'cafe';
+  /** Real Instagram handle (no @), hand-entered by an operator — Google Places has no social fields. A direct link out, never an embedded feed. */
+  instagramHandle?: string;
   /** Price band, e.g. "$$" / "$$$". */
   price: string;
   trust: 'high' | 'mid' | 'low';

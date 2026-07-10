@@ -78,12 +78,17 @@ export interface Restaurant {
   /** SPEC-026: external, uncurated Google aggregate — shown separately from CajuEat's own trust, never fed into computeTrust or turned into a Source. */
   googleRating?: number;
   googleRatingCount?: number;
+  /** Google's own short editorial blurb and up to 5 real review excerpts — same external/uncurated boundary as googleRating (never a Source, never fed into computeTrust). Passed to the Brain as grounding context so Conversation can answer questions about them. */
+  googleEditorialSummary?: string;
+  googleReviews?: { text: string; rating: number }[];
   /** Distinción real de la Guía Michelin — independiente entre sí (un lugar puede tener estrella Y estrella verde a la vez), nunca inferida, siempre cargada por un operador con una fuente real citada. */
   michelinStars?: number;
   michelinGreenStar?: boolean;
   michelinBibGourmand?: boolean;
   /** "restaurante" | "cafe" — inferido de la cocina/tipo de Google al cargar, editable por un operador. Alimenta el filtro de tipo de pin en el mapa. */
   venueType?: 'restaurant' | 'cafe';
+  /** Handle real de Instagram (sin @), cargado a mano por un operador — Google Places no expone redes sociales. Solo un link directo a la cuenta, nunca un feed embebido (requeriría acceso de la propia cuenta vía Graph API). */
+  instagramHandle?: string;
   price: string;
   trust: TrustLevel;
   /** Rationale behind the computed trust level (SPEC-007) — surfaced to the PWA, never a raw score. */

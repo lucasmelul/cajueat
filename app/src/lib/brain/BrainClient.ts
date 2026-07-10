@@ -4,6 +4,7 @@ import type {
   CompareResult,
   ConversationTurn,
   Contribution,
+  Dish,
   DnaTag,
   GeoPoint,
   MapEvent,
@@ -34,6 +35,8 @@ export interface BrainClient {
   getAllRestaurants(): Promise<Restaurant[]>;
   getRestaurant(id: string): Promise<Restaurant | undefined>;
   getSimilarRestaurants(id: string, limit?: number): Promise<Restaurant[]>;
+  /** SPEC-025 "Ver menú": real sourced dishes for this restaurant — never a full invented menu. */
+  getDishesForRestaurant(id: string): Promise<Dish[]>;
   /** `onDelta` fires with plain-text chunks of the reply as they're generated (SPEC-002: never a single completed block). */
   sendMessage(input: { text: string; history: ConversationTurn[] }, onDelta?: (chunk: string) => void): Promise<ConversationTurn>;
 

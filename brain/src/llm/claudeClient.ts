@@ -46,6 +46,13 @@ function catalogForPrompt(catalog: Restaurant[]) {
     idealFor: r.idealFor,
     notFor: r.notFor,
     summary: r.summary,
+    // SPEC-026-style external signal: Google's own words, never a Source, never fed into
+    // computeTrust — passed only so Conversation can ground an answer in what Google says
+    // ("¿qué dicen las reviews sobre el ruido?") without inventing anything.
+    ...(r.googleEditorialSummary ? { googleEditorialSummary: r.googleEditorialSummary } : {}),
+    ...(r.googleReviews && r.googleReviews.length > 0
+      ? { googleReviews: r.googleReviews.slice(0, 5).map((rv) => ({ text: rv.text.slice(0, 400), rating: rv.rating })) }
+      : {}),
   }));
 }
 
@@ -70,6 +77,11 @@ su nivel de confianza. Si la pregunta es sobre un plato o categoría puntual (ej
 por su tipo de cocina o nombre si no está cargado como plato real. Si ningún plato cargado coincide con lo que pide,
 decilo con honestidad explícita en la respuesta (ej. "todavía no tengo información sobre eso") en vez de recomendar
 un restaurante genérico como si fuera una respuesta real a esa pregunta.
+
+Algunos restaurantes también traen googleEditorialSummary y/o googleReviews (texto real de Google, nunca inventado
+por vos). Si la pregunta apunta a eso (ej. "¿qué dicen las reviews?", "¿es ruidoso?"), podés usar ese contenido —
+pero siempre aclarando que es una opinión externa de Google, nunca la confianza propia de Lugarcito, y nunca
+citando algo que no esté literalmente en esos campos.
 
 Respondé en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips
 de seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;

@@ -203,6 +203,28 @@
   color: var(--ink-700);
 }
 
+.cj-event-peek__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cj-event-peek__head b {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: var(--ink-900);
+}
+.cj-event-peek__head span {
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.cj-event-peek__when {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--caju-600) !important;
+}
+
 .cj-brain-skeleton {
   display: flex;
   gap: var(--space-4);

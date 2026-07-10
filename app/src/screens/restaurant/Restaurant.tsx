@@ -12,6 +12,7 @@ import {
   CircleX,
   Clock,
   FolderPlus,
+  ExternalLink,
   Heart,
   Laptop,
   Navigation,
@@ -31,7 +32,7 @@ import { RestaurantCard } from '../../components/discovery';
 import { BrainMark, SourceChip, TrustMeter } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { useAppStore } from '../../lib/store/useAppStore';
-import type { Restaurant as RestaurantData } from '../../types';
+import type { Dish, Restaurant as RestaurantData } from '../../types';
 import './Restaurant.css';
 
 const FACT_ICONS: Record<string, LucideIcon> = {
@@ -73,6 +74,7 @@ export function Restaurant() {
 
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [similar, setSimilar] = useState<RestaurantData[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,10 +82,11 @@ export function Restaurant() {
     let alive = true;
     setLoading(true);
     hydrateMemory();
-    Promise.all([brain.getRestaurant(id), brain.getSimilarRestaurants(id, 2)]).then(([r, sim]) => {
+    Promise.all([brain.getRestaurant(id), brain.getSimilarRestaurants(id, 2), brain.getDishesForRestaurant(id)]).then(([r, sim, d]) => {
       if (!alive) return;
       setRestaurant(r ?? null);
       setSimilar(sim);
+      setDishes(d);
       setLoading(false);
     });
     return () => {
@@ -133,6 +136,15 @@ export function Restaurant() {
               <ChevronLeft size={22} />
             </button>
             <div className="cj-hero__top-r">
+              {restaurant.instagramHandle && (
+                <button
+                  className="cj-round"
+                  aria-label="Ver Instagram"
+                  onClick={() => window.open(`https://instagram.com/${restaurant.instagramHandle}`, '_blank', 'noopener')}
+                >
+                  <ExternalLink size={18} />
+                </button>
+              )}
               <button className="cj-round" aria-label="Compartir" onClick={() => shareRestaurant(restaurant)}>
                 <Share2 size={18} />
               </button>
@@ -246,6 +258,21 @@ export function Restaurant() {
               ))}
             </div>
           </section>
+
+          {/* Menú (SPEC-025): platos reales cargados y sourceados — nunca un menú completo inventado. */}
+          {dishes.length > 0 && (
+            <section className="cj-sec">
+              <Badge tone="over">Menú</Badge>
+              <div className="cj-menu">
+                {dishes.map((d) => (
+                  <div className="cj-menu__row" key={d.id}>
+                    <span className="cj-menu__name">{d.name}</span>
+                    <TrustMeter level={d.trust} pill />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Brain tips */}
           <section className="cj-sec">

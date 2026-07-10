@@ -67,6 +67,11 @@ export function getDishesByCategory(category: string): Dish[] {
   return store.dishes.filter((d) => d.category.toLowerCase() === needle).map(withComputedTrust);
 }
 
+/** Real dishes for one restaurant's "Menú" section — never a full menu, only what's actually been sourced. */
+export function getDishesByRestaurant(restaurantId: string): Dish[] {
+  return store.dishes.filter((d) => d.restaurantId === restaurantId).map(withComputedTrust);
+}
+
 /** Direct operator creation (Admin CMS) — same convention as createRestaurant: an operator's own action, never queued. Requires at least one real source so a dish is never sourceless from the moment it exists. */
 export function createDish(input: { name: string; category: string; restaurantId: string; source: Source }): Dish {
   const raw: RawDish = {
