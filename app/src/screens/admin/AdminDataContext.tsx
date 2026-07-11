@@ -1,5 +1,5 @@
 import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
-import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention } from '../../lib/admin/adminClient';
+import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention, PendingLink } from '../../lib/admin/adminClient';
 import type { Dish, MapEvent, Restaurant } from '../../types';
 
 /**
@@ -16,12 +16,14 @@ export interface AdminData {
   pendingNewPlaces: NewPlaceSuggestion[];
   dishes: Dish[];
   pendingDishMentions: PendingDishMention[];
+  pendingLinks: PendingLink[];
   events: MapEvent[];
   loadAll: () => Promise<void>;
   setPendingContributions: Dispatch<SetStateAction<PendingContribution[]>>;
   setPendingNewPlaces: Dispatch<SetStateAction<NewPlaceSuggestion[]>>;
   setDishes: Dispatch<SetStateAction<Dish[]>>;
   setPendingDishMentions: Dispatch<SetStateAction<PendingDishMention[]>>;
+  setPendingLinks: Dispatch<SetStateAction<PendingLink[]>>;
   setEvents: Dispatch<SetStateAction<MapEvent[]>>;
 }
 

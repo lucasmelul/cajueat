@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, Inbox, LayoutDashboard, LogOut, MapPin, Megaphone, PlusCircle, QrCode, Radar, ShieldCheck, UtensilsCrossed } from 'lucide-react';
 import { Button } from '../../components/core';
 import { adminClient, AdminAuthError, clearOperatorToken, getOperatorToken, setOperatorToken } from '../../lib/admin/adminClient';
-import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention } from '../../lib/admin/adminClient';
+import type { CuratorRecord, NewPlaceSuggestion, PendingContribution, PendingDishMention, PendingLink } from '../../lib/admin/adminClient';
 import type { Dish, MapEvent, Restaurant } from '../../types';
 import { AdminDataContext } from './AdminDataContext';
 import './AdminLayout.css';
@@ -40,18 +40,20 @@ export function AdminLayout() {
   const [pendingNewPlaces, setPendingNewPlaces] = useState<NewPlaceSuggestion[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [pendingDishMentions, setPendingDishMentions] = useState<PendingDishMention[]>([]);
+  const [pendingLinks, setPendingLinks] = useState<PendingLink[]>([]);
   const [events, setEvents] = useState<MapEvent[]>([]);
 
   const loadAll = async () => {
     setGateLoading(true);
     try {
-      const [data, curatorData, pending, newPlaces, dishData, pendingDishes, evts] = await Promise.all([
+      const [data, curatorData, pending, newPlaces, dishData, pendingDishes, links, evts] = await Promise.all([
         adminClient.getCatalog(),
         adminClient.getCurators(),
         adminClient.getPendingContributions(),
         adminClient.getPendingNewPlaces(),
         adminClient.getDishes(),
         adminClient.getPendingDishMentions(),
+        adminClient.getPendingLinks(),
         adminClient.getEvents(),
       ]);
       setCatalog(data);
@@ -60,6 +62,7 @@ export function AdminLayout() {
       setPendingNewPlaces(newPlaces);
       setDishes(dishData);
       setPendingDishMentions(pendingDishes);
+      setPendingLinks(links);
       setEvents(evts);
       setAuthed(true);
       setGateError('');
@@ -121,12 +124,14 @@ export function AdminLayout() {
         pendingNewPlaces,
         dishes,
         pendingDishMentions,
+        pendingLinks,
         events,
         loadAll,
         setPendingContributions,
         setPendingNewPlaces,
         setDishes,
         setPendingDishMentions,
+        setPendingLinks,
         setEvents,
       }}
     >

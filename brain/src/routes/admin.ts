@@ -18,9 +18,11 @@ import {
   getPendingContributions,
   getPendingDishMentionById,
   getPendingDishMentions,
+  getPendingLinks,
   markContributionStatus,
   markDishMentionStatus,
   markNewPlaceStatus,
+  markPendingLinkStatus,
 } from '../moderation/pendingContributionsStore.js';
 import { notifyNewPlaceIfMatches, notifyTrustChangeIfSaved } from '../notifications/triggers.js';
 import type { Source, SourceKind, SignalWeight } from '../types.js';
@@ -295,6 +297,34 @@ adminRouter.post('/admin/pending-dish-mentions/:id/reject', (req, res) => {
   const updated = markDishMentionStatus(req.params.id, 'rejected');
   if (!updated) {
     res.status(404).json({ error: 'pending_dish_mention_not_found' });
+    return;
+  }
+  res.json(updated);
+});
+
+/**
+ * Reels/TikTok/links (SPEC-015): the Brain never reads the content, so there's no automatic
+ * "confirm" action — an operator opens the link, decides what to do (add a source, create a
+ * new place, or nothing), and does that manually with the tools above. These two routes just
+ * clear the item from the queue once it's been looked at.
+ */
+adminRouter.get('/admin/pending-links', (_req, res) => {
+  res.json(getPendingLinks());
+});
+
+adminRouter.post('/admin/pending-links/:id/reviewed', (req, res) => {
+  const updated = markPendingLinkStatus(req.params.id, 'confirmed');
+  if (!updated) {
+    res.status(404).json({ error: 'pending_link_not_found' });
+    return;
+  }
+  res.json(updated);
+});
+
+adminRouter.post('/admin/pending-links/:id/reject', (req, res) => {
+  const updated = markPendingLinkStatus(req.params.id, 'rejected');
+  if (!updated) {
+    res.status(404).json({ error: 'pending_link_not_found' });
     return;
   }
   res.json(updated);

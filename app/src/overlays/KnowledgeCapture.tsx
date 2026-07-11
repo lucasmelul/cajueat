@@ -66,6 +66,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const [points, setPoints] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSpeechSupported(!!getSpeechRecognition());
@@ -164,7 +165,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
                 <span className="cj-cap__t">Foto</span>
                 <span className="cj-cap__s">Plato, menú o ticket</span>
               </button>
-              <button className="cj-cap" onClick={() => start('reel')}>
+              <button className="cj-cap" onClick={() => linkInputRef.current?.focus()}>
                 <span className="cj-cap__ic cj-cap__ic--leaf">
                   <Clapperboard size={22} />
                 </span>
@@ -181,7 +182,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             </div>
             <div className="cj-cap-link">
               <Link2 size={18} />
-              <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="o pegá un link de Instagram, YouTube…" />
+              <input ref={linkInputRef} value={link} onChange={(e) => setLink(e.target.value)} placeholder="o pegá un link de Instagram, YouTube…" />
               <Button size="sm" variant="primary" onClick={() => start('link', link.trim())} disabled={!link.trim()}>
                 Enviar
               </Button>

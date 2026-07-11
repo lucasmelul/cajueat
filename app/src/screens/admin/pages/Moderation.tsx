@@ -15,6 +15,8 @@ export function Moderation() {
     setPendingNewPlaces,
     pendingDishMentions,
     setPendingDishMentions,
+    pendingLinks,
+    setPendingLinks,
     loadAll,
   } = useAdminData();
 
@@ -22,6 +24,7 @@ export function Moderation() {
   const [newPlaceBusyId, setNewPlaceBusyId] = useState<string | null>(null);
   const [newPlaceDrafts, setNewPlaceDrafts] = useState<Record<string, { name: string; cuisine: string; neighborhood: string; address: string }>>({});
   const [dishMentionBusyId, setDishMentionBusyId] = useState<string | null>(null);
+  const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
 
   // Backfills a draft for any suggestion this page hasn't seen yet — covers both the initial
   // load and a later loadAll() picking up a suggestion that arrived after this page mounted.
@@ -106,6 +109,26 @@ export function Moderation() {
       setPendingDishMentions((prev) => prev.filter((d) => d.id !== id));
     } finally {
       setDishMentionBusyId(null);
+    }
+  };
+
+  const markLinkReviewed = async (id: string) => {
+    setLinkBusyId(id);
+    try {
+      await adminClient.markPendingLinkReviewed(id);
+      setPendingLinks((prev) => prev.filter((l) => l.id !== id));
+    } finally {
+      setLinkBusyId(null);
+    }
+  };
+
+  const rejectLink = async (id: string) => {
+    setLinkBusyId(id);
+    try {
+      await adminClient.rejectPendingLink(id);
+      setPendingLinks((prev) => prev.filter((l) => l.id !== id));
+    } finally {
+      setLinkBusyId(null);
     }
   };
 
@@ -212,6 +235,35 @@ export function Moderation() {
                 </Button>
                 <Button size="sm" variant="secondary" disabled={dishMentionBusyId === d.id} onClick={() => rejectDishMention(d.id)}>
                   Rechazar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="cj-admin-sec">
+        <Badge tone="over">Reels / TikTok / links · pendientes</Badge>
+        <p className="cj-admin-lead">
+          Lugarcito no puede leer el contenido de un Reel o link todavía (SPEC-015) — abrí el link vos mismo y, si
+          corresponde, agregá una fuente o creá el lugar a mano con las herramientas de arriba. Esto solo limpia la
+          cola una vez que lo revisaste.
+        </p>
+        {pendingLinks.length === 0 && <p className="cj-admin-lead">No hay links pendientes de revisión.</p>}
+        <div className="cj-admin-analysis">
+          {pendingLinks.map((l) => (
+            <div className="cj-admin-match" key={l.id}>
+              <p>
+                <a href={l.url} target="_blank" rel="noopener noreferrer">
+                  {l.url}
+                </a>
+              </p>
+              <div className="cj-admin-pending__actions">
+                <Button size="sm" variant="primary" disabled={linkBusyId === l.id} onClick={() => markLinkReviewed(l.id)}>
+                  Marcar como revisado
+                </Button>
+                <Button size="sm" variant="secondary" disabled={linkBusyId === l.id} onClick={() => rejectLink(l.id)}>
+                  Descartar
                 </Button>
               </div>
             </div>

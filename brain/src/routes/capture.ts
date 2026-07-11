@@ -3,7 +3,7 @@ import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
-import { enqueueNewPlaceSuggestion, enqueuePendingContribution, enqueuePendingDishMention } from '../moderation/pendingContributionsStore.js';
+import { enqueueNewPlaceSuggestion, enqueuePendingContribution, enqueuePendingDishMention, enqueuePendingLink } from '../moderation/pendingContributionsStore.js';
 
 export const captureRouter = Router();
 
@@ -79,10 +79,16 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     return;
   }
 
-  // Reel/TikTok/link: sigue como simulación honesta — requiere una decisión legal/de costo (SPEC-015), no técnica.
-  // El link en sí ahora sí llega y queda registrado (antes se descartaba en el cliente) — lo que sigue sin
-  // pasar es el scraping real del contenido, no la recepción del link.
-  const learned = `Gracias por compartir ${label}. El Brain lo sumó a su conocimiento sobre la zona.`;
-  recordContribution(req.userId!, text ? `Aportaste ${label}: ${text.slice(0, 80)}` : `Aportaste ${label}`, POINTS);
+  // Reel/TikTok/link (SPEC-015): sin scraping real del contenido — requiere una decisión legal/de
+  // costo, no técnica — así que nunca pasa por Claude ni se aplica solo. En vez de una respuesta
+  // enlatada que finge haber "aprendido" algo del link, se guarda para que un operador lo abra a
+  // mano y agregue una fuente/lugar real con las herramientas que ya existen (Admin → Moderación).
+  if (!text) {
+    res.status(400).json({ error: 'link_required' });
+    return;
+  }
+  enqueuePendingLink({ url: text });
+  const learned = `Gracias por compartir ${label}. Lo guardamos para que el equipo lo revise a mano — todavía no podemos leer el contenido del link automáticamente.`;
+  recordContribution(req.userId!, `Aportaste ${label}: ${text.slice(0, 80)}`, POINTS);
   res.json({ learned, pointsAwarded: POINTS });
 });

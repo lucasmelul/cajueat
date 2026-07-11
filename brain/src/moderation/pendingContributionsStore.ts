@@ -60,21 +60,42 @@ export interface PendingDishMention {
   status: ContributionStatus;
 }
 
+/**
+ * A Reel/TikTok/Instagram link a user pasted — the Brain can't fetch or read the actual
+ * content (SPEC-015: needs a real scraping/API integration, a legal/cost decision, not a
+ * technical one), so this is never auto-processed. It exists purely so an operator can open
+ * the link by hand, see what it's actually about, and manually add a source/new place using
+ * the tools that already exist — instead of the link vanishing with a fake "learned" message.
+ */
+export interface PendingLink {
+  id: string;
+  url: string;
+  note?: string;
+  createdAt: number;
+  status: ContributionStatus;
+}
+
 interface Store {
   contributions: PendingContribution[];
   newPlaces: NewPlaceSuggestion[];
   dishMentions: PendingDishMention[];
+  links: PendingLink[];
 }
 
 const DATA_FILE = join(DATA_DIR, 'pending-contributions.json');
 
 function load(): Store {
-  if (!existsSync(DATA_FILE)) return { contributions: [], newPlaces: [], dishMentions: [] };
+  if (!existsSync(DATA_FILE)) return { contributions: [], newPlaces: [], dishMentions: [], links: [] };
   try {
     const parsed = JSON.parse(readFileSync(DATA_FILE, 'utf-8')) as Partial<Store>;
-    return { contributions: parsed.contributions ?? [], newPlaces: parsed.newPlaces ?? [], dishMentions: parsed.dishMentions ?? [] };
+    return {
+      contributions: parsed.contributions ?? [],
+      newPlaces: parsed.newPlaces ?? [],
+      dishMentions: parsed.dishMentions ?? [],
+      links: parsed.links ?? [],
+    };
   } catch {
-    return { contributions: [], newPlaces: [], dishMentions: [] };
+    return { contributions: [], newPlaces: [], dishMentions: [], links: [] };
   }
 }
 
@@ -181,6 +202,31 @@ export function getPendingDishMentions(): PendingDishMention[] {
 
 export function getPendingDishMentionById(id: string): PendingDishMention | undefined {
   return store.dishMentions.find((d) => d.id === id);
+}
+
+export function enqueuePendingLink(input: { url: string; note?: string }): PendingLink {
+  const entry: PendingLink = {
+    id: randomUUID(),
+    url: input.url,
+    note: input.note,
+    createdAt: Date.now(),
+    status: 'pending',
+  };
+  store.links.unshift(entry);
+  persist();
+  return entry;
+}
+
+export function getPendingLinks(): PendingLink[] {
+  return store.links.filter((l) => l.status === 'pending');
+}
+
+export function markPendingLinkStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): PendingLink | undefined {
+  const entry = store.links.find((l) => l.id === id);
+  if (!entry) return undefined;
+  entry.status = status;
+  persist();
+  return entry;
 }
 
 export function markDishMentionStatus(id: string, status: Exclude<ContributionStatus, 'pending'>): PendingDishMention | undefined {

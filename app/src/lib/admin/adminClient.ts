@@ -132,6 +132,15 @@ export interface PendingDishMention {
   status: 'pending' | 'confirmed' | 'rejected';
 }
 
+/** SPEC-015: a Reel/TikTok/link a user pasted — the Brain never reads the content, so an operator opens it by hand. */
+export interface PendingLink {
+  id: string;
+  url: string;
+  note?: string;
+  createdAt: number;
+  status: 'pending' | 'confirmed' | 'rejected';
+}
+
 export type CreateDishInput = {
   name: string;
   category: string;
@@ -280,4 +289,10 @@ export const adminClient = {
   confirmPendingDishMention: (id: string) => request<Dish>(`/admin/pending-dish-mentions/${id}/confirm`, { method: 'POST' }),
 
   rejectPendingDishMention: (id: string) => request<PendingDishMention>(`/admin/pending-dish-mentions/${id}/reject`, { method: 'POST' }),
+
+  getPendingLinks: () => request<PendingLink[]>('/admin/pending-links'),
+
+  markPendingLinkReviewed: (id: string) => request<PendingLink>(`/admin/pending-links/${id}/reviewed`, { method: 'POST' }),
+
+  rejectPendingLink: (id: string) => request<PendingLink>(`/admin/pending-links/${id}/reject`, { method: 'POST' }),
 };
