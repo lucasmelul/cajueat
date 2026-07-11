@@ -65,6 +65,10 @@ export interface InterpretedQuery {
   restaurantIds: string[];
   reply: string;
   chips: string[];
+  /** true si `reply` está groundeada en el catálogo/platos reales pasados; false si la pregunta no tiene nada
+   *  relevante ahí (ej. no es sobre gastronomía, o es sobre un lugar/dato que Lugarcito no tiene cargado). Cuando
+   *  es false, `interpretQuery` intenta un fallback de búsqueda web real — nunca inventa la respuesta él mismo. */
+  foundInCatalog: boolean;
 }
 
 const QUERY_SYSTEM_PROMPT = `Sos Lugarcito, un concierge gastronómico. Interpretás lo que pide el usuario y elegís,
@@ -82,6 +86,10 @@ Algunos restaurantes también traen googleEditorialSummary y/o googleReviews (te
 por vos). Si la pregunta apunta a eso (ej. "¿qué dicen las reviews?", "¿es ruidoso?"), podés usar ese contenido —
 pero siempre aclarando que es una opinión externa de Google, nunca la confianza propia de Lugarcito, y nunca
 citando algo que no esté literalmente en esos campos.
+
+Marcá foundInCatalog en false únicamente cuando tu reply es un "no tengo esto" honesto porque nada en la lista de
+restaurantes o platos es relevante para lo que pidió — no lo marques false solo porque elegiste la opción "más
+cercana" en vez de una perfecta. Con foundInCatalog en true incluí igual el reply normal.
 
 Respondé en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips
 de seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;
@@ -127,8 +135,9 @@ export async function interpretQuery(
             restaurantIds: { type: 'array', items: { type: 'string' } },
             reply: { type: 'string' },
             chips: { type: 'array', items: { type: 'string' } },
+            foundInCatalog: { type: 'boolean' },
           },
-          required: ['restaurantIds', 'reply', 'chips'],
+          required: ['restaurantIds', 'reply', 'chips', 'foundInCatalog'],
           additionalProperties: false,
         },
       },
@@ -148,7 +157,51 @@ export async function interpretQuery(
 
   // Never trust the model's IDs blindly — only real, known restaurants leave this function.
   const knownIds = new Set(input.catalog.map((r) => r.id));
-  return { ...parsed, restaurantIds: parsed.restaurantIds.filter((id) => knownIds.has(id)) };
+  const grounded = { ...parsed, restaurantIds: parsed.restaurantIds.filter((id) => knownIds.has(id)) };
+  if (grounded.foundInCatalog) return grounded;
+
+  // El catálogo/platos no tenían nada relevante — último recurso: una búsqueda web real, nunca
+  // inventada por el modelo. La aclaración de que es información externa/no verificada por
+  // Lugarcito se agrega acá en código, no queda librada a que el modelo se acuerde de escribirla
+  // cada vez (mismo criterio que "según Google" en las reviews: el disclaimer nunca es una
+  // decisión del LLM). El "no tengo esto" que ya se streameó queda como primera parte honesta.
+  const disclaimer = 'No verificado por Lugarcito — resultado de una búsqueda web:\n';
+  onDelta?.(`\n\n${disclaimer}`);
+  const webAnswer = await answerFromWeb(input.text, onDelta);
+  return { ...grounded, reply: webAnswer ? `${grounded.reply}\n\n${disclaimer}${webAnswer}` : grounded.reply };
+}
+
+const WEB_FALLBACK_SYSTEM_PROMPT = `Sos Lugarcito. La pregunta del usuario no tiene nada relevante en el catálogo
+interno de restaurantes/platos reales de Lugarcito. Buscá en la web una respuesta útil y concreta.
+
+Reglas:
+- No hace falta que aclares que es información externa — eso ya lo antepone el sistema. Andá directo al dato.
+- Mencioná de dónde sale (el sitio/dominio real que encontraste en la búsqueda), en una frase corta.
+- Español, 1-3 oraciones, tono cercano.
+- Si la búsqueda tampoco encuentra nada útil, decilo con honestidad — nunca inventes una respuesta.`;
+
+/** Último recurso de SPEC-002 cuando `interpretQuery` no groundeó nada: una búsqueda web real vía la
+ *  tool nativa de Claude, nunca el conocimiento de entrenamiento del modelo solo. Separada de
+ *  `interpretQuery` a propósito — sin JSON schema, para poder usar la tool de búsqueda sin pelear
+ *  con el output estructurado. */
+export async function answerFromWeb(text: string, onDelta?: (chunk: string) => void): Promise<string> {
+  const stream = getClient().messages.stream({
+    model: MODEL,
+    max_tokens: 400,
+    system: WEB_FALLBACK_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: text }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+  });
+
+  let full = '';
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      full += event.delta.text;
+      onDelta?.(event.delta.text);
+    }
+  }
+  await stream.finalMessage();
+  return full.trim();
 }
 
 const EXPLAIN_SYSTEM_PROMPT = `Sos Lugarcito. Te doy una recomendación y las señales reales que la sostienen.
