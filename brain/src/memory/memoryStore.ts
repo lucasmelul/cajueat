@@ -22,6 +22,8 @@ interface UsageCounter {
   day: string; // YYYY-MM-DD, resets counts when it no longer matches today
   messages: number;
   captures: number;
+  /** SPEC-002 web-search fallback: separate, tighter cap from the general message limit — real API cost per use, and the reason someone would exhaust it (asking things Lugarcito has no data on) is different from normal conversation volume. */
+  webSearches: number;
 }
 
 interface MemoryState {
@@ -68,7 +70,7 @@ function todayKey(): string {
 }
 
 function freshUsage(): UsageCounter {
-  return { day: todayKey(), messages: 0, captures: 0 };
+  return { day: todayKey(), messages: 0, captures: 0, webSearches: 0 };
 }
 
 /** Brand-new anonymous row — empty, per SPEC-013 ("el Brain crea una fila de usuario la primera vez que ve ese ID", no pre-populated history). */
@@ -370,6 +372,22 @@ export function checkAndConsumeUsage(userId: string, kind: UsageKind): { allowed
   state.usage[key] += 1;
   persist();
   return { allowed: true, remaining: limit - state.usage[key] };
+}
+
+/** SPEC-002 web-search fallback: 5/día, separado del límite general de mensajes — evita que alguien
+ *  use Lugarcito como un LLM gratis vía preguntas que a propósito no tienen nada en el catálogo.
+ *  Solo se consume cuando la búsqueda realmente se ejecuta, nunca por preguntas que sí groundean. */
+const WEB_SEARCH_FALLBACK_DAILY_LIMIT = 5;
+
+export function checkAndConsumeWebSearchFallback(userId: string): { allowed: boolean; remaining: number } {
+  const state = getOrCreateUser(userId);
+  if (state.usage.day !== todayKey()) state.usage = freshUsage();
+
+  if (state.usage.webSearches >= WEB_SEARCH_FALLBACK_DAILY_LIMIT) return { allowed: false, remaining: 0 };
+
+  state.usage.webSearches += 1;
+  persist();
+  return { allowed: true, remaining: WEB_SEARCH_FALLBACK_DAILY_LIMIT - state.usage.webSearches };
 }
 
 /**

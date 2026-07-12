@@ -4,7 +4,7 @@ import { getCatalog } from '../data/restaurants.js';
 import { getDishes } from '../data/dishStore.js';
 import { extractConversationKnowledge, interpretQuery } from '../llm/claudeClient.js';
 import { requireUserId } from '../middleware/identity.js';
-import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
+import { checkAndConsumeUsage, checkAndConsumeWebSearchFallback, recordContribution } from '../memory/memoryStore.js';
 import { enqueueNewPlaceSuggestion, enqueuePendingContribution } from '../moderation/pendingContributionsStore.js';
 import type { ConversationTurn } from '../types.js';
 
@@ -39,9 +39,12 @@ conversationRouter.post('/messages', requireUserId, async (req, res, next) => {
     // full, grounding-checked turn, identical in shape to the old non-streaming response.
     res.setHeader('Content-Type', 'application/x-ndjson');
     const dishes = getDishes();
-    const interpreted = await interpretQuery({ text, history, catalog, dishes }, (chunk) => {
-      res.write(`${JSON.stringify({ type: 'delta', text: chunk })}\n`);
-    });
+    const interpreted = await interpretQuery(
+      { text, history, catalog, dishes, checkWebSearchQuota: () => checkAndConsumeWebSearchFallback(req.userId!).allowed },
+      (chunk) => {
+        res.write(`${JSON.stringify({ type: 'delta', text: chunk })}\n`);
+      },
+    );
     const restaurants = interpreted.restaurantIds.map((id) => catalog.find((r) => r.id === id)).filter((r): r is NonNullable<typeof r> => !!r);
 
     // SPEC-004 "Desde conversación": most messages are questions, not knowledge — only worth a

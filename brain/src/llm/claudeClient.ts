@@ -69,6 +69,10 @@ export interface InterpretedQuery {
    *  relevante ahí (ej. no es sobre gastronomía, o es sobre un lugar/dato que Lugarcito no tiene cargado). Cuando
    *  es false, `interpretQuery` intenta un fallback de búsqueda web real — nunca inventa la respuesta él mismo. */
   foundInCatalog: boolean;
+  /** true si la pregunta es sobre comida/restaurantes/salidas o sobre la app misma — el único caso en el que el
+   *  fallback de búsqueda web tiene sentido. false para preguntas genéricas (clima, código, tarea de otro tema):
+   *  nunca se busca en la web para esas, aunque tampoco groundeen en el catálogo. */
+  onTopic: boolean;
 }
 
 const QUERY_SYSTEM_PROMPT = `Sos Lugarcito, un concierge gastronómico. Interpretás lo que pide el usuario y elegís,
@@ -91,6 +95,11 @@ Marcá foundInCatalog en false únicamente cuando tu reply es un "no tengo esto"
 restaurantes o platos es relevante para lo que pidió — no lo marques false solo porque elegiste la opción "más
 cercana" en vez de una perfecta. Con foundInCatalog en true incluí igual el reply normal.
 
+Marcá onTopic en true si la pregunta es sobre comida, restaurantes, bares, cafés, salidas gastronómicas, o cómo usar
+esta app — sin importar si el catálogo tiene o no la respuesta. Marcalo en false para cualquier otra cosa (clima,
+código, tarea escolar, cultura general, o pedirte que actúes como un asistente genérico): en esos casos foundInCatalog
+también debe ser false, y nunca vale la pena buscar en la web — Lugarcito solo ayuda a decidir dónde comer.
+
 Respondé en español, corto (1-3 oraciones), en tono cercano y con criterio, nunca como un buscador. Sugerí 2-3 chips
 de seguimiento breves (ej: "¿Qué pedir?", "Comparar con otro").`;
 
@@ -108,6 +117,11 @@ export async function interpretQuery(
     history: ConversationTurn[];
     catalog: Restaurant[];
     dishes?: Dish[];
+    /** Rate-limit gate for the web-search fallback, owned by the caller (route layer has the
+     *  real per-user usage store — this file stays a pure LLM wrapper, no persistence import).
+     *  Called (and expected to consume quota) only when a web search is actually about to run —
+     *  never for on-topic questions that already grounded, and never for off-topic ones. */
+    checkWebSearchQuota?: () => boolean;
   },
   onDelta?: (chunk: string) => void,
 ): Promise<InterpretedQuery> {
@@ -136,8 +150,9 @@ export async function interpretQuery(
             reply: { type: 'string' },
             chips: { type: 'array', items: { type: 'string' } },
             foundInCatalog: { type: 'boolean' },
+            onTopic: { type: 'boolean' },
           },
-          required: ['restaurantIds', 'reply', 'chips', 'foundInCatalog'],
+          required: ['restaurantIds', 'reply', 'chips', 'foundInCatalog', 'onTopic'],
           additionalProperties: false,
         },
       },
@@ -159,6 +174,19 @@ export async function interpretQuery(
   const knownIds = new Set(input.catalog.map((r) => r.id));
   const grounded = { ...parsed, restaurantIds: parsed.restaurantIds.filter((id) => knownIds.has(id)) };
   if (grounded.foundInCatalog) return grounded;
+
+  // Pregunta ajena a comida/restaurantes/la app — nunca buscar en la web para esto, sin importar
+  // qué tan "vacío" haya quedado el catálogo. Evita que Lugarcito se use como un LLM genérico
+  // gratis vía preguntas deliberadamente fuera de tema.
+  if (!grounded.onTopic) return grounded;
+
+  // Onda tema, pero sin nada groundeado — cuota diaria propia (separada del límite general de
+  // mensajes) antes de gastar una búsqueda real. Nunca se consume si no se va a usar.
+  if (input.checkWebSearchQuota && !input.checkWebSearchQuota()) {
+    const limitMsg = 'Ya usaste tus búsquedas web de hoy — segui probando mañana, o preguntame sobre algo que ya tenga cargado.';
+    onDelta?.(`\n\n${limitMsg}`);
+    return { ...grounded, reply: `${grounded.reply}\n\n${limitMsg}` };
+  }
 
   // El catálogo/platos no tenían nada relevante — último recurso: una búsqueda web real, nunca
   // inventada por el modelo. La aclaración de que es información externa/no verificada por
