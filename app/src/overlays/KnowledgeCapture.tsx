@@ -64,6 +64,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const [step, setStep] = useState(0);
   const [learned, setLearned] = useState('');
   const [points, setPoints] = useState(0);
+  const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +87,7 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
         const result = await brain.submitCapture({ kind, text, image, mediaType });
         setLearned(result.learned);
         setPoints(result.pointsAwarded);
+        setPending(!!result.pending);
         addCajuPoints(result.pointsAwarded);
         setStage('done');
       } catch (err) {
@@ -288,9 +290,9 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
             <div className="cj-cap-done__seed">
               <BrainMark size={52} radius={16} />
             </div>
-            <h2>¡Gracias! Lugarcito aprendió algo nuevo.</h2>
+            <h2>{pending ? 'Gracias, lo vamos a revisar.' : '¡Gracias! Lugarcito aprendió algo nuevo.'}</h2>
             <div className="cj-cap-learn">
-              <Badge tone="over">Lo que guardé</Badge>
+              <Badge tone="over">{pending ? 'Queda en revisión' : 'Lo que guardé'}</Badge>
               <p>{learned}</p>
             </div>
             <div className="cj-cap-award">

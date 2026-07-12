@@ -263,7 +263,7 @@ adminRouter.post('/admin/dishes/confirm-match', (req, res) => {
 
 /** SPEC-025 extension of SPEC-019: what a regular user's Nota/Foto/Voz named as a specific dish, awaiting operator review. */
 adminRouter.get('/admin/pending-dish-mentions', (_req, res) => {
-  const catalog = getCatalog();
+  const catalog = getCatalog({ includeDemo: true, includeUnverified: true });
   const pending = getPendingDishMentions()
     .map((d) => {
       const restaurant = catalog.find((r) => r.id === d.restaurantId);
@@ -356,7 +356,7 @@ adminRouter.post('/admin/analyze', async (req, res, next) => {
  * "confirm one by one, never applied on its own" pattern as /admin/analyze's suggestions.
  */
 adminRouter.get('/admin/pending-contributions', (_req, res) => {
-  const catalog = getCatalog();
+  const catalog = getCatalog({ includeDemo: true, includeUnverified: true });
   const pending = getPendingContributions()
     .map((c) => {
       const restaurant = catalog.find((r) => r.id === c.restaurantId);

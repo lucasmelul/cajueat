@@ -272,8 +272,9 @@ export const mockBrainClient: BrainClient = {
     if (kind === 'photo') {
       return delay({ learned: 'Guardamos la foto. El Brain real la va a poder leer cuando estés online.', pointsAwarded: 30 }, 300);
     }
-    const learned = `Gracias por compartir ${kind === 'link' ? 'un link' : 'conocimiento nuevo'}. El Brain lo sumó a su conocimiento.`;
-    return delay({ learned, pointsAwarded: 30 }, 300);
+    // El mock no tiene acceso a oEmbed real — mismo camino honesto que el link no-TikTok en producción.
+    const learned = `Gracias por compartir ${kind === 'link' ? 'un link' : 'conocimiento nuevo'}. Lo guardamos para que el equipo lo revise a mano.`;
+    return delay({ learned, pointsAwarded: 30, pending: true }, 300);
   },
 
   async search(query, limit = 8) {

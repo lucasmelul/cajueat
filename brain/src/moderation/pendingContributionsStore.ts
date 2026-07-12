@@ -15,7 +15,7 @@ import { DATA_DIR } from '../paths.js';
  * and the restaurant, never the identity behind it (SPEC-013).
  */
 
-export type ContributionSource = 'note' | 'photo' | 'voice' | 'conversation';
+export type ContributionSource = 'note' | 'photo' | 'voice' | 'conversation' | 'link';
 export type ContributionStatus = 'pending' | 'confirmed' | 'rejected';
 
 export interface PendingContribution {

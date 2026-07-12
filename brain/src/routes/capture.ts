@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getCatalog, getRestaurantById } from '../data/restaurants.js';
 import { extractNoteKnowledge, extractPhotoKnowledge } from '../llm/claudeClient.js';
+import { fetchTikTokOEmbed, isTikTokUrl } from '../integrations/tiktok.js';
 import { requireUserId } from '../middleware/identity.js';
 import { checkAndConsumeUsage, recordContribution } from '../memory/memoryStore.js';
 import { enqueueNewPlaceSuggestion, enqueuePendingContribution, enqueuePendingDishMention, enqueuePendingLink } from '../moderation/pendingContributionsStore.js';
@@ -79,16 +80,47 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     return;
   }
 
-  // Reel/TikTok/link (SPEC-015): sin scraping real del contenido — requiere una decisión legal/de
-  // costo, no técnica — así que nunca pasa por Claude ni se aplica solo. En vez de una respuesta
-  // enlatada que finge haber "aprendido" algo del link, se guarda para que un operador lo abra a
-  // mano y agregue una fuente/lugar real con las herramientas que ya existen (Admin → Moderación).
+  // Reel/TikTok/link (SPEC-015): Instagram/YouTube dan una URL opaca — sin scraping real del
+  // contenido (requiere una decisión legal/de costo, no técnica), así que esos nunca pasan por
+  // Claude ni se aplican solos. TikTok es la excepción real: su oEmbed público (sin API key) da
+  // el título/caption real del video, que sí alcanza para groundear una extracción como si fuera
+  // una nota de texto — mismo camino de moderación que Nota/Foto, nunca aplicado directo.
   if (!text) {
     res.status(400).json({ error: 'link_required' });
     return;
   }
+
+  if (isTikTokUrl(text)) {
+    const usage = checkAndConsumeUsage(req.userId!, 'capture');
+    if (usage.allowed) {
+      const oembed = await fetchTikTokOEmbed(text);
+      if (oembed) {
+        const caption = [oembed.title, oembed.authorName ? `(@${oembed.authorName})` : ''].filter(Boolean).join(' ');
+        const extraction = await extractNoteKnowledge({ text: caption, catalog: getCatalog() });
+        const restaurant = extraction.restaurantId ? getRestaurantById(extraction.restaurantId) : undefined;
+        const learned =
+          extraction.learned ||
+          'Leímos el video, pero no pudimos identificar un lugar real ahí — lo guardamos para que el equipo lo revise a mano.';
+        recordContribution(req.userId!, restaurant ? `Aportaste un TikTok sobre ${restaurant.name}` : 'Aportaste un TikTok', POINTS);
+        if (restaurant && extraction.learned) {
+          enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'link' });
+        } else if (extraction.newPlace?.name) {
+          enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'link' });
+        } else {
+          enqueuePendingLink({ url: text });
+        }
+        if (restaurant && extraction.dish?.name) {
+          enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'link' });
+        }
+        res.json({ learned, pointsAwarded: POINTS });
+        return;
+      }
+    }
+    // oEmbed failed (private/deleted video) or usage exhausted — fall through to the honest manual-review path below.
+  }
+
   enqueuePendingLink({ url: text });
-  const learned = `Gracias por compartir ${label}. Lo guardamos para que el equipo lo revise a mano — todavía no podemos leer el contenido del link automáticamente.`;
+  const learned = `Gracias por compartir ${label}. Lo guardamos para que el equipo lo revise a mano — todavía no podemos leer el contenido de este link automáticamente.`;
   recordContribution(req.userId!, `Aportaste ${label}: ${text.slice(0, 80)}`, POINTS);
-  res.json({ learned, pointsAwarded: POINTS });
+  res.json({ learned, pointsAwarded: POINTS, pending: true });
 });

@@ -91,7 +91,7 @@ export interface PendingContribution {
   restaurantId: string;
   restaurantName: string;
   claim: string;
-  source: 'note' | 'photo' | 'voice' | 'conversation';
+  source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
 }
@@ -112,7 +112,7 @@ export interface NewPlaceSuggestion {
   neighborhood: string;
   address?: string;
   claim: string;
-  source: 'note' | 'photo' | 'voice' | 'conversation';
+  source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
 }
@@ -127,7 +127,7 @@ export interface PendingDishMention {
   dishName: string;
   category: string;
   claim: string;
-  source: 'note' | 'photo' | 'voice' | 'conversation';
+  source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
 }

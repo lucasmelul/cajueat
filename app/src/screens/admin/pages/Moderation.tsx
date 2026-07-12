@@ -4,7 +4,7 @@ import { adminClient } from '../../../lib/admin/adminClient';
 import type { PendingContribution } from '../../../lib/admin/adminClient';
 import { useAdminData } from '../AdminDataContext';
 
-const SOURCE_LABEL: Record<PendingContribution['source'], string> = { note: 'Nota', photo: 'Foto', voice: 'Voz', conversation: 'Conversación' };
+const SOURCE_LABEL: Record<PendingContribution['source'], string> = { note: 'Nota', photo: 'Foto', voice: 'Voz', conversation: 'Conversación', link: 'TikTok' };
 
 /** SPEC-019 + su extensión: dos colas de moderación distintas (agregar fuente a un lugar existente vs. crear uno nuevo), mismo "el operador confirma, nunca se aplica solo". */
 export function Moderation() {

@@ -47,7 +47,8 @@ export interface BrainClient {
   addDnaTag(label: string): Promise<DnaTag>;
   removeDnaTag(id: string): Promise<void>;
   submitFeedback(input: { restaurantId: string; answers: string[] }): Promise<{ learned: string; pointsAwarded: number }>;
-  submitCapture(input: { kind: string; text?: string; image?: string; mediaType?: string }): Promise<{ learned: string; pointsAwarded: number }>;
+  /** `pending: true` means we couldn't process this automatically (e.g. a non-TikTok link) — it's parked for an operator to review by hand, never a real "we learned this" claim. */
+  submitCapture(input: { kind: string; text?: string; image?: string; mediaType?: string }): Promise<{ learned: string; pointsAwarded: number; pending?: boolean }>;
 
   /** SPEC-008 Search Experience — intent-lite matching, never returns an empty list. */
   search(query: string, limit?: number): Promise<Restaurant[]>;
