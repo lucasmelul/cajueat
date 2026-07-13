@@ -31,7 +31,12 @@ checkinRouter.post('/checkin', requireUserId, (req, res) => {
     res.status(401).json({ error: 'invalid_token' });
     return;
   }
-  const restaurant = getRestaurantById(restaurantId);
+  // A scanned QR is restaurant-initiated, not organic discovery — an operator already decided
+  // this place is real and live the moment they generated it, regardless of whether the
+  // community has posted enough independent evidence yet for public recommendation. Gating
+  // this lookup the same way as browsing (restaurants.ts) would make a freshly onboarded
+  // restaurant's own printed QR silently fail the first time a real customer scans it.
+  const restaurant = getRestaurantById(restaurantId, { includeUnverified: true });
   if (!restaurant) {
     res.status(404).json({ error: 'restaurant_not_found' });
     return;
@@ -92,9 +97,15 @@ checkinRouter.post('/checkin', requireUserId, (req, res) => {
   res.json({ restaurant, pointsAwarded, firstVisit });
 });
 
-/** SPEC-021 Pasaporte: visited (real check-ins only) + pending grouped by neighborhood, against the real non-demo catalog. */
+/**
+ * SPEC-021 Pasaporte: visited (real check-ins only) + pending grouped by neighborhood, against
+ * the real non-demo catalog. `includeUnverified: true` — a genuine check-in the user made in
+ * person must never disappear from their own Passport just because that restaurant hasn't yet
+ * cleared the public evidence bar; that bar is about recommending it to *other* users, not about
+ * whether this user's own real visit counts.
+ */
 checkinRouter.get('/passport', requireUserId, (req, res) => {
-  const catalog = getCatalog();
+  const catalog = getCatalog({ includeUnverified: true });
   const checkins = getCheckinsForUser(req.userId!);
   const firstVisitByRestaurant = new Map<string, number>();
   for (const c of checkins) {

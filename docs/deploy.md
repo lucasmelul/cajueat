@@ -23,6 +23,14 @@ explícitas (ver [PENDING-FEATURES.md](PENDING-FEATURES.md)).
    - `ADMIN_TOKEN` — **un secreto nuevo y real**, nunca el `dev-operator-secret-change-me` local.
      Generalo con `openssl rand -hex 32` o similar.
    - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` — las que ya generaste para push.
+   - `CHECKIN_SECRET` — **obligatoria**, sin esto el check-in QR, el feedback, el canje de puntos
+     y Mi Pasaporte rompen en el primer uso. Generala con `openssl rand -hex 32` o similar,
+     nunca reutilices un valor de desarrollo.
+   - `GOOGLE_PLACES_API_KEY` — opcional; sin esto, los botones "vincular/refrescar Google" en
+     Admin devuelven 503, el resto de la app funciona igual.
+   - `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` — opcionales; sin esto,
+     "Guardá tu perfil" sigue funcionando pero devuelve el código OTP directo en la respuesta en
+     vez de mandar un SMS real (ver sección de abajo).
    - `DATA_DIR` — la ruta del Volume del paso 3 (`/data`).
    - `ALLOWED_ORIGIN` — dejalo vacío hasta tener la URL de Vercel (paso 2.4), después volvés
      acá y lo completás con esa URL exacta.
@@ -31,7 +39,9 @@ explícitas (ver [PENDING-FEATURES.md](PENDING-FEATURES.md)).
    necesitás para el paso 2.
 
 **Verificación**: `curl https://<tu-url>.up.railway.app/api/restaurants -H "X-Caju-User-Id: test"`
-tiene que devolver el catálogo real (6 restaurantes, `trust`/`trustRationale` calculados).
+tiene que devolver 200. Un array vacío es esperado y correcto en un catálogo recién desplegado
+sin contenido real cargado todavía (los 6 restaurantes de fixture están marcados `isDemo` y
+nunca aparecen acá a propósito) — cargá lugares reales desde Admin antes de invitar testers.
 
 ## 2. Vercel — `app/`
 
@@ -64,10 +74,4 @@ esta variable requiere un redeploy, no alcanza con reiniciar).
 
 ## Fuera de este alcance (decisiones de producto ya documentadas, no bloqueantes para 2 usuarios)
 
-- SMS/WhatsApp real para "Guardá tu Brain" — sigue devolviendo el código OTP directo en la
-  respuesta (decisión abierta #1 en [product-decisions.md](product-decisions.md)). No hace falta
-  para que dos personas usen la app desde sus propios dispositivos, solo para no perder el
-  progreso si cambian de dispositivo.
 - Base de datos real en vez de JSON — ver la nota de scope en el plan original.
-- Ícono real de PWA (`icons: []` en `vite.config.ts`) — sin esto, "Agregar a pantalla de inicio"
-  funciona pero con un ícono genérico del navegador en vez de la marca.

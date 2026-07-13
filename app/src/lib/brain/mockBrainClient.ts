@@ -352,6 +352,14 @@ export const mockBrainClient: BrainClient = {
     return delay({ linked: true }, 200);
   },
 
+  // Mock has a single in-memory user, so there's never a real "phone already linked to someone
+  // else" conflict to resolve — this exists only to satisfy the interface for local dev without VITE_BRAIN_URL.
+  async adoptAccount(phone, code) {
+    if (code !== '123456') return delay({ linked: false }, 200);
+    memory.user.phone = phone;
+    return delay({ linked: true, userId: memory.user.id, user: memory.user }, 200);
+  },
+
   async getActivity() {
     const pendingFeedback = Object.entries(memory.saved)
       .filter(([, saved]) => saved)

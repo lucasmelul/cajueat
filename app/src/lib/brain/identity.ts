@@ -13,3 +13,12 @@ export function getAnonId(): string {
   }
   return id;
 }
+
+/**
+ * "Continuar con este perfil" (SPEC-013 phone login): this device stops sending its own
+ * anonymous id and adopts an existing account's — the guest activity under the old id is
+ * abandoned, never merged, same tradeoff SPEC-013 already documents for a fresh device.
+ */
+export function setAnonId(id: string): void {
+  localStorage.setItem(KEY, id);
+}

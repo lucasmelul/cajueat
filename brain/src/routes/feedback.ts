@@ -10,7 +10,10 @@ const POINTS = 45;
 
 feedbackRouter.post('/feedback', requireUserId, (req, res) => {
   const { restaurantId, answers } = req.body ?? {};
-  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId) : undefined;
+  // includeUnverified: true — a restaurant reachable only via a real prior check-in (SPEC-020,
+  // e.g. one that hasn't cleared the public evidence bar yet) must still resolve here, otherwise
+  // `restaurant` silently becomes undefined and the check-in gate below never fires at all.
+  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId, { includeUnverified: true }) : undefined;
   const answerList: string[] = Array.isArray(answers) ? answers.filter((a) => typeof a === 'string') : [];
 
   // SPEC-020 Acceptance Criteria: "sin excepción, ni siquiera para el operador" — a review

@@ -5,6 +5,7 @@ import { Badge, Button, Chip, IconButton } from '../../components/core';
 import { CajuPoints, RestaurantCard } from '../../components/discovery';
 import { BrainMark } from '../../components/brain';
 import { brain } from '../../lib/brain';
+import { setAnonId } from '../../lib/brain/identity';
 import { getCurrentSubscription, getPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../../lib/push/pushClient';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { Contribution, Passport, PendingFeedback, Restaurant } from '../../types';
@@ -45,6 +46,7 @@ export function Profile() {
   const [code, setCode] = useState('');
   const [devCode, setDevCode] = useState('');
   const [syncError, setSyncError] = useState('');
+  const [adopting, setAdopting] = useState(false);
   const [pushState, setPushState] = useState<'idle' | 'checking' | 'granted' | 'denied' | 'unsupported'>('idle');
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [pendingFeedback, setPendingFeedback] = useState<PendingFeedback[]>([]);
@@ -119,6 +121,27 @@ export function Profile() {
     if (user) setUser({ ...user, phone: phone.trim() });
     setSyncStage('idle');
     setCode('');
+  };
+
+  // "Encontramos un perfil guardado con este número — ¿continuar desde ahí?" El código sigue
+  // siendo el mismo de confirmCode, no se le pide reescribirlo. Al confirmar, este dispositivo
+  // pasa a usar ese userId — la actividad de invitado local se abandona, nunca se fusiona.
+  const confirmAdopt = async () => {
+    setAdopting(true);
+    setSyncError('');
+    try {
+      const result = await brain.adoptAccount(phone.trim(), code.trim());
+      if (!result.linked || !result.userId) {
+        setSyncError('El código venció mientras confirmabas — pedí uno nuevo.');
+        setSyncStage('idle');
+        setCode('');
+        return;
+      }
+      setAnonId(result.userId);
+      window.location.reload();
+    } finally {
+      setAdopting(false);
+    }
   };
 
   return (
@@ -313,10 +336,16 @@ export function Profile() {
                 dispositivo.
               </p>
               {syncStage === 'conflict' ? (
-                <p className="cj-sync-error">
-                  Ese número ya tiene un perfil guardado en otro dispositivo. Por ahora no fusionamos automáticamente —
-                  iniciá sesión desde ese dispositivo en vez de crear uno nuevo acá.
-                </p>
+                <div className="cj-sync-form">
+                  <p className="cj-sync-error">
+                    Encontramos un perfil guardado con este número en otro dispositivo. Si continuás, vas a ver los
+                    datos de ese perfil acá — y la actividad de invitado de este dispositivo se pierde, nunca se
+                    fusiona.
+                  </p>
+                  <Button size="sm" variant="primary" onClick={confirmAdopt} disabled={adopting}>
+                    {adopting ? 'Continuando…' : 'Continuar con ese perfil'}
+                  </Button>
+                </div>
               ) : syncStage === 'codeSent' ? (
                 <div className="cj-sync-form">
                   {devCode && (

@@ -53,6 +53,8 @@ interface Store {
 
 /** Anonymous usage limits before Conversation/Knowledge Capture require "Guardá tu Brain" (SPEC-013's cost-abuse gate). Placeholder values — exact thresholds are an open product question. */
 const ANON_DAILY_LIMITS = { message: 15, capture: 8 } as const;
+/** A phone-verified user has proven real identity behind the anonymous ID — same abuse gate, a much higher ceiling instead of removing it outright. */
+const PHONE_LINKED_DAILY_LIMITS = { message: 60, capture: 30 } as const;
 type UsageKind = keyof typeof ANON_DAILY_LIMITS;
 
 /** OTP codes are short-lived secrets — kept in-memory only, never written to disk. */
@@ -178,6 +180,31 @@ export function getTargetingSignal(userId: string): TargetingSignal {
 export function getProfile(userId: string) {
   const state = getOrCreateUser(userId);
   return { user: state.user, saved: state.saved, dna: state.dna, contributions: state.contributions };
+}
+
+export interface ContributorSummary {
+  phoneVerified: boolean;
+  maskedPhone?: string;
+  points: number;
+  contributionsCount: number;
+}
+
+/**
+ * Admin Moderación (product decision, 2026-07-12): read-only, never creates a row — a
+ * contributorId on a queued item always refers to a real, already-existing user, so a miss
+ * here is a genuine data problem to surface as `null`, never silently masked by creating one.
+ * The phone is never returned in full — only enough digits for an operator to recognize a
+ * repeat contributor across items, never enough to actually contact them.
+ */
+export function getContributorSummary(userId: string): ContributorSummary | null {
+  const state = store.users[userId];
+  if (!state) return null;
+  return {
+    phoneVerified: !!state.user.phone,
+    maskedPhone: state.user.phone ? `•••${state.user.phone.slice(-4)}` : undefined,
+    points: state.user.cajuPoints,
+    contributionsCount: state.contributions.length,
+  };
 }
 
 export interface UserStats {
@@ -366,7 +393,7 @@ export function checkAndConsumeUsage(userId: string, kind: UsageKind): { allowed
   if (state.usage.day !== todayKey()) state.usage = freshUsage();
 
   const key = kind === 'message' ? 'messages' : 'captures';
-  const limit = ANON_DAILY_LIMITS[kind];
+  const limit = state.user.phone ? PHONE_LINKED_DAILY_LIMITS[kind] : ANON_DAILY_LIMITS[kind];
   if (state.usage[key] >= limit) return { allowed: false, remaining: 0 };
 
   state.usage[key] += 1;
@@ -407,22 +434,40 @@ export type VerifyOtpResult =
   | { ok: true; conflict: true; existingUserId: string }
   | { ok: false; error: 'invalid_or_expired_code' };
 
-/** Never fuses two Brains silently (SPEC-013) — a phone already linked elsewhere comes back as a conflict for the client to resolve explicitly. */
+/** Never fuses two Brains silently (SPEC-013) — a phone already linked elsewhere comes back as a conflict for the client to resolve explicitly. The code is only consumed on a terminal outcome (linked here, or adopted via confirmAdoptAccount) so a conflict can still be confirmed without re-sending a new SMS. */
 export function verifyOtp(userId: string, phone: string, code: string): VerifyOtpResult {
   const pending = pendingOtps.get(phone);
   if (!pending || pending.code !== code || pending.expiresAt < Date.now()) {
     return { ok: false, error: 'invalid_or_expired_code' };
   }
-  pendingOtps.delete(phone);
 
   const existingUserId = store.phoneIndex[phone];
   if (existingUserId && existingUserId !== userId) {
     return { ok: true, conflict: true, existingUserId };
   }
 
+  pendingOtps.delete(phone);
   const state = getOrCreateUser(userId);
   state.user.phone = phone;
   store.phoneIndex[phone] = userId;
   persist();
   return { ok: true, conflict: false };
+}
+
+export type AdoptAccountResult = { ok: true; userId: string } | { ok: false };
+
+/**
+ * "Encontramos un perfil con este número — ¿continuar desde ahí?" confirmed. Re-validates the
+ * same pending code verifyOtp left untouched on conflict; the caller's own anonymous row is
+ * simply abandoned (same accepted "switching devices loses local-only guest activity" tradeoff
+ * SPEC-013 already documents for the pre-link case), never merged into the existing account.
+ */
+export function confirmAdoptAccount(phone: string, code: string): AdoptAccountResult {
+  const pending = pendingOtps.get(phone);
+  if (!pending || pending.code !== code || pending.expiresAt < Date.now()) return { ok: false };
+  const existingUserId = store.phoneIndex[phone];
+  if (!existingUserId) return { ok: false };
+
+  pendingOtps.delete(phone);
+  return { ok: true, userId: existingUserId };
 }

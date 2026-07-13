@@ -44,15 +44,15 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     // SPEC-019: real, grounded knowledge about a real place goes to the moderation queue —
     // never straight to the shared catalog, no matter how confident the extraction is.
     if (restaurant && extraction.learned) {
-      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: contributionSource });
+      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: contributionSource, contributorId: req.userId });
     } else if (extraction.newPlace?.name) {
       // Previously: a note about a place not yet in the catalog silently vanished here — no
       // admin trace, generic points only. Now it queues as a reviewable new-place suggestion.
-      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: contributionSource });
+      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: contributionSource, contributorId: req.userId });
     }
     // SPEC-025: a specific dish mention, always tied to an already-real restaurant — queued the same way.
     if (restaurant && extraction.dish?.name) {
-      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: contributionSource });
+      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: contributionSource, contributorId: req.userId });
     }
     res.json({ learned, pointsAwarded: POINTS });
     return;
@@ -69,12 +69,12 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     const learned = extraction.learned || 'Gracias por compartir la foto. El Brain la sumó a su conocimiento.';
     recordContribution(req.userId!, restaurant ? `Aportaste una foto de ${restaurant.name}` : 'Aportaste una foto', POINTS);
     if (restaurant && extraction.learned) {
-      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'photo' });
+      enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'photo', contributorId: req.userId });
     } else if (extraction.newPlace?.name) {
-      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'photo' });
+      enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'photo', contributorId: req.userId });
     }
     if (restaurant && extraction.dish?.name) {
-      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'photo' });
+      enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'photo', contributorId: req.userId });
     }
     res.json({ learned, pointsAwarded: POINTS });
     return;
@@ -103,14 +103,14 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
           'Leímos el video, pero no pudimos identificar un lugar real ahí — lo guardamos para que el equipo lo revise a mano.';
         recordContribution(req.userId!, restaurant ? `Aportaste un TikTok sobre ${restaurant.name}` : 'Aportaste un TikTok', POINTS);
         if (restaurant && extraction.learned) {
-          enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'link' });
+          enqueuePendingContribution({ restaurantId: restaurant.id, claim: extraction.learned, source: 'link', contributorId: req.userId });
         } else if (extraction.newPlace?.name) {
-          enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'link' });
+          enqueueNewPlaceSuggestion({ ...extraction.newPlace, claim: extraction.learned, source: 'link', contributorId: req.userId });
         } else {
-          enqueuePendingLink({ url: text });
+          enqueuePendingLink({ url: text, contributorId: req.userId });
         }
         if (restaurant && extraction.dish?.name) {
-          enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'link' });
+          enqueuePendingDishMention({ restaurantId: restaurant.id, dishName: extraction.dish.name, category: extraction.dish.category, claim: extraction.dish.claim, source: 'link', contributorId: req.userId });
         }
         res.json({ learned, pointsAwarded: POINTS });
         return;
@@ -119,7 +119,7 @@ captureRouter.post('/capture', requireUserId, async (req, res) => {
     // oEmbed failed (private/deleted video) or usage exhausted — fall through to the honest manual-review path below.
   }
 
-  enqueuePendingLink({ url: text });
+  enqueuePendingLink({ url: text, contributorId: req.userId });
   const learned = `Gracias por compartir ${label}. Lo guardamos para que el equipo lo revise a mano — todavía no podemos leer el contenido de este link automáticamente.`;
   recordContribution(req.userId!, `Aportaste ${label}: ${text.slice(0, 80)}`, POINTS);
   res.json({ learned, pointsAwarded: POINTS, pending: true });

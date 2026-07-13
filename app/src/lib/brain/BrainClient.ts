@@ -64,10 +64,12 @@ export interface BrainClient {
   removeFromCollection(collectionId: string, restaurantId: string): Promise<void>;
   deleteCollection(id: string): Promise<void>;
 
-  /** SPEC-013 "Guardá tu Brain" — step 1: no SMS vendor wired up yet, so devCode comes back directly in dev instead of faking delivery. */
+  /** SPEC-013 "Guardá tu perfil" — step 1: sends via Twilio when configured; devCode comes back directly only when no SMS vendor is wired up (local dev). */
   requestSyncCode(phone: string): Promise<{ sent: boolean; devCode?: string }>;
-  /** Step 2: attaches the phone to this anonymous Brain. `conflict: true` means that phone is already linked elsewhere — never silently merged. */
+  /** Step 2: attaches the phone to this anonymous Brain. `conflict: true` means that phone is already linked to a *different* Brain — call adoptAccount to continue from there, never silently merged. */
   verifySyncCode(phone: string, code: string): Promise<{ linked: boolean; conflict?: boolean }>;
+  /** Confirms "sí, continuar con ese perfil" after a conflict — same phone+code, still valid from step 2. Returns the userId this device should adopt from now on. */
+  adoptAccount(phone: string, code: string): Promise<{ linked: boolean; userId?: string; user?: User }>;
 
   /** SPEC-011/SPEC-016: real contributions timeline + real saved-without-feedback restaurants — never fixture text. */
   getActivity(): Promise<{ contributions: Contribution[]; pendingFeedback: PendingFeedback[] }>;

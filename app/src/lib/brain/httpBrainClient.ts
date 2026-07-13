@@ -128,6 +128,8 @@ export const httpBrainClient: BrainClient = {
 
   verifySyncCode: (phone, code) => request('/identity/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
 
+  adoptAccount: (phone, code) => request('/identity/otp/adopt', { method: 'POST', body: JSON.stringify({ phone, code }) }),
+
   getActivity: () => request('/activity'),
 
   // SPEC-020/023: every expected outcome (out of range, already checked in, cooldown,

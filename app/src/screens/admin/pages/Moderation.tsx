@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button } from '../../../components/core';
 import { adminClient } from '../../../lib/admin/adminClient';
-import type { PendingContribution } from '../../../lib/admin/adminClient';
+import type { ContributorSummary, PendingContribution } from '../../../lib/admin/adminClient';
 import { useAdminData } from '../AdminDataContext';
 
 const SOURCE_LABEL: Record<PendingContribution['source'], string> = { note: 'Nota', photo: 'Foto', voice: 'Voz', conversation: 'Conversación', link: 'TikTok' };
+
+/** Contexto opcional sobre quién mandó un aporte — nunca el teléfono completo, solo lo suficiente para reconocer a un contribuyente recurrente al moderar. */
+function ContributorChip({ contributor }: { contributor: ContributorSummary | null }) {
+  if (!contributor) return <span className="cj-admin-contributor cj-admin-contributor--unknown">usuario anónimo</span>;
+  if (!contributor.phoneVerified) return <span className="cj-admin-contributor">anónimo · primera vez o sin teléfono · {contributor.contributionsCount} aportes</span>;
+  return (
+    <span className="cj-admin-contributor cj-admin-contributor--verified">
+      verificado {contributor.maskedPhone} · {contributor.points} pts · {contributor.contributionsCount} aportes
+    </span>
+  );
+}
 
 /** SPEC-019 + su extensión: dos colas de moderación distintas (agregar fuente a un lugar existente vs. crear uno nuevo), mismo "el operador confirma, nunca se aplica solo". */
 export function Moderation() {
@@ -150,6 +161,7 @@ export function Moderation() {
                 <b>{c.restaurantName}</b>
                 <Badge tone="brand">{SOURCE_LABEL[c.source]}</Badge>
               </div>
+              <ContributorChip contributor={c.contributor} />
               <p>{c.claim}</p>
               <div className="cj-admin-pending__actions">
                 <Button size="sm" variant="primary" disabled={pendingBusyId === c.id} onClick={() => confirmPending(c.id)}>
@@ -181,6 +193,7 @@ export function Moderation() {
                 <div className="cj-admin-match__head">
                   <Badge tone="brand">{SOURCE_LABEL[p.source]}</Badge>
                 </div>
+                <ContributorChip contributor={p.contributor} />
                 <p>{p.claim}</p>
                 <div className="cj-admin-form">
                   <input value={draft.name} onChange={(e) => updateNewPlaceDraft(p.id, { name: e.target.value })} placeholder="Nombre" />
@@ -226,6 +239,7 @@ export function Moderation() {
                 </b>
                 <Badge tone="brand">{SOURCE_LABEL[d.source]}</Badge>
               </div>
+              <ContributorChip contributor={d.contributor} />
               <p>
                 {d.category} · {d.claim}
               </p>
@@ -253,6 +267,7 @@ export function Moderation() {
         <div className="cj-admin-analysis">
           {pendingLinks.map((l) => (
             <div className="cj-admin-match" key={l.id}>
+              <ContributorChip contributor={l.contributor} />
               <p>
                 <a href={l.url} target="_blank" rel="noopener noreferrer">
                   {l.url}

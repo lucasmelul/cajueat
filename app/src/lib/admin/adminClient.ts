@@ -86,6 +86,14 @@ export interface CuratorRecord {
 }
 
 /** SPEC-019: what a regular user's Nota/Foto/Voz/conversation message taught the Brain, awaiting operator review. */
+/** Optional context on who submitted a moderation item — never a raw phone, only enough for an operator to recognize a repeat contributor. */
+export interface ContributorSummary {
+  phoneVerified: boolean;
+  maskedPhone?: string;
+  points: number;
+  contributionsCount: number;
+}
+
 export interface PendingContribution {
   id: string;
   restaurantId: string;
@@ -94,6 +102,7 @@ export interface PendingContribution {
   source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
+  contributor: ContributorSummary | null;
 }
 
 export type CreateEventInput = {
@@ -115,6 +124,7 @@ export interface NewPlaceSuggestion {
   source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
+  contributor: ContributorSummary | null;
 }
 
 export type ConfirmNewPlaceInput = { name?: string; cuisine?: string; neighborhood?: string; address?: string; position?: { lat: number; lng: number } };
@@ -130,6 +140,7 @@ export interface PendingDishMention {
   source: 'note' | 'photo' | 'voice' | 'conversation' | 'link';
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
+  contributor: ContributorSummary | null;
 }
 
 /** SPEC-015: a Reel/TikTok/link a user pasted — the Brain never reads the content, so an operator opens it by hand. */
@@ -139,6 +150,7 @@ export interface PendingLink {
   note?: string;
   createdAt: number;
   status: 'pending' | 'confirmed' | 'rejected';
+  contributor: ContributorSummary | null;
 }
 
 export type CreateDishInput = {

@@ -10,9 +10,11 @@ import { DATA_DIR } from '../paths.js';
  * a real restaurant sits here until an operator confirms or rejects it via
  * the Admin CMS. Never applied on its own, no matter how old or how many
  * similar ones exist — the operator is always the filter (SPEC-007's
- * "never invent, never blindly trust" applies here too). Deliberately
- * doesn't store which user contributed — the operator reviews the claim
- * and the restaurant, never the identity behind it (SPEC-013).
+ * "never invent, never blindly trust" applies here too). Stores the
+ * submitting user's anonymous id (never a raw phone number) so an operator
+ * can optionally see a contributor's track record when reviewing a claim —
+ * a deliberate, later product decision to trade some of SPEC-013's original
+ * "operator never sees identity" stance for moderation context.
  */
 
 export type ContributionSource = 'note' | 'photo' | 'voice' | 'conversation' | 'link';
@@ -25,6 +27,7 @@ export interface PendingContribution {
   source: ContributionSource;
   createdAt: number;
   status: ContributionStatus;
+  contributorId?: string;
 }
 
 /**
@@ -46,6 +49,7 @@ export interface NewPlaceSuggestion {
   source: ContributionSource;
   createdAt: number;
   status: ContributionStatus;
+  contributorId?: string;
 }
 
 /** SPEC-025: a specific dish a user's Nota/Foto/Voz named for an already-real restaurant — same "never applied on its own" discipline as the other two queues above. */
@@ -58,6 +62,7 @@ export interface PendingDishMention {
   source: ContributionSource;
   createdAt: number;
   status: ContributionStatus;
+  contributorId?: string;
 }
 
 /**
@@ -73,6 +78,7 @@ export interface PendingLink {
   note?: string;
   createdAt: number;
   status: ContributionStatus;
+  contributorId?: string;
 }
 
 interface Store {
@@ -106,7 +112,12 @@ function persist() {
   writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
-export function enqueuePendingContribution(input: { restaurantId: string; claim: string; source: ContributionSource }): PendingContribution {
+export function enqueuePendingContribution(input: {
+  restaurantId: string;
+  claim: string;
+  source: ContributionSource;
+  contributorId?: string;
+}): PendingContribution {
   const entry: PendingContribution = {
     id: randomUUID(),
     restaurantId: input.restaurantId,
@@ -114,6 +125,7 @@ export function enqueuePendingContribution(input: { restaurantId: string; claim:
     source: input.source,
     createdAt: Date.now(),
     status: 'pending',
+    contributorId: input.contributorId,
   };
   store.contributions.unshift(entry);
   persist();
@@ -142,6 +154,7 @@ export function enqueueNewPlaceSuggestion(input: {
   neighborhood: string;
   claim: string;
   source: ContributionSource;
+  contributorId?: string;
 }): NewPlaceSuggestion {
   const entry: NewPlaceSuggestion = {
     id: randomUUID(),
@@ -152,6 +165,7 @@ export function enqueueNewPlaceSuggestion(input: {
     source: input.source,
     createdAt: Date.now(),
     status: 'pending',
+    contributorId: input.contributorId,
   };
   store.newPlaces.unshift(entry);
   persist();
@@ -180,6 +194,7 @@ export function enqueuePendingDishMention(input: {
   category: string;
   claim: string;
   source: ContributionSource;
+  contributorId?: string;
 }): PendingDishMention {
   const entry: PendingDishMention = {
     id: randomUUID(),
@@ -190,6 +205,7 @@ export function enqueuePendingDishMention(input: {
     source: input.source,
     createdAt: Date.now(),
     status: 'pending',
+    contributorId: input.contributorId,
   };
   store.dishMentions.unshift(entry);
   persist();
@@ -204,13 +220,14 @@ export function getPendingDishMentionById(id: string): PendingDishMention | unde
   return store.dishMentions.find((d) => d.id === id);
 }
 
-export function enqueuePendingLink(input: { url: string; note?: string }): PendingLink {
+export function enqueuePendingLink(input: { url: string; note?: string; contributorId?: string }): PendingLink {
   const entry: PendingLink = {
     id: randomUUID(),
     url: input.url,
     note: input.note,
     createdAt: Date.now(),
     status: 'pending',
+    contributorId: input.contributorId,
   };
   store.links.unshift(entry);
   persist();

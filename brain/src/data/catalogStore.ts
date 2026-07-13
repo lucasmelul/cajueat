@@ -118,9 +118,17 @@ export function getCatalog(opts?: { includeDemo?: boolean; includeUnverified?: b
   return opts?.includeUnverified ? demoFiltered : demoFiltered.filter((r) => r.hasEnoughEvidence);
 }
 
-/** Lookup by an explicit, already-known id — always demo-inclusive, since a listing decision (hide demo) doesn't apply once the caller already has the exact id (e.g. an operator confirming a source on a demo place). */
-export function getRestaurantById(id: string): Restaurant | undefined {
-  return getCatalog({ includeDemo: true }).find((r) => r.id === id);
+/**
+ * Lookup by an explicit, already-known id. Mirrors `getCatalog`'s own `includeDemo`/
+ * `includeUnverified` defaults (both false) — every end-user-facing route (restaurant detail,
+ * save, similar, dishes, feedback, check-in) must never resolve one of the 6 fixture places, or
+ * a real place that hasn't cleared the evidence bar yet, by a guessed/bookmarked id. Admin CMS
+ * call sites, already behind `requireOperator`, pass both flags true — a real restaurant an
+ * operator is actively managing (generating its QR, linking Google, adding a promotion) must
+ * resolve regardless of its current public trust/evidence state.
+ */
+export function getRestaurantById(id: string, opts?: { includeDemo?: boolean; includeUnverified?: boolean }): Restaurant | undefined {
+  return getCatalog({ includeDemo: opts?.includeDemo ?? false, includeUnverified: opts?.includeUnverified ?? false }).find((r) => r.id === id);
 }
 
 export type RestaurantInput = Omit<RawRestaurant, 'id'> & { id?: string };
@@ -131,7 +139,7 @@ export function createRestaurant(input: RestaurantInput): Restaurant {
   if (catalog.some((r) => r.id === id)) throw new Error(`restaurant_id_exists:${id}`);
   catalog.push({ ...input, id });
   persist();
-  return getRestaurantById(id)!;
+  return getRestaurantById(id, { includeDemo: true, includeUnverified: true })!;
 }
 
 export function updateRestaurant(id: string, patch: Partial<Omit<RawRestaurant, 'id'>>): Restaurant | undefined {
@@ -139,7 +147,7 @@ export function updateRestaurant(id: string, patch: Partial<Omit<RawRestaurant, 
   if (idx === -1) return undefined;
   catalog[idx] = { ...catalog[idx], ...patch, id };
   persist();
-  return getRestaurantById(id);
+  return getRestaurantById(id, { includeDemo: true, includeUnverified: true });
 }
 
 /**
@@ -160,5 +168,5 @@ export function addSourceToRestaurant(id: string, source: Source): Restaurant | 
     if (outcome) recordCuratorOutcome(source.name, catalog[idx].cuisine, outcome);
   }
 
-  return getRestaurantById(id);
+  return getRestaurantById(id, { includeDemo: true, includeUnverified: true });
 }

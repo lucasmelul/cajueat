@@ -9,7 +9,7 @@ import { createEvent, deleteEvent, getEvents } from '../data/eventsStore.js';
 import { resolveRelativeDate } from '../dates/resolveRelativeDate.js';
 import { getPlaceDetails, searchPlaces } from '../integrations/googlePlaces.js';
 import { analyzeCuratorContent, extractEventsFromImage } from '../llm/claudeClient.js';
-import { getUserStats } from '../memory/memoryStore.js';
+import { getContributorSummary, getUserStats } from '../memory/memoryStore.js';
 import { requireOperator } from '../middleware/operator.js';
 import {
   getNewPlaceSuggestionById,
@@ -36,6 +36,11 @@ import type { Source, SourceKind, SignalWeight } from '../types.js';
 export const adminRouter = Router();
 
 adminRouter.use('/admin', requireOperator);
+
+/** Attaches the submitting user's contributor summary (never a raw phone) to a moderation queue item, `null` when there's no contributorId at all (pre-existing items, or genuinely anonymous captures made before this field existed). */
+function withContributor<T extends { contributorId?: string }>(item: T): T & { contributor: ReturnType<typeof getContributorSummary> } {
+  return { ...item, contributor: item.contributorId ? getContributorSummary(item.contributorId) : null };
+}
 
 /** Read-only overview — trust/trustRationale/sources for the whole catalog at once, which no end-user screen ever shows. includeDemo:true so the operator can still see/manage the hand-authored fixture places even though real users never do. */
 adminRouter.get('/admin/restaurants', (_req, res) => {
@@ -165,7 +170,7 @@ adminRouter.post('/admin/restaurants/:id/sources', (req, res) => {
     res.status(400).json({ error: 'name_kind_weight_required' });
     return;
   }
-  const before = getRestaurantById(req.params.id);
+  const before = getRestaurantById(req.params.id, { includeDemo: true, includeUnverified: true });
   const source: Source = { name: name.trim(), kind, weight, capturedAt: new Date().toISOString(), ...(claim ? { claim: String(claim) } : {}) };
   const updated = addSourceToRestaurant(req.params.id, source);
   if (!updated) {
@@ -185,7 +190,7 @@ adminRouter.get('/admin/dishes', (_req, res) => {
 /** Direct operator creation — same convention as POST /admin/restaurants: an operator's own action, never queued. Requires one real source so a dish is never sourceless. */
 adminRouter.post('/admin/dishes', (req, res) => {
   const { name, category, restaurantId, source } = req.body ?? {};
-  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId) : undefined;
+  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId, { includeDemo: true, includeUnverified: true }) : undefined;
   if (
     typeof name !== 'string' ||
     !name.trim() ||
@@ -240,7 +245,7 @@ adminRouter.post('/admin/dishes/:id/sources', (req, res) => {
  */
 adminRouter.post('/admin/dishes/confirm-match', (req, res) => {
   const { restaurantId, dishName, category, name, kind, weight, claim } = req.body ?? {};
-  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId) : undefined;
+  const restaurant = typeof restaurantId === 'string' ? getRestaurantById(restaurantId, { includeDemo: true, includeUnverified: true }) : undefined;
   if (
     !restaurant ||
     typeof dishName !== 'string' ||
@@ -267,7 +272,7 @@ adminRouter.get('/admin/pending-dish-mentions', (_req, res) => {
   const pending = getPendingDishMentions()
     .map((d) => {
       const restaurant = catalog.find((r) => r.id === d.restaurantId);
-      return restaurant ? { ...d, restaurantName: restaurant.name } : null;
+      return restaurant ? withContributor({ ...d, restaurantName: restaurant.name }) : null;
     })
     .filter((d): d is NonNullable<typeof d> => d !== null);
   res.json(pending);
@@ -309,7 +314,7 @@ adminRouter.post('/admin/pending-dish-mentions/:id/reject', (req, res) => {
  * clear the item from the queue once it's been looked at.
  */
 adminRouter.get('/admin/pending-links', (_req, res) => {
-  res.json(getPendingLinks());
+  res.json(getPendingLinks().map(withContributor));
 });
 
 adminRouter.post('/admin/pending-links/:id/reviewed', (req, res) => {
@@ -360,7 +365,7 @@ adminRouter.get('/admin/pending-contributions', (_req, res) => {
   const pending = getPendingContributions()
     .map((c) => {
       const restaurant = catalog.find((r) => r.id === c.restaurantId);
-      return restaurant ? { ...c, restaurantName: restaurant.name } : null;
+      return restaurant ? withContributor({ ...c, restaurantName: restaurant.name }) : null;
     })
     .filter((c): c is NonNullable<typeof c> => c !== null);
   res.json(pending);
@@ -373,7 +378,7 @@ adminRouter.post('/admin/pending-contributions/:id/confirm', (req, res) => {
     res.status(404).json({ error: 'pending_contribution_not_found' });
     return;
   }
-  const before = getRestaurantById(pending.restaurantId);
+  const before = getRestaurantById(pending.restaurantId, { includeDemo: true, includeUnverified: true });
   const source: Source = { name: 'Un usuario', kind: 'community', weight: 'weak', capturedAt: new Date().toISOString(), claim: pending.claim };
   const updated = addSourceToRestaurant(pending.restaurantId, source);
   if (!updated) {
@@ -403,7 +408,7 @@ adminRouter.post('/admin/pending-contributions/:id/reject', (req, res) => {
  * can fill in whatever the extraction left blank (cuisine/neighborhood/address) before it goes live.
  */
 adminRouter.get('/admin/pending-new-places', (_req, res) => {
-  res.json(getNewPlaceSuggestions());
+  res.json(getNewPlaceSuggestions().map(withContributor));
 });
 
 adminRouter.post('/admin/pending-new-places/:id/confirm', (req, res) => {
@@ -543,7 +548,7 @@ adminRouter.post('/admin/restaurants/:id/link-google', async (req, res, next) =>
 /** Manual refresh against the already-linked place — same factual-fields-only patch, no new Source, no trust change. */
 adminRouter.post('/admin/restaurants/:id/refresh-google', async (req, res, next) => {
   try {
-    const restaurant = getRestaurantById(req.params.id);
+    const restaurant = getRestaurantById(req.params.id, { includeDemo: true, includeUnverified: true });
     if (!restaurant) {
       res.status(404).json({ error: 'restaurant_not_found' });
       return;
@@ -640,7 +645,7 @@ adminRouter.post('/admin/events/from-image', async (req, res, next) => {
  * shows the exact same QR, nothing to persist.
  */
 adminRouter.get('/admin/restaurants/:id/checkin-token', (req, res) => {
-  const restaurant = getRestaurantById(req.params.id);
+  const restaurant = getRestaurantById(req.params.id, { includeDemo: true, includeUnverified: true });
   if (!restaurant) {
     res.status(404).json({ error: 'restaurant_not_found' });
     return;
@@ -670,7 +675,7 @@ const VALID_PROMOTION_TYPES = new Set<PromotionType>(['liquidacion', 'lanzamient
  * every other notification type instead of a parallel "send now" branch.
  */
 adminRouter.post('/admin/restaurants/:id/promotions', (req, res) => {
-  const restaurant = getRestaurantById(req.params.id);
+  const restaurant = getRestaurantById(req.params.id, { includeDemo: true, includeUnverified: true });
   if (!restaurant) {
     res.status(404).json({ error: 'restaurant_not_found' });
     return;
