@@ -38,6 +38,7 @@ async function checkRecommendation(userId: string): Promise<void> {
 
   const recs = await getRecommendations(userId);
   const { brainCard } = recs;
+  if (!brainCard) return; // unfiltered call — only null if the catalog itself is genuinely empty, nothing to push then
   await sendPushToUser(userId, {
     title: 'Una recomendación para vos',
     body: brainCard.sub ? `${brainCard.message.replace(/\*\*/g, '')} ${brainCard.sub}` : brainCard.message.replace(/\*\*/g, ''),

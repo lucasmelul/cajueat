@@ -21,7 +21,8 @@ export interface RecommendationContext {
 }
 
 export interface Recommendations {
-  brainCard: BrainCardData;
+  /** Null when the active filter genuinely matches nothing — never a fake pick to fill the card. */
+  brainCard: BrainCardData | null;
   restaurants: Restaurant[];
 }
 

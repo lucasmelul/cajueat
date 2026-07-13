@@ -21,6 +21,9 @@ export function getCurrentPosition(timeoutMs = 8000): Promise<GeoPoint | null> {
   });
 }
 
+/** Mirrors the real Brain's NEAR_RADIUS_KM (recommendationEngine.ts) — same 2km "Cerca" radius, used here for filtering event pins the real Brain doesn't recommend over (mockBrainClient.ts keeps its own copy alongside its own haversineKm). */
+export const NEAR_RADIUS_KM = 2;
+
 /** Same haversine the real Brain uses for "Cerca" (SPEC-001) — kept client-side too so the Living Map can label the nearest real neighborhood instead of a fixed one. */
 export function haversineKm(a: GeoPoint, b: GeoPoint): number {
   const R = 6371;

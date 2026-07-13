@@ -91,6 +91,9 @@
   color: var(--ink-500);
   margin: 8px 0 12px;
 }
+.cj-admin-lead--error {
+  color: var(--danger);
+}
 
 .cj-admin-table {
   display: flex;
@@ -195,6 +198,18 @@
 .cj-admin-match__head b {
   font-size: 14px;
   color: var(--ink-900);
+}
+.cj-admin-contributor {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-500);
+  margin-bottom: 6px;
+}
+.cj-admin-contributor--verified {
+  color: var(--caju-600, var(--ink-700));
+}
+.cj-admin-contributor--unknown {
+  font-style: italic;
 }
 .cj-admin-match p {
   font-size: 13px;

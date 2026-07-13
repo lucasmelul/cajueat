@@ -22,7 +22,7 @@ import { CajuPoints, RestaurantCard, BottomSheet, type SheetState } from '../../
 import { BrainCard, PromptBar, highlightText } from '../../components/brain';
 import { brain } from '../../lib/brain';
 import { DEFAULT_MAP_CENTER } from '../../lib/brain/fixtures';
-import { getCurrentPosition, haversineKm } from '../../lib/geo/geolocation';
+import { getCurrentPosition, haversineKm, NEAR_RADIUS_KM } from '../../lib/geo/geolocation';
 import { useAppStore } from '../../lib/store/useAppStore';
 import type { BrainCardData, MapEvent, Restaurant } from '../../types';
 import './LivingMap.css';
@@ -86,11 +86,14 @@ export function LivingMap() {
   }, []);
 
   // Context Chips (Cerca, Abierto ahora, Para una cita, Trabajar, Guardados) re-ask the
-  // Recommendation Engine with the active filter — all five genuinely narrow the catalog
-  // now (idealFor/tags, saved ids, real opening hours, real distance to `near`).
+  // Recommendation Engine with the active filter — all five genuinely narrow the catalog now
+  // (idealFor/tags, saved ids, real opening hours, real distance to `near`), and that same
+  // filtered set now also drives the Living Map's pins, not just the Brain Card — a chip that
+  // visually filters nothing but the card read as broken/confusing (real feedback).
   // The `near` coords only matter while that chip is active — using them as a dependency
   // unconditionally would refetch every time the location updates from an unrelated FAB tap.
   const nearDep = activeChip === 'near' ? userLocation : null;
+  const [occasionRestaurants, setOccasionRestaurants] = useState<Restaurant[] | null>(null);
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -99,6 +102,7 @@ export function LivingMap() {
       if (!alive) return;
       setBrainCard(recs.brainCard);
       setBrainCardDismissed(false);
+      setOccasionRestaurants(recs.restaurants);
       setLoading(false);
     });
     return () => {
@@ -107,15 +111,24 @@ export function LivingMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChip, nearDep]);
 
-  // SPEC-001: geolocation is only ever requested in context (a CTA, the "Cerca" chip, the
-  // "Mi ubicación" FAB) — never automatically on load. Resolves to null on denial/timeout
-  // without blocking the map ("el usuario igualmente puede explorar").
+  // Geolocation is also requested via a CTA (the "Cerca" chip, the "Mi ubicación" FAB) for
+  // an explicit re-center later. Resolves to null on denial/timeout without blocking the
+  // map ("el usuario igualmente puede explorar") — the city-wide DEFAULT_MAP_CENTER stays
+  // the fallback view either way.
   const requestLocation = async () => {
     const point = await getCurrentPosition();
     if (!point) return;
     setUserLocation(point);
     mapRef.current?.recenter(point);
   };
+
+  // The map opens on the user's real location, not a city-wide view — request it once,
+  // silently, right on mount. Falls back to DEFAULT_MAP_CENTER on denial/timeout, same as
+  // every other geolocation call here.
+  useEffect(() => {
+    requestLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // SPEC-001 pills-in-modal: every context/cuisine/venue-type/Michelin/events control lives
   // behind one "Filtros" button instead of always-visible pill rows over the map (they got in
@@ -149,21 +162,27 @@ export function LivingMap() {
   };
 
   // The map's pins come from the full catalog (`allRestaurants`, fetched once via
-  // getAllRestaurants), never from the Recommendation Engine's top-N — that pipeline is
-  // deliberately capped (MAX_RESULTS) for the Brain Card's "today's pick" framing, and with a
-  // real multi-hundred-restaurant catalog a capped result set meant the map only ever showed a
-  // handful of pins. Cuisine/Michelin/venueType pills filter this full set client-side; the
-  // context chips (Cerca/Abierto ahora/etc.) still only drive the Brain Card recommendation.
+  // getAllRestaurants) narrowed by the Recommendation Engine's honest filtered set
+  // (`occasionRestaurants`, uncapped — unlike the Brain Card's top-N pick) whenever a chip other
+  // than the default 'open' is active. `null` means "not loaded yet" and never hides anything,
+  // so the map doesn't flash empty on first paint. Cuisine/Michelin/venueType pills filter this
+  // same set client-side, same as before.
   const cuisines = Array.from(new Set(allRestaurants.map((r) => r.cuisine))).sort();
   const activeCuisineFilter = cuisineFilter && cuisines.includes(cuisineFilter) ? cuisineFilter : null;
   const isMichelin = (r: Restaurant) => !!(r.michelinStars || r.michelinGreenStar || r.michelinBibGourmand);
   const hasMichelinResults = allRestaurants.some(isMichelin);
   const hasCafeResults = allRestaurants.some((r) => r.venueType === 'cafe');
   const hasRestaurantTypeResults = allRestaurants.some((r) => r.venueType === 'restaurant');
+  const occasionIds = occasionRestaurants ? new Set(occasionRestaurants.map((r) => r.id)) : null;
   const visibleRestaurants = allRestaurants
+    .filter((r) => (occasionIds ? occasionIds.has(r.id) : true))
     .filter((r) => (activeCuisineFilter ? r.cuisine === activeCuisineFilter : true))
     .filter((r) => (michelinOnly ? isMichelin(r) : true))
     .filter((r) => (venueTypeFilter ? r.venueType === venueTypeFilter : true));
+  // "Cerca" is the one chip with an obvious event-equivalent (distance) — 'open'/'date'/'work'/
+  // 'saved' are restaurant-only concepts (hours, tags, bookmarks) events don't have.
+  const visibleEvents =
+    activeChip === 'near' && userLocation ? events.filter((e) => haversineKm(userLocation, e.position) <= NEAR_RADIUS_KM) : events;
 
   const activeFilterCount =
     (activeChip !== 'open' ? 1 : 0) +
@@ -228,7 +247,7 @@ export function LivingMap() {
         ref={mapRef}
         center={DEFAULT_MAP_CENTER}
         restaurants={visibleRestaurants}
-        events={showEvents ? events : []}
+        events={showEvents ? visibleEvents : []}
         selectedId={selectedRestaurantId}
         selectedEventId={selectedEventId}
         onSelectRestaurant={handleSelectPin}
@@ -330,7 +349,7 @@ export function LivingMap() {
         {!selected &&
           !selectedEvent &&
           !brainCardDismissed &&
-          (loading || !brainCard ? (
+          (loading ? (
             <div className="cj-brain-skeleton">
               <div className="cj-skel" style={{ width: 38, height: 38, borderRadius: 12 }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -339,7 +358,9 @@ export function LivingMap() {
                 <div className="cj-skel" style={{ width: '60%', height: 14 }} />
               </div>
             </div>
-          ) : (
+          ) : brainCard ? (
+            // No card at all when the active filter genuinely matches nothing (brainCard is
+            // null) — an empty-state message here read as broken once the map filtered too.
             <BrainCard
               eyebrow="LUGARCITO · PARA VOS"
               message={highlightText(brainCard.message)}
@@ -358,7 +379,7 @@ export function LivingMap() {
                 </>
               }
             />
-          ))}
+          ) : null)}
 
         <PromptBar value={query} onChange={setQuery} onSend={handleSend} onVoice={handleVoice} />
       </div>

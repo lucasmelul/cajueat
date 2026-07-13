@@ -5,9 +5,9 @@ describe('mockBrainClient', () => {
   it('always returns at least one recommendation with an explanation', async () => {
     const { brainCard, restaurants } = await mockBrainClient.getRecommendations();
     expect(restaurants.length).toBeGreaterThan(0);
-    expect(restaurants.length).toBeLessThanOrEqual(5);
-    expect(brainCard.message).toBeTruthy();
-    expect(brainCard.restaurantId).toBe(restaurants[0].id);
+    expect(brainCard).not.toBeNull();
+    expect(brainCard!.message).toBeTruthy();
+    expect(brainCard!.restaurantId).toBe(restaurants[0].id);
   });
 
   it('resolves a restaurant by id', async () => {

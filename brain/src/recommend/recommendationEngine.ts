@@ -64,30 +64,27 @@ export async function getRecommendations(userId: string, context: Recommendation
   const savedIds = new Set(getSavedIds(userId));
   const dnaLabels = dna.map((d) => d.label);
 
-  let candidates = getCatalog();
+  const catalog = getCatalog();
+  let filtered = catalog;
   if (context.neighborhood) {
-    candidates = candidates.filter((r) => r.neighborhood.toLowerCase() === context.neighborhood!.toLowerCase());
+    filtered = filtered.filter((r) => r.neighborhood.toLowerCase() === context.neighborhood!.toLowerCase());
   }
   if (context.filter === 'date') {
-    candidates = candidates.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
+    filtered = filtered.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
   } else if (context.filter === 'work') {
-    candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
+    filtered = filtered.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
   } else if (context.filter === 'saved') {
-    candidates = candidates.filter((r) => savedIds.has(r.id));
+    filtered = filtered.filter((r) => savedIds.has(r.id));
   } else if (context.filter === 'open') {
-    candidates = candidates.filter((r) => isOpenNow(r.openHours) === true);
+    filtered = filtered.filter((r) => isOpenNow(r.openHours) === true);
   } else if (context.filter === 'near' && context.near) {
-    const point = context.near;
-    const withinRadius = candidates.filter((r) => haversineKm(point, r.position) <= NEAR_RADIUS_KM);
-    // Nobody within the radius doesn't mean "show anything" — closest-first still respects what "Cerca" means.
-    candidates = withinRadius.length > 0 ? withinRadius : [...candidates].sort((a, b) => haversineKm(point, a.position) - haversineKm(point, b.position));
+    // Without real geolocation, 'near' has no coordinates to filter by — pass through rather than fake a location.
+    filtered = filtered.filter((r) => haversineKm(context.near!, r.position) <= NEAR_RADIUS_KM);
   }
-  // Without real geolocation, 'near' has no coordinates to filter by — pass through rather than fake a location.
-  if (candidates.length === 0) candidates = getCatalog(); // never an empty result from filtering alone (CP-018 Discovery Engine)
 
   // A genuinely empty catalog (no real restaurants loaded yet, e.g. right after the demo
   // fixtures were hidden) is a real, honest state — never a bug to paper over with a fake pick.
-  if (candidates.length === 0) {
+  if (catalog.length === 0) {
     return {
       brainCard: {
         eyebrow: 'CAJU',
@@ -98,7 +95,35 @@ export async function getRecommendations(userId: string, context: Recommendation
     };
   }
 
-  const ranked = candidates.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score);
+  // `filtered` is the honest result — it also drives the Living Map's pins now (CP-068 update:
+  // Context Chips filter the map, not just the card), so an empty result here has to stay empty,
+  // never silently backfilled with the whole catalog like it used to be.
+  if (filtered.length === 0) {
+    // "Cerca" is the one exception: nobody within NEAR_RADIUS_KM still deserves a real pick for
+    // the card (closest-first), even though the map honestly shows zero pins for that filter.
+    const cardCandidates =
+      context.filter === 'near' && context.near
+        ? [...catalog].sort((a, b) => haversineKm(context.near!, a.position) - haversineKm(context.near!, b.position))
+        : null;
+    // Otherwise there's genuinely nothing to suggest for this filter — no card at all, never a
+    // fake pick or an empty-state message standing in for one.
+    if (!cardCandidates) {
+      return { brainCard: null, restaurants: [] };
+    }
+    const top = diversify(cardCandidates.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score), 1)[0];
+    const message = await explainRecommendation({ restaurant: top.restaurant, signals: buildSignals(top) });
+    return {
+      brainCard: {
+        eyebrow: 'CAJU · RECOMENDACIÓN',
+        message: `Hoy elegiría **${top.restaurant.name}**.`,
+        sub: message,
+        restaurantId: top.restaurant.id,
+      },
+      restaurants: [],
+    };
+  }
+
+  const ranked = filtered.map((r) => scoreRestaurant(r, dnaLabels, savedIds)).sort((a, b) => b.score - a.score);
   const picked = diversify(ranked, MAX_RESULTS);
   const top = picked[0];
 
@@ -111,6 +136,6 @@ export async function getRecommendations(userId: string, context: Recommendation
       sub: message,
       restaurantId: top.restaurant.id,
     },
-    restaurants: picked.map((p) => p.restaurant),
+    restaurants: filtered,
   };
 }

@@ -131,23 +131,37 @@ export const mockBrainClient: BrainClient = {
   },
 
   async getRecommendations(context?: RecommendationContext) {
-    let candidates = FIXTURE_RESTAURANTS;
+    let filtered = FIXTURE_RESTAURANTS;
     if (context?.filter === 'date') {
-      candidates = candidates.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
+      filtered = filtered.filter((r) => r.idealFor.some((x) => /cita|ocasión especial/i.test(x)) || r.tags.some((t) => /en pareja/i.test(t)));
     } else if (context?.filter === 'work') {
-      candidates = candidates.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
+      filtered = filtered.filter((r) => r.idealFor.some((x) => /trabajar/i.test(x)) || r.tags.some((t) => /trabajar/i.test(t)));
     } else if (context?.filter === 'saved') {
-      candidates = candidates.filter((r) => memory.saved[r.id]);
+      filtered = filtered.filter((r) => memory.saved[r.id]);
     } else if (context?.filter === 'near' && context.near) {
-      const point = context.near;
-      const withinRadius = candidates.filter((r) => haversineKm(point, r.position) <= NEAR_RADIUS_KM);
-      candidates = withinRadius.length > 0 ? withinRadius : [...candidates].sort((a, b) => haversineKm(point, a.position) - haversineKm(point, b.position));
+      filtered = filtered.filter((r) => haversineKm(context.near!, r.position) <= NEAR_RADIUS_KM);
     }
     // 'open' has no real hours data in the mock's fixtures — pass through unfiltered (the real Brain filters for real).
-    if (candidates.length === 0) candidates = FIXTURE_RESTAURANTS; // never empty (CP-018)
 
-    const restaurants = candidates.slice(0, 5);
-    const pick = restaurants[0];
+    // Mirrors the real Brain: the filtered result also drives the Living Map's pins now, so an
+    // empty result stays honestly empty — "Cerca" is the one exception, closest-first still
+    // picks a card even when nothing is literally within range.
+    if (filtered.length === 0) {
+      const cardCandidates =
+        context?.filter === 'near' && context.near
+          ? [...FIXTURE_RESTAURANTS].sort((a, b) => haversineKm(context.near!, a.position) - haversineKm(context.near!, b.position))
+          : null;
+      if (!cardCandidates) {
+        return delay({ brainCard: null, restaurants: [] }, 500);
+      }
+      const pick = cardCandidates[0];
+      return delay(
+        { brainCard: { eyebrow: 'CAJU · RECOMENDACIÓN', message: `Hoy elegiría **${pick.name}**.`, sub: pick.why, restaurantId: pick.id }, restaurants: [] },
+        500,
+      );
+    }
+
+    const pick = filtered[0];
     return delay(
       {
         brainCard: {
@@ -156,7 +170,7 @@ export const mockBrainClient: BrainClient = {
           sub: pick.why,
           restaurantId: pick.id,
         },
-        restaurants,
+        restaurants: filtered,
       },
       500,
     );

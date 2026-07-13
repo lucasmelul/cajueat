@@ -16,6 +16,7 @@ export function Checkins() {
   const [selectedId, setSelectedId] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
 
   const [consumption, setConsumption] = useState<ConsumptionSummaryRow[]>([]);
   const [consumptionLoading, setConsumptionLoading] = useState(true);
@@ -30,11 +31,17 @@ export function Checkins() {
   const showQr = async (id: string) => {
     setSelectedId(id);
     setQrDataUrl(null);
+    setQrError(null);
     setQrLoading(true);
-    const { token } = await adminClient.getCheckinToken(id);
-    const dataUrl = await QRCode.toDataURL(token, { width: 280, margin: 1 });
-    setQrDataUrl(dataUrl);
-    setQrLoading(false);
+    try {
+      const { token } = await adminClient.getCheckinToken(id);
+      const dataUrl = await QRCode.toDataURL(token, { width: 280, margin: 1 });
+      setQrDataUrl(dataUrl);
+    } catch {
+      setQrError('No se pudo generar el QR. Revisá que CHECKIN_SECRET esté seteado en las variables de entorno del Brain (Railway).');
+    } finally {
+      setQrLoading(false);
+    }
   };
 
   const selectedRestaurant = realRestaurants.find((r) => r.id === selectedId);
@@ -73,6 +80,7 @@ export function Checkins() {
             QR de <b>{selectedRestaurant.name}</b>
           </p>
           {qrLoading && <p className="cj-admin-lead">Generando…</p>}
+          {qrError && <p className="cj-admin-lead cj-admin-lead--error">{qrError}</p>}
           {qrDataUrl && <img className="cj-admin-qr__img" src={qrDataUrl} alt={`QR de check-in de ${selectedRestaurant.name}`} />}
         </div>
       )}
