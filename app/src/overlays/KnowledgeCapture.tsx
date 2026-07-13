@@ -5,36 +5,12 @@ import { CajuPoints } from '../components/discovery';
 import { BrainMark } from '../components/brain';
 import { brain, BrainSyncRequiredError } from '../lib/brain';
 import { useAppStore } from '../lib/store/useAppStore';
+import { useSpeechRecognition } from '../lib/voice/useSpeechRecognition';
 import './KnowledgeCapture.css';
 
 type Stage = 'pick' | 'noteInput' | 'photoInput' | 'voiceInput' | 'analyzing' | 'done' | 'error';
 
 const ANALYSIS_STEPS = ['Detectando lugar', 'Identificando platos', 'Ponderando confianza'];
-
-// Web Speech API no está en lib.dom.d.ts (no es estándar) — tipado mínimo de lo que usamos.
-interface SpeechRecognitionResultLike {
-  0: { transcript: string };
-  isFinal: boolean;
-}
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<SpeechRecognitionResultLike>;
-}
-interface SpeechRecognitionLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-}
-
-function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
-  const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
 export interface KnowledgeCaptureProps {
   onClose: () => void;
@@ -56,8 +32,6 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   });
   const [note, setNote] = useState('');
   const [voiceText, setVoiceText] = useState('');
-  const [listening, setListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(true);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [photoMediaType, setPhotoMediaType] = useState<string | null>(null);
@@ -66,14 +40,12 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
   const [points, setPoints] = useState(0);
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const speech = useSpeechRecognition((addition) => setVoiceText((prev) => (prev ? `${prev} ${addition}` : addition).trim()));
 
   useEffect(() => {
-    setSpeechSupported(!!getSpeechRecognition());
     if (pendingShare) setPendingShare(null); // consumed once into `link`'s initial value above
     if (pendingCaptureStage) setPendingCaptureStage(null); // consumed once into `stage`'s initial value above
-    return () => recognitionRef.current?.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -112,32 +84,6 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
       setPhotoMediaType(header.match(/data:(.*);base64/)?.[1] ?? file.type);
     };
     reader.readAsDataURL(file);
-  };
-
-  const toggleListening = () => {
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-      return;
-    }
-    const SpeechRecognitionCtor = getSpeechRecognition();
-    if (!SpeechRecognitionCtor) return;
-    const recognition = new SpeechRecognitionCtor();
-    recognition.lang = 'es-AR';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.onresult = (e) => {
-      let addition = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) addition += e.results[i][0].transcript;
-      }
-      if (addition) setVoiceText((prev) => (prev ? `${prev} ${addition}` : addition).trim());
-    };
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => setListening(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
   };
 
   return (
@@ -249,11 +195,11 @@ export function KnowledgeCapture({ onClose }: KnowledgeCaptureProps) {
           <div className="cj-cap-voice">
             <div className="cj-ov-head">
               <h2>Contale a Lugarcito</h2>
-              <p>{speechSupported ? 'Grabá y corregí antes de enviar — la transcripción no es perfecta.' : 'Tu navegador no transcribe automático — escribilo directo.'}</p>
+              <p>{speech.supported ? 'Grabá y corregí antes de enviar — la transcripción no es perfecta.' : 'Tu navegador no transcribe automático — escribilo directo.'}</p>
             </div>
-            {speechSupported && (
-              <button className={`cj-cap-voice__mic ${listening ? 'on' : ''}`} onClick={toggleListening} aria-label={listening ? 'Detener grabación' : 'Grabar'}>
-                {listening ? <Square size={20} /> : <Mic size={22} />}
+            {speech.supported && (
+              <button className={`cj-cap-voice__mic ${speech.listening ? 'on' : ''}`} onClick={speech.toggle} aria-label={speech.listening ? 'Detener grabación' : 'Grabar'}>
+                {speech.listening ? <Square size={20} /> : <Mic size={22} />}
               </button>
             )}
             <textarea

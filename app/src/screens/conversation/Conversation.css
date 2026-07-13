@@ -109,6 +109,22 @@
   gap: 10px;
   margin-top: 12px;
 }
+.cj-turn__listen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.cj-turn__listen:hover {
+  color: var(--ink-700);
+}
 .cj-turn__chips {
   display: flex;
   flex-wrap: wrap;

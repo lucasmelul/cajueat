@@ -1,4 +1,4 @@
-import { Mic, Send } from 'lucide-react';
+import { Mic, Send, Square } from 'lucide-react';
 import { BrainMark } from './BrainMark';
 import './PromptBar.css';
 
@@ -7,6 +7,8 @@ export interface PromptBarProps {
   onChange?: (value: string) => void;
   onSend?: (value: string) => void;
   onVoice?: () => void;
+  /** PRD-019: whether onVoice's dictation is actively listening right now — swaps the mic for a stop icon, same visual language as Knowledge Capture's Voz step. */
+  listening?: boolean;
   placeholder?: string;
   showMark?: boolean;
   className?: string;
@@ -18,6 +20,7 @@ export function PromptBar({
   onChange,
   onSend,
   onVoice,
+  listening = false,
   placeholder = 'Preguntá dónde comer…',
   showMark = true,
   className = '',
@@ -39,9 +42,9 @@ export function PromptBar({
         placeholder={placeholder}
         aria-label="Hablar con Lugarcito"
       />
-      {!hasText && (
-        <button className="caju-prompt__btn" onClick={onVoice} aria-label="Aportar por voz" type="button">
-          <Mic />
+      {!hasText && onVoice && (
+        <button className={`caju-prompt__btn ${listening ? 'on' : ''}`} onClick={onVoice} aria-label={listening ? 'Detener grabación' : 'Aportar por voz'} type="button">
+          {listening ? <Square /> : <Mic />}
         </button>
       )}
       <button className="caju-prompt__btn caju-prompt__send" onClick={submit} disabled={!hasText} aria-label="Enviar" type="button">
