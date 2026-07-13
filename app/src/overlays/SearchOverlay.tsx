@@ -17,6 +17,8 @@ export interface SearchOverlayProps {
 export function SearchOverlay({ onClose, onSelectRestaurant }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Restaurant[]>([]);
+  // SPEC-008 "sugiere ideas": chips generados por la última búsqueda real, no autocompletado literal.
+  const [ideaSuggestions, setIdeaSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,11 +29,12 @@ export function SearchOverlay({ onClose, onSelectRestaurant }: SearchOverlayProp
     }
     setLoading(true);
     const timer = setTimeout(() => {
-      brain.search(trimmed).then((r) => {
-        setResults(r);
+      brain.search(trimmed).then(({ restaurants, suggestions }) => {
+        setResults(restaurants);
+        setIdeaSuggestions(suggestions);
         setLoading(false);
       });
-    }, 250);
+    }, 350);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -82,6 +85,15 @@ export function SearchOverlay({ onClose, onSelectRestaurant }: SearchOverlayProp
                 />
               ))}
             </div>
+            {!loading && ideaSuggestions.length > 0 && (
+              <div className="cj-search-suggest cj-search-suggest--related">
+                {ideaSuggestions.map((s) => (
+                  <Chip key={s} onClick={() => setQuery(s)}>
+                    {s}
+                  </Chip>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

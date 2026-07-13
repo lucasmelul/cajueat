@@ -277,8 +277,10 @@ export const mockBrainClient: BrainClient = {
     return delay({ learned, pointsAwarded: 30, pending: true }, 300);
   },
 
+  // Mock has no LLM to call — keeps the deterministic keyword scorer as a local-dev-only
+  // approximation, never claims real intent understanding (that's what httpBrainClient does).
   async search(query, limit = 8) {
-    return delay(searchCatalog(query, limit), 200);
+    return delay({ restaurants: searchCatalog(query, limit), suggestions: [] }, 200);
   },
 
   async compareRestaurants(restaurantIds, question) {

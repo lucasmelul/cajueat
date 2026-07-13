@@ -50,8 +50,8 @@ export interface BrainClient {
   /** `pending: true` means we couldn't process this automatically (e.g. a non-TikTok link) — it's parked for an operator to review by hand, never a real "we learned this" claim. */
   submitCapture(input: { kind: string; text?: string; image?: string; mediaType?: string }): Promise<{ learned: string; pointsAwarded: number; pending?: boolean }>;
 
-  /** SPEC-008 Search Experience — intent-lite matching, never returns an empty list. */
-  search(query: string, limit?: number): Promise<Restaurant[]>;
+  /** SPEC-008 Search Experience — real intent understanding via Claude, grounded in the real catalog, never an empty list. `suggestions` are short related-idea chips, never literal text autocomplete. */
+  search(query: string, limit?: number): Promise<{ restaurants: Restaurant[]; suggestions: string[] }>;
 
   /** SPEC-014 Compare Experience — 2-3 restaurants the user already narrowed down to, never more. */
   compareRestaurants(restaurantIds: string[], question?: string): Promise<CompareResult>;

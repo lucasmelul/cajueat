@@ -57,6 +57,9 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.cj-search-suggest--related {
+  margin-top: 16px;
+}
 
 .cj-search-label {
   font-size: 12px;

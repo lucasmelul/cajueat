@@ -232,6 +232,66 @@ export async function answerFromWeb(text: string, onDelta?: (chunk: string) => v
   return full.trim();
 }
 
+/** SPEC-008: "Google busca palabras. Lugarcito entiende intención" — nunca un keyword scorer. */
+export interface SearchResult {
+  restaurantIds: string[];
+  /** 3-4 ideas cortas relacionadas a la intención detectada — "sugiere ideas", nunca autocompletado de texto literal. */
+  suggestions: string[];
+}
+
+const SEARCH_SYSTEM_PROMPT = `Sos el motor de búsqueda de Lugarcito (SPEC-008). "Google busca palabras. Lugarcito
+entiende intención" — nunca hagas matching literal de palabras, interpretá qué busca la persona: intención,
+restricciones, contexto y preferencias, aunque la frase no mencione directamente cocina o nombre de lugar (ej.
+"sorprendeme", "algo romántico", "una cafetería donde pueda trabajar cuatro horas").
+
+Elegí ÚNICAMENTE de la lista de restaurantes reales que te paso, ordenados del mejor al peor match, máximo 8.
+Nunca inventes un restaurante que no esté en la lista. Nunca devuelvas una lista vacía si hay algo remotamente
+razonable — "nunca mostrar 'no encontramos resultados'": si nada calza perfecto, igual devolvé las opciones más
+cercanas ordenadas por relevancia y confianza real.
+
+Además, generá de 3 a 4 sugerencias cortas de búsqueda relacionadas a lo que la persona ya escribió o a su
+intención detectada — ideas breves tipo chip (ej. si escribió "sus" → "Sushi tradicional", "Sushi premium",
+"Omakase"), nunca autocompletado literal del texto ni una lista genérica sin relación con la búsqueda actual.
+
+Español, sin explicaciones — solo el JSON pedido.`;
+
+const TRUST_ORDER: Record<Restaurant['trust'], number> = { high: 3, mid: 2, low: 1 };
+
+export async function interpretSearchQuery(input: { text: string; catalog: Restaurant[] }): Promise<SearchResult> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 300,
+    system: SEARCH_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: `Restaurantes disponibles (JSON):\n${JSON.stringify(catalogForPrompt(input.catalog))}\n\nBúsqueda: "${input.text}"` }],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: {
+            restaurantIds: { type: 'array', items: { type: 'string' } },
+            suggestions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['restaurantIds', 'suggestions'],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const parsed = JSON.parse(requireTextBlock(response.content).text) as SearchResult;
+  const knownIds = new Set(input.catalog.map((r) => r.id));
+  const restaurantIds = parsed.restaurantIds.filter((id) => knownIds.has(id));
+
+  // Grounding filtered everything out (e.g. Claude hallucinated an id) but the catalog isn't
+  // empty — "siempre responder", never a dead end just because the model's picks didn't survive.
+  if (restaurantIds.length === 0 && input.catalog.length > 0) {
+    const byTrust = [...input.catalog].sort((a, b) => TRUST_ORDER[b.trust] - TRUST_ORDER[a.trust]).slice(0, 8).map((r) => r.id);
+    return { restaurantIds: byTrust, suggestions: parsed.suggestions };
+  }
+  return { restaurantIds, suggestions: parsed.suggestions };
+}
+
 const EXPLAIN_SYSTEM_PROMPT = `Sos Lugarcito. Te doy una recomendación y las señales reales que la sostienen.
 Escribí UNA sola oración corta y natural explicando por qué la elegiste, usando solo esas señales — nunca inventes
 datos que no te di. Español, tono cercano, sin adornos de marketing.`;
